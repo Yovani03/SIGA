@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+db.sqlite3
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Local Scanner
+local_scanner_agent/node_modules/
+local_scanner_agent/temp_scan.pdf
+
+# Vercel
+.vercel

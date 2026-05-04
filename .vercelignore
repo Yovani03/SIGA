@@ -1,0 +1,5 @@
+local_scanner_agent/
+venv/
+backend/venv/
+backend/db.sqlite3
+.env
