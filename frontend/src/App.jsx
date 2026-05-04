@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import AltaFactura from './pages/AltaFactura';
 import AltaVehiculo from './pages/AltaVehiculo';
 import ListaVehiculos from './pages/ListaVehiculos';
+import Mantenimiento from './pages/Mantenimiento';
 
 function App() {
   return (
@@ -15,8 +16,7 @@ function App() {
           <Route path="alta-factura" element={<AltaFactura />} />
           <Route path="alta-vehiculo" element={<AltaVehiculo />} />
           <Route path="vehiculos" element={<ListaVehiculos />} />
-          {/* Futuras rutas irán aquí */}
-          <Route path="mantenimiento" element={<div className="p-8">Página de Mantenimiento (Próximamente)</div>} />
+          <Route path="mantenimiento" element={<Mantenimiento />} />
         </Route>
       </Routes>
     </Router>
