@@ -266,7 +266,7 @@ const ListaVehiculos = () => {
                         
                         {f.archivo_escaneado ? (
                           <a 
-                            href={f.archivo_escaneado} 
+                            href={f.archivo_escaneado.includes('cloudinary.com') && !f.archivo_escaneado.toLowerCase().endsWith('.pdf') ? `${f.archivo_escaneado}.pdf` : f.archivo_escaneado} 
                             target="_blank" 
                             rel="noreferrer"
                             className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
