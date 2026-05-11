@@ -22,7 +22,7 @@ const Login = () => {
         e.preventDefault();
         setError('');
         setIsSubmitting(true);
-        const success = await login(username, password);
+        const success = await login(username.trim().toLowerCase(), password);
         if (!success) {
             setError('Credenciales inválidas. Por favor, intenta de nuevo.');
             setIsSubmitting(false);
