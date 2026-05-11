@@ -1,0 +1,300 @@
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
+import { 
+  Ticket as TicketIcon, 
+  Search, 
+  Plus, 
+  Calendar, 
+  DollarSign, 
+  Hash, 
+  Truck,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
+  Store,
+  Info
+} from 'lucide-react';
+import AltaTicket from './AltaTicket';
+
+const Tickets = () => {
+  const [tickets, setTickets] = useState([]);
+  const [vehiculos, setVehiculos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAltaModal, setShowAltaModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [ticketsRes, vehiculosRes] = await Promise.all([
+        api.get('tickets/'),
+        api.get('vehiculos/')
+      ]);
+      setTickets(ticketsRes.data);
+      setVehiculos(vehiculosRes.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error cargando tickets", err);
+      setError("No se pudieron cargar los datos de tickets.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAltaSuccess = () => {
+    setShowAltaModal(false);
+    fetchData();
+  };
+
+  const getUnidadInfo = (unidadId) => {
+    return vehiculos.find(v => v.id === unidadId);
+  };
+
+  const filteredTickets = tickets.filter(t => {
+    const unidad = getUnidadInfo(t.unidad);
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      t.folio_interno.toLowerCase().includes(searchLower) ||
+      t.folio_emision.toLowerCase().includes(searchLower) ||
+      (t.descripcion && t.descripcion.toLowerCase().includes(searchLower)) ||
+      (t.taller_nombre && t.taller_nombre.toLowerCase().includes(searchLower)) ||
+      (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
+      (unidad && unidad.placas.toLowerCase().includes(searchLower))
+    );
+  }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTickets = filteredTickets.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  return (
+    <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6">
+        <div>
+          <h1 className="text-2xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <TicketIcon className="text-amber-500 shrink-0" size={32} />
+            Control de Tickets
+          </h1>
+          <p className="text-slate-400 mt-1 text-sm lg:text-lg">Gestión de notas simples y folios físicos.</p>
+        </div>
+        
+        <button 
+          onClick={() => setShowAltaModal(true)}
+          className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-amber-900/20 active:scale-95 w-full md:w-auto"
+        >
+          <Plus size={20} />
+          Nuevo Ticket / Nota
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Pendientes de Facturar</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <Clock className="text-amber-500 shrink-0" size={24} />
+            {tickets.filter(t => !t.convertido_en_factura).length}
+          </p>
+        </div>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Monto Pendiente</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <DollarSign className="text-emerald-500 shrink-0" size={24} />
+            {tickets
+              .filter(t => !t.convertido_en_factura)
+              .reduce((acc, curr) => acc + parseFloat(curr.monto), 0)
+              .toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl sm:col-span-2 lg:col-span-1">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Ya Facturados</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <CheckCircle2 className="text-blue-500 shrink-0" size={24} />
+            {tickets.filter(t => t.convertido_en_factura).length}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+          <Search className="text-slate-500 group-focus-within:text-amber-500 transition-colors" size={20} />
+        </div>
+        <input
+          type="text"
+          placeholder="Buscar folio, descripción, taller, unidad o placas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-amber-500 outline-none transition-all text-lg placeholder:text-slate-600 shadow-xl"
+        />
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <Loader2 className="text-amber-500 animate-spin" size={48} />
+          <p className="text-slate-400 font-medium">Cargando tickets...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-10 text-center space-y-4">
+          <AlertCircle className="text-rose-500 mx-auto" size={48} />
+          <p className="text-rose-400 text-lg font-medium">{error}</p>
+          <button onClick={fetchData} className="text-amber-400 hover:text-amber-300 font-bold underline">Intentar de nuevo</button>
+        </div>
+      ) : filteredTickets.length === 0 ? (
+        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
+          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <TicketIcon className="text-slate-600" size={40} />
+          </div>
+          <h3 className="text-2xl font-bold text-white">No se encontraron tickets</h3>
+          <p className="text-slate-400 max-w-md mx-auto">
+            {searchTerm ? `No hay resultados para "${searchTerm}".` : "Aún no has registrado tickets o notas simples."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {currentTickets.map((t) => {
+            const unidad = getUnidadInfo(t.unidad);
+            return (
+              <div key={t.id} className={`bg-slate-900/40 backdrop-blur-sm border ${t.convertido_en_factura ? 'border-slate-800 opacity-75' : 'border-amber-500/30'} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-2xl relative overflow-hidden flex flex-col`}>
+                {t.convertido_en_factura && (
+                   <div className="absolute top-2 right-2 bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest z-10">
+                     Facturado
+                   </div>
+                )}
+                
+                <div className="flex justify-between items-start mb-6">
+                  <div className="min-w-0">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio Interno</p>
+                    <p className="text-amber-400 font-mono text-2xl font-black tracking-tight truncate">{t.folio_interno}</p>
+                    <p className="text-slate-400 text-xs mt-1">Físico: <span className="text-slate-200 font-bold">{t.folio_emision}</span></p>
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Monto</p>
+                    <p className="text-emerald-400 font-black text-2xl">${parseFloat(t.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 flex-grow">
+                  <div className="flex items-center gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                    <div className="bg-amber-600/10 p-2 rounded-lg shrink-0">
+                      <Truck className="text-amber-500" size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad</p>
+                      <p className="text-white text-sm font-bold truncate">
+                        {unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 px-1">
+                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
+                      <Store className="text-slate-400" size={14} />
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Origen</p>
+                      <p className="text-slate-300 text-sm font-medium">{t.taller_nombre || 'No especificado'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 px-1">
+                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
+                      <Info className="text-slate-400" size={14} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Descripción</p>
+                      <p className="text-slate-300 text-sm italic truncate" title={t.descripcion}>
+                        {t.descripcion || 'Sin descripción'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                  <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
+                    <Calendar size={14} className="text-slate-600" />
+                    {new Date(t.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                  
+                  {t.archivo_escaneado && (
+                    <a 
+                      href={t.archivo_escaneado} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="text-amber-400 hover:text-amber-300 p-2 bg-amber-500/10 rounded-xl transition-colors shadow-lg"
+                    >
+                      <ExternalLink size={18} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-10 gap-2">
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+            <button
+              key={number}
+              onClick={() => paginate(number)}
+              className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                currentPage === number 
+                  ? 'bg-amber-600 text-white shadow-xl shadow-amber-900/20 scale-110' 
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {number}
+            </button>
+          ))}
+
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+
+      {showAltaModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-amber-500/5">
+            <AltaTicket 
+              onSuccess={handleAltaSuccess} 
+              onClose={() => setShowAltaModal(false)} 
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Tickets;

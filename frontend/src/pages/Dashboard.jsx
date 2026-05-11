@@ -31,14 +31,14 @@ const StatCard = ({ icon, label, value, subValue, trend, color }) => (
 
 const Dashboard = () => {
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Resumen de Operaciones</h1>
-        <p className="text-slate-400">Bienvenido de nuevo. Aquí tienes el estado actual de tu flota y mantenimientos.</p>
+    <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-1 lg:gap-2">
+        <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Resumen de Operaciones</h1>
+        <p className="text-slate-400 text-sm lg:text-base">Bienvenido de nuevo. Aquí tienes el estado actual de tu flota.</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <StatCard 
           icon={<Truck />} 
           label="Total Unidades" 
@@ -70,21 +70,21 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-sm">
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl">
+          <div className="p-4 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-sm">
             <h3 className="font-semibold text-white">Estado Reciente de la Flota</h3>
             <button className="text-sm text-blue-400 hover:text-blue-300 font-medium">Ver todo</button>
           </div>
-          <div className="p-0 overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="bg-slate-950/30 text-slate-500 text-xs uppercase tracking-wider">
-                  <th className="px-6 py-4 font-semibold">Eco</th>
-                  <th className="px-6 py-4 font-semibold">Placas</th>
-                  <th className="px-6 py-4 font-semibold">Último Mantenimiento</th>
-                  <th className="px-6 py-4 font-semibold text-right">Estatus</th>
+                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Eco</th>
+                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Placas</th>
+                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Último Mant.</th>
+                  <th className="px-4 lg:px-6 py-4 font-semibold text-right text-[10px] lg:text-xs">Estatus</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
@@ -94,12 +94,12 @@ const Dashboard = () => {
                   { eco: 'T-108', plates: '89-CL-1P', date: '12 May 2026', status: 'Taller', color: 'text-amber-400 bg-amber-400/10' },
                   { eco: 'T-112', plates: '10-ZX-7M', date: 'Hoy', status: 'Disponible', color: 'text-emerald-400 bg-emerald-400/10' },
                 ].map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-800/30 transition-colors group">
-                    <td className="px-6 py-4 font-medium text-white">{item.eco}</td>
-                    <td className="px-6 py-4 text-slate-400">{item.plates}</td>
-                    <td className="px-6 py-4 text-slate-400">{item.date}</td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.color}`}>
+                  <tr key={i} className="hover:bg-slate-800/30 transition-colors group text-sm lg:text-base">
+                    <td className="px-4 lg:px-6 py-4 font-medium text-white">{item.eco}</td>
+                    <td className="px-4 lg:px-6 py-4 text-slate-400">{item.plates}</td>
+                    <td className="px-4 lg:px-6 py-4 text-slate-400 whitespace-nowrap">{item.date}</td>
+                    <td className="px-4 lg:px-6 py-4 text-right">
+                      <span className={`px-2 lg:px-3 py-1 rounded-full text-[10px] lg:text-xs font-medium whitespace-nowrap ${item.color}`}>
                         {item.status}
                       </span>
                     </td>
@@ -111,7 +111,7 @@ const Dashboard = () => {
         </div>
 
         {/* Reminders/Alerts */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl p-5 lg:p-6 shadow-xl space-y-6">
           <h3 className="font-semibold text-white">Alertas Próximas</h3>
           <div className="space-y-4">
             {[
@@ -119,14 +119,14 @@ const Dashboard = () => {
               { title: 'Revisión Frenos T-105', time: 'Mañana', type: 'critico' },
               { title: 'Vencimiento Seguro R-201', time: '30 May', type: 'documento' },
             ].map((alert, i) => (
-              <div key={i} className="flex gap-4 items-start p-4 bg-slate-950/50 rounded-2xl border border-slate-800/50">
-                <div className={`p-2 rounded-lg ${
+              <div key={i} className="flex gap-3 lg:gap-4 items-start p-3 lg:p-4 bg-slate-950/50 rounded-xl lg:rounded-2xl border border-slate-800/50">
+                <div className={`p-2 rounded-lg shrink-0 ${
                   alert.type === 'critico' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-800 text-slate-400'
                 }`}>
                   {alert.type === 'critico' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-white">{alert.title}</h4>
+                <div className="min-w-0">
+                  <h4 className="text-sm font-medium text-white truncate">{alert.title}</h4>
                   <p className="text-xs text-slate-500 mt-1">{alert.time}</p>
                 </div>
               </div>
@@ -140,5 +140,6 @@ const Dashboard = () => {
     </div>
   );
 };
+
 
 export default Dashboard;

@@ -12,7 +12,12 @@ import {
   ExternalLink,
   FilePlus,
   Hash,
-  DollarSign
+  DollarSign,
+  LogIn,
+  MapPin,
+  X,
+  Loader2,
+  Ticket as TicketIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -26,20 +31,27 @@ const Spinner = () => (
 const Mantenimiento = () => {
   const [ordenes, setOrdenes] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
+  const [talleres, setTalleres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [scanning, setScanning] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('todos');
   
-  // Estado para el formulario
   const [formData, setFormData] = useState({
     unidad: '',
-    folio: '',
     descripcion: '',
-    estatus: 'pendiente',
-    costo_total: '',
-    archivo_escaneado: null
+    tipo: 'correctivo',
+    taller: ''
   });
+  
+  const [tickets, setTickets] = useState([]);
+  const [showCompletarModal, setShowCompletarModal] = useState(false);
+  const [ordenACompletar, setOrdenACompletar] = useState(null);
+  const [ticketsSeleccionados, setTicketsSeleccionados] = useState([]);
+
+  const [showPausarModal, setShowPausarModal] = useState(false);
+  const [ordenAPausar, setOrdenAPausar] = useState(null);
+  const [motivoEspera, setMotivoEspera] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -47,12 +59,16 @@ const Mantenimiento = () => {
 
   const fetchData = async () => {
     try {
-      const [resOrdenes, resVehiculos] = await Promise.all([
+      const [resOrdenes, resVehiculos, resTickets, resTalleres] = await Promise.all([
         api.get('ordenes-trabajo/'),
-        api.get('vehiculos/')
+        api.get('vehiculos/'),
+        api.get('tickets/pendientes/'),
+        api.get('talleres/')
       ]);
       setOrdenes(resOrdenes.data);
       setVehiculos(resVehiculos.data);
+      setTickets(resTickets.data);
+      setTalleres(resTalleres.data);
     } catch (error) {
       console.error("Error al cargar datos:", error);
     } finally {
@@ -60,48 +76,35 @@ const Mantenimiento = () => {
     }
   };
 
-  const handleScan = async () => {
-    setScanning(true);
+  const handleCompletar = async () => {
+    setFormLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/scan');
-      if (!response.ok) throw new Error('Error en el servidor de escaneo local');
-      
-      const blob = await response.blob();
-      const file = new File([blob], `mantenimiento_${Date.now()}.pdf`, { type: 'application/pdf' });
-      
-      setFormData(prev => ({ ...prev, archivo_escaneado: file }));
-      alert("¡Documento escaneado con éxito!");
+      await api.post(`ordenes-trabajo/${ordenACompletar.id}/completar/`, {
+        tickets: ticketsSeleccionados
+      });
+      setShowCompletarModal(false);
+      setOrdenACompletar(null);
+      setTicketsSeleccionados([]);
+      fetchData();
     } catch (err) {
-      console.error(err);
-      alert("No se pudo conectar con el escáner Brother. Asegúrate de que el agente local esté encendido.");
+      console.error("Error al completar:", err);
+      alert(err.response?.data?.error || "Error al completar la orden");
     } finally {
-      setScanning(false);
+      setFormLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
-
-    const data = new FormData();
-    Object.keys(formData).forEach(key => {
-      if (formData[key] !== null) {
-        data.append(key, formData[key]);
-      }
-    });
-
     try {
-      await api.post('ordenes-trabajo/', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post('ordenes-trabajo/', formData);
       setShowModal(false);
       setFormData({
         unidad: '',
-        folio: '',
         descripcion: '',
-        estatus: 'pendiente',
-        costo_total: '',
-        archivo_escaneado: null
+        tipo: 'correctivo',
+        taller: ''
       });
       fetchData();
     } catch (err) {
@@ -112,252 +115,397 @@ const Mantenimiento = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completado': return <CheckCircle2 className="text-emerald-400" size={18} />;
-      case 'en proceso': return <Clock className="text-amber-400" size={18} />;
-      default: return <AlertCircle className="text-slate-400" size={18} />;
+  const handleStatusChange = async (ordenId, newEstatus, additionalData = {}) => {
+    try {
+      await api.patch(`ordenes-trabajo/${ordenId}/`, { estatus: newEstatus, ...additionalData });
+      fetchData();
+    } catch (err) {
+      console.error("Error al actualizar estatus:", err);
+      alert("Error al actualizar estatus");
     }
+  };
+
+  const handlePausar = async () => {
+    if (!motivoEspera) {
+      alert("Debe seleccionar un motivo de espera.");
+      return;
+    }
+    setFormLoading(true);
+    await handleStatusChange(ordenAPausar.id, 'en espera', { motivo_espera: motivoEspera });
+    setShowPausarModal(false);
+    setOrdenAPausar(null);
+    setMotivoEspera('');
+    setFormLoading(false);
   };
 
   const stats = {
     total: ordenes.length,
-    pendientes: ordenes.filter(o => o.estatus === 'pendiente').length,
     proceso: ordenes.filter(o => o.estatus === 'en proceso').length,
+    espera: ordenes.filter(o => o.estatus === 'en espera').length,
     completados: ordenes.filter(o => o.estatus === 'completado').length,
   };
 
+  const filteredOrdenes = ordenes.filter(o => activeTab === 'todos' || o.estatus === activeTab);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Wrench className="text-blue-500" size={32} />
-            Control de Mantenimiento
+          <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
+            <Wrench className="text-blue-500 shrink-0" size={28} />
+            Mantenimiento
           </h1>
-          <p className="text-slate-400 mt-2">Gestiona órdenes de trabajo y servicios preventivos.</p>
+          <p className="text-slate-400 mt-1 lg:mt-2 text-sm">Gestiona órdenes de trabajo y servicios.</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-5 lg:px-6 py-3 rounded-xl lg:rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
         >
           <Plus size={20} /> Nueva Orden
         </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Órdenes', value: stats.total, icon: <Hash className="text-blue-400" /> },
-          { label: 'Pendientes', value: stats.pendientes, icon: <AlertCircle className="text-slate-400" /> },
+          { label: 'En Espera', value: stats.espera, icon: <AlertCircle className="text-red-400" /> },
           { label: 'En Proceso', value: stats.proceso, icon: <Clock className="text-amber-400" /> },
           { label: 'Completadas', value: stats.completados, icon: <CheckCircle2 className="text-emerald-400" /> },
         ].map((s, idx) => (
-          <div key={idx} className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl flex items-center justify-between">
+          <div key={idx} className="bg-slate-900/50 border border-slate-800 p-5 lg:p-6 rounded-2xl lg:rounded-3xl flex items-center justify-between">
             <div>
-              <p className="text-slate-500 text-sm font-medium">{s.label}</p>
-              <p className="text-2xl font-bold text-white mt-1">{s.value}</p>
+              <p className="text-slate-500 text-xs lg:text-sm font-medium">{s.label}</p>
+              <p className="text-xl lg:text-2xl font-bold text-white mt-1">{s.value}</p>
             </div>
-            <div className="bg-slate-800 p-3 rounded-2xl">{s.icon}</div>
+            <div className="bg-slate-800 p-2.5 lg:p-3 rounded-xl lg:rounded-2xl shrink-0">{s.icon}</div>
           </div>
         ))}
       </div>
 
-      {/* Main Content */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden">
-        <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-white">Órdenes de Trabajo Recientes</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar por folio o unidad..." 
-              className="bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors w-full sm:w-64"
-            />
-          </div>
-        </div>
+      {/* Top Filters */}
+      <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-xl lg:rounded-2xl border border-slate-800 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap">
+        {[
+          { id: 'todos', label: 'TODOS', count: stats.total },
+          { id: 'en proceso', label: 'PROCESO', count: stats.proceso },
+          { id: 'en espera', label: 'ESPERA', count: stats.espera },
+          { id: 'completado', label: 'OK', count: stats.completados }
+        ].map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 sm:flex-none px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${
+              activeTab === tab.id 
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            {tab.label}
+            <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+              activeTab === tab.id ? 'bg-blue-800 text-blue-100' : 'bg-slate-800 text-slate-300'
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-950/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">Folio</th>
-                <th className="px-6 py-4">Unidad</th>
-                <th className="px-6 py-4">Descripción</th>
-                <th className="px-6 py-4">Estatus</th>
-                <th className="px-6 py-4">Costo</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {loading ? (
-                <tr><td colSpan="6" className="text-center py-12"><Spinner /></td></tr>
-              ) : ordenes.length === 0 ? (
-                <tr><td colSpan="6" className="text-center py-12 text-slate-500 italic">No hay órdenes registradas.</td></tr>
-              ) : (
-                ordenes.map(o => (
-                  <tr key={o.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4 font-mono text-blue-400 font-bold">{o.folio || `OT-${o.id}`}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Truck size={14} className="text-slate-500" />
-                        <span className="text-white font-medium">{o.unidad_nombre}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-400 max-w-xs truncate">{o.descripcion}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                        o.estatus === 'completado' ? 'bg-emerald-500/10 text-emerald-400' :
-                        o.estatus === 'en proceso' ? 'bg-amber-500/10 text-amber-400' :
-                        'bg-slate-500/10 text-slate-400'
-                      }`}>
-                        {getStatusIcon(o.estatus)}
-                        {o.estatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-emerald-400 font-bold">${o.costo_total}</td>
-                    <td className="px-6 py-4 text-right">
-                      {o.archivo_escaneado ? (
-                        <a 
-                          href={o.archivo_escaneado.includes('cloudinary.com') && !o.archivo_escaneado.toLowerCase().endsWith('.pdf') ? `${o.archivo_escaneado}.pdf` : o.archivo_escaneado}
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="text-blue-400 hover:text-blue-300 transition-colors p-2 bg-blue-900/20 rounded-lg inline-block"
-                        >
-                          <ExternalLink size={18} />
-                        </a>
-                      ) : (
-                        <span className="text-slate-600 italic text-xs">Sin factura</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Cards List */}
+      <div className="space-y-4">
+        {loading ? (
+          <div className="text-center py-12"><Spinner /></div>
+        ) : filteredOrdenes.length === 0 ? (
+          <div className="text-center py-12 bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-3xl text-slate-500 italic text-sm">No hay reportes en esta categoría.</div>
+        ) : (
+          filteredOrdenes.map(o => (
+            <div key={o.id} className="bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-3xl p-5 lg:p-6 flex flex-col sm:flex-row gap-5 lg:gap-6 items-start sm:items-center hover:border-slate-700 transition-colors">
+               
+               <div className={`p-4 lg:p-5 rounded-full flex-shrink-0 border-2 ${
+                 o.estatus === 'en proceso' ? 'bg-amber-900/10 border-amber-500/20 text-amber-400' :
+                 o.estatus === 'en espera' ? 'bg-red-900/10 border-red-500/20 text-red-400' :
+                 'bg-emerald-900/10 border-emerald-500/20 text-emerald-400'
+               }`}>
+                 {o.estatus === 'completado' ? <CheckCircle2 size={18} /> : 
+                  o.estatus === 'en proceso' ? <Clock size={18} /> : <AlertCircle size={18} />}
+               </div>
+
+               <div className="flex-1 space-y-3 min-w-0">
+                 <div className="flex flex-wrap items-center gap-2">
+                   <span className={`px-2.5 py-1 rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-wider ${
+                     o.estatus === 'en proceso' ? 'bg-amber-500/10 text-amber-400' :
+                     o.estatus === 'en espera' ? 'bg-red-500/10 text-red-400' :
+                     'bg-emerald-500/10 text-emerald-400'
+                   }`}>
+                     • {o.estatus}
+                   </span>
+                   <span className={`px-2.5 py-1 rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-wider ${
+                     o.tipo === 'preventivo' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
+                   }`}>
+                     {o.tipo}
+                   </span>
+                   <span className="text-slate-500 text-[10px] font-mono">#{o.folio || `OT-${o.id}`}</span>
+                 </div>
+                 <h3 className="text-lg lg:text-2xl font-bold text-white leading-tight">{o.descripcion}</h3>
+                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] lg:text-sm text-slate-400">
+                   <div className="flex items-center gap-1.5"><Truck size={14} className="shrink-0"/> <span className="truncate">{o.unidad_nombre}</span></div>
+                   <div className="flex items-center gap-1.5"><Calendar size={14} className="shrink-0"/> {new Date(o.fecha_creacion).toLocaleDateString()}</div>
+                   {o.costo_total > 0 && <div className="flex items-center gap-1 text-emerald-400 font-bold"><DollarSign size={14} className="shrink-0"/> {o.costo_total}</div>}
+                 </div>
+                 {o.taller_info && (
+                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2 bg-slate-950 p-3 lg:p-3.5 rounded-xl border border-slate-800 w-full sm:w-fit">
+                     <div className="flex items-center gap-3 min-w-0">
+                       <Wrench size={16} className="text-blue-500 shrink-0" />
+                       <div className="min-w-0">
+                         <p className="text-xs font-bold text-white truncate">{o.taller_info.nombre}</p>
+                         <p className="text-[10px] text-slate-400 truncate mt-0.5">{o.taller_info.direccion}</p>
+                       </div>
+                     </div>
+                     <a 
+                       href={o.taller_info.url_mapa || `https://maps.google.com/?q=${encodeURIComponent(o.taller_info.direccion || o.taller_info.nombre)}`} 
+                       target="_blank" 
+                       rel="noreferrer"
+                       className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-colors border border-blue-500/20 shrink-0"
+                     >
+                       <MapPin size={12} /> MAPA
+                     </a>
+                   </div>
+                 )}
+               </div>
+
+               <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+                 {o.estatus === 'en proceso' && (
+                   <>
+                     <button onClick={() => { setOrdenAPausar(o); setMotivoEspera(''); setShowPausarModal(true); }} className="flex-1 sm:flex-none bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl transition-all text-[10px] lg:text-xs">
+                       PAUSAR
+                     </button>
+                     <button onClick={() => { setOrdenACompletar(o); setTicketsSeleccionados([]); setShowCompletarModal(true); }} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 lg:py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs">
+                       ALTA <CheckCircle2 size={16}/>
+                     </button>
+                   </>
+                 )}
+                 {o.estatus === 'en espera' && (
+                   <button onClick={() => handleStatusChange(o.id, 'en proceso')} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all text-sm">
+                     REANUDAR
+                   </button>
+                 )}
+                 {o.estatus === 'completado' && (
+                   <div className="w-full flex sm:flex-col items-center justify-center gap-2 text-emerald-400 font-bold bg-emerald-900/10 px-4 py-3 rounded-xl border border-emerald-500/20 text-xs">
+                     <CheckCircle2 size={18} />
+                     OK
+                   </div>
+                 )}
+               </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modal Nueva Orden */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                <Plus className="text-blue-500" size={24} /> Nueva Orden de Trabajo
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
+            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
+              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
+                <Plus className="text-blue-500 shrink-0" size={24} /> Nueva Orden
               </h2>
               <button 
                 onClick={() => setShowModal(false)}
-                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors"
+                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
               >✕</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="p-5 lg:p-6 space-y-5 lg:space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Unidad</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unidad</label>
                   <select 
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
                     value={formData.unidad}
                     onChange={(e) => setFormData({...formData, unidad: e.target.value})}
                   >
                     <option value="">Selecciona Unidad...</option>
-                    {vehiculos.map(v => (
+                    {vehiculos.filter(v => v.estado === 'operativa' || !v.estado).map(v => (
                       <option key={v.id} value={v.id}>{v.numero_economico} - {v.marca}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Folio / Referencia</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ej. REF-882"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-                    value={formData.folio}
-                    onChange={(e) => setFormData({...formData, folio: e.target.value})}
-                  />
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo</label>
+                  <select 
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({...formData, tipo: e.target.value})}
+                  >
+                    <option value="correctivo">Correctivo</option>
+                    <option value="preventivo">Preventivo</option>
+                  </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Descripción del Trabajo</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Taller / Mecánico</label>
+                <select 
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                  value={formData.taller}
+                  onChange={(e) => setFormData({...formData, taller: e.target.value})}
+                >
+                  <option value="">Selecciona Taller...</option>
+                  {talleres.map(t => (
+                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción</label>
                 <textarea 
                   required
                   rows="3"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-                  placeholder="Detalle de la reparación o servicio..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                  placeholder="Detalle de la reparación..."
                   value={formData.descripcion}
                   onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
                 ></textarea>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Estatus</label>
-                  <select 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-                    value={formData.estatus}
-                    onChange={(e) => setFormData({...formData, estatus: e.target.value})}
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en proceso">En Proceso</option>
-                    <option value="completado">Completado</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider text-emerald-400">Costo Total ($)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" size={18} />
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      className="w-full bg-slate-950 border border-emerald-900/30 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500"
-                      value={formData.costo_total}
-                      onChange={(e) => setFormData({...formData, costo_total: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Sección de Escaneo */}
-              <div className="bg-slate-950/50 border border-slate-800 p-6 rounded-2xl space-y-4">
-                <p className="text-sm font-bold text-slate-400 uppercase">Documento de Respaldo</p>
-                <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/50">
-                  {formData.archivo_escaneado ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <CheckCircle2 className="text-emerald-400" size={40} />
-                      <p className="text-white font-medium">¡Documento Listo!</p>
-                      <button 
-                        type="button"
-                        onClick={() => setFormData({...formData, archivo_escaneado: null})}
-                        className="text-slate-500 text-xs hover:text-red-400 underline"
-                      >Quitar</button>
-                    </div>
-                  ) : (
-                    <button 
-                      type="button"
-                      onClick={handleScan}
-                      disabled={scanning}
-                      className="w-full py-4 bg-slate-800 hover:bg-blue-600 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                    >
-                      {scanning ? <Spinner /> : <FilePlus size={20} />}
-                      <span>{scanning ? 'Escaneando con Brother...' : 'Escanear Factura/Recibo Ahora'}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
               <button 
                 type="submit"
                 disabled={formLoading}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-all"
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-all active:scale-95"
               >
                 {formLoading ? <Spinner /> : <Wrench size={20} />}
-                <span>{formLoading ? 'Guardando...' : 'Crear Orden de Trabajo'}</span>
+                <span>{formLoading ? 'Guardando...' : 'Crear Orden'}</span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Completar Orden */}
+      {showCompletarModal && ordenACompletar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
+            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
+              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
+                <CheckCircle2 className="text-emerald-500 shrink-0" size={24} /> Reintegrar Unidad
+              </h2>
+              <button 
+                onClick={() => setShowCompletarModal(false)}
+                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
+              >✕</button>
+            </div>
+            <div className="p-5 lg:p-6 space-y-6">
+              <p className="text-slate-400 text-sm">Seleccione los tickets asociados a esta reparación para la unidad <span className="font-bold text-white">{ordenACompletar.unidad_nombre}</span>.</p>
+              
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {tickets.filter(t => t.unidad === ordenACompletar.unidad).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 bg-slate-950 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
+                    <div className="bg-slate-900 p-3 rounded-full">
+                      <TicketIcon className="text-slate-600" size={32} />
+                    </div>
+                    <p className="text-slate-500 italic text-xs max-w-[250px]">No hay tickets pendientes para esta unidad. Debe registrar un ticket primero.</p>
+                  </div>
+                ) : (
+                  tickets.filter(t => t.unidad === ordenACompletar.unidad).map(t => (
+                    <label key={t.id} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${
+                      ticketsSeleccionados.includes(t.id) 
+                        ? 'bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-900/10' 
+                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}>
+                      <div className="relative flex items-center justify-center">
+                        <input 
+                          type="checkbox" 
+                          className="peer appearance-none w-6 h-6 border-2 border-slate-700 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                          checked={ticketsSeleccionados.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setTicketsSeleccionados([...ticketsSeleccionados, t.id]);
+                            } else {
+                              setTicketsSeleccionados(ticketsSeleccionados.filter(id => id !== t.id));
+                            }
+                          }}
+                        />
+                        <CheckCircle2 size={14} className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-white font-bold text-sm truncate uppercase tracking-tight">
+                            Folio: <span className="text-blue-400 font-mono">{t.folio_interno}</span>
+                          </p>
+                          <span className="text-emerald-400 font-black text-sm shrink-0">
+                            ${parseFloat(t.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <p className="text-slate-500 text-[10px] mt-1 flex items-center gap-2">
+                          <Calendar size={12} /> {new Date(t.fecha).toLocaleDateString()}
+                          <span className="text-slate-700">•</span>
+                          <span className="truncate">{t.descripcion || 'Sin descripción'}</span>
+                        </p>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+              
+              <button 
+                onClick={handleCompletar}
+                disabled={formLoading || ticketsSeleccionados.length === 0}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold rounded-xl lg:rounded-2xl shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:scale-100"
+              >
+                {formLoading ? <Spinner /> : <CheckCircle2 size={20} />}
+                <span>{formLoading ? 'Procesando...' : 'Finalizar y Reintegrar'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pausar / En Espera */}
+      {showPausarModal && ordenAPausar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
+                <AlertCircle className="text-red-500 shrink-0" size={24} /> Pausar
+              </h2>
+              <button 
+                onClick={() => setShowPausarModal(false)}
+                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
+              >✕</button>
+            </div>
+            <div className="p-5 lg:p-6 space-y-6">
+              <p className="text-slate-400 text-sm">¿Por qué se pausará la unidad <span className="font-bold text-white">{ordenAPausar.unidad_nombre}</span>?</p>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Motivo</label>
+                <select 
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  value={motivoEspera}
+                  onChange={(e) => setMotivoEspera(e.target.value)}
+                >
+                  <option value="">Seleccione el motivo...</option>
+                  <option value="falta_refaccion">Falta de refacción</option>
+                  <option value="taller_lleno">Sin espacio en taller</option>
+                  <option value="falta_presupuesto">Aprobación pendiente</option>
+                  <option value="otro">Otro motivo</option>
+                </select>
+              </div>
+              
+              <button 
+                onClick={handlePausar}
+                disabled={formLoading || !motivoEspera}
+                className="w-full py-4 bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+              >
+                {formLoading ? <Spinner /> : <Clock size={20} />}
+                <span>{formLoading ? 'Procesando...' : 'Poner en Espera'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

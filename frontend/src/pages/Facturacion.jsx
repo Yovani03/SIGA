@@ -1,0 +1,443 @@
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
+import { 
+  FilePlus, 
+  Search, 
+  Plus, 
+  Calendar, 
+  DollarSign, 
+  Hash, 
+  Truck,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  Filter,
+  BarChart3,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  Store,
+  Info,
+  X,
+  Ticket as TicketIcon,
+  Tag
+} from 'lucide-react';
+import AltaFactura from './AltaFactura';
+
+const Facturacion = () => {
+  const [facturas, setFacturas] = useState([]);
+  const [vehiculos, setVehiculos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAltaModal, setShowAltaModal] = useState(false);
+  const [selectedFactura, setSelectedFactura] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [facturasRes, vehiculosRes] = await Promise.all([
+        api.get('facturas/'),
+        api.get('vehiculos/')
+      ]);
+      setFacturas(facturasRes.data);
+      setVehiculos(vehiculosRes.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error cargando facturación", err);
+      setError("No se pudieron cargar los datos de facturación.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAltaSuccess = () => {
+    setShowAltaModal(false);
+    fetchData();
+  };
+
+  const getUnidadInfo = (unidadId) => {
+    return vehiculos.find(v => v.id === unidadId);
+  };
+
+  const filteredFacturas = facturas.filter(f => {
+    if (f.producto_categoria === 'Combustible') return false;
+
+    const unidad = getUnidadInfo(f.unidad);
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      f.folio.toLowerCase().includes(searchLower) ||
+      (f.descripcion && f.descripcion.toLowerCase().includes(searchLower)) ||
+      (f.taller_nombre && f.taller_nombre.toLowerCase().includes(searchLower)) ||
+      (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
+      (unidad && unidad.placas.toLowerCase().includes(searchLower))
+    );
+  }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFacturas = filteredFacturas.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredFacturas.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  return (
+    <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6">
+        <div>
+          <h1 className="text-2xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <FilePlus className="text-blue-500 shrink-0" size={32} />
+            Facturación
+          </h1>
+          <p className="text-slate-400 mt-1 text-sm lg:text-lg">Gestión de comprobantes fiscales y gastos generales.</p>
+        </div>
+        
+        <button 
+          onClick={() => setShowAltaModal(true)}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 w-full md:w-auto"
+        >
+          <Plus size={20} />
+          Nueva Factura
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Facturado</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <DollarSign className="text-emerald-500 shrink-0" size={24} />
+            {facturas
+              .filter(f => f.producto_categoria !== 'Combustible')
+              .reduce((acc, curr) => acc + parseFloat(curr.monto), 0)
+              .toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Comprobantes</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <Hash className="text-blue-500 shrink-0" size={24} />
+            {facturas.filter(f => f.producto_categoria !== 'Combustible').length}
+          </p>
+        </div>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg sm:col-span-2 lg:col-span-1">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Unidades con Gasto</p>
+          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+            <Truck className="text-indigo-500 shrink-0" size={24} />
+            {[...new Set(facturas.filter(f => f.producto_categoria !== 'Combustible').map(f => f.unidad))].length}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+          <Search className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
+        </div>
+        <input
+          type="text"
+          placeholder="Buscar folio, descripción, taller, unidad o placa..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-blue-500 outline-none transition-all text-lg placeholder:text-slate-600 shadow-xl"
+        />
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <Loader2 className="text-blue-500 animate-spin" size={48} />
+          <p className="text-slate-400 font-medium">Cargando facturación...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-10 text-center space-y-4">
+          <AlertCircle className="text-rose-500 mx-auto" size={48} />
+          <p className="text-rose-400 text-lg font-medium">{error}</p>
+          <button onClick={fetchData} className="text-blue-400 hover:text-blue-300 font-bold underline">Intentar de nuevo</button>
+        </div>
+      ) : filteredFacturas.length === 0 ? (
+        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
+          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <FilePlus className="text-slate-600" size={40} />
+          </div>
+          <h3 className="text-2xl font-bold text-white">No se encontraron facturas</h3>
+          <p className="text-slate-400 max-w-md mx-auto">
+            {searchTerm ? `No hay resultados para "${searchTerm}".` : "Aún no has registrado facturas."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {currentFacturas.map((f) => {
+            const unidad = getUnidadInfo(f.unidad);
+            return (
+              <div 
+                key={f.id} 
+                onClick={() => {
+                  setSelectedFactura(f);
+                  setShowDetailModal(true);
+                }}
+                className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-blue-500 transition-all group shadow-2xl flex flex-col relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="min-w-0">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio</p>
+                    <p className="text-white font-mono text-2xl font-black tracking-tight truncate">{f.folio}</p>
+                    {f.producto_nombre && (
+                      <div className="inline-block bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-blue-500/20 truncate max-w-full">
+                        {f.producto_categoria}: {f.producto_nombre}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Monto</p>
+                    <p className="text-emerald-400 font-black text-2xl">${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 flex-grow">
+                  <div className="flex items-center gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                    <div className="bg-blue-600/10 p-2 rounded-lg shrink-0">
+                      <Truck className="text-blue-500" size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad</p>
+                      <p className="text-white text-sm font-bold truncate">
+                        {unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 px-1">
+                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
+                      <Store className="text-slate-400" size={14} />
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
+                      <p className="text-slate-300 text-sm font-medium">{f.taller_nombre || 'No especificado'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 px-1">
+                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
+                      <Info className="text-slate-400" size={14} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Descripción</p>
+                      <p className="text-slate-300 text-sm italic truncate" title={f.descripcion}>
+                        {f.descripcion || 'Sin descripción'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                  <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
+                    <Calendar size={14} className="text-slate-600" />
+                    {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                  
+                  {f.archivo_escaneado ? (
+                    <a 
+                      href={f.archivo_escaneado} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-[11px] font-bold shadow-lg shadow-blue-900/40 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      Ver Doc <ExternalLink size={14} />
+                    </a>
+                  ) : (
+                    <span className="text-rose-400 text-[10px] font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20">Sin Archivo</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-10 gap-2">
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+            <button
+              key={number}
+              onClick={() => paginate(number)}
+              className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                currentPage === number 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/20 scale-110' 
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {number}
+            </button>
+          ))}
+
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+
+      {showAltaModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-4xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-blue-500/5">
+            <AltaFactura 
+              onSuccess={handleAltaSuccess} 
+              onClose={() => setShowAltaModal(false)} 
+            />
+          </div>
+        </div>
+      )}
+      {showDetailModal && selectedFactura && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-0 shadow-2xl relative overflow-hidden shadow-blue-500/5">
+            {/* Header del Modal */}
+            <div className="p-8 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-600/10 p-3 rounded-2xl">
+                  <FilePlus className="text-blue-500" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Detalles de Factura</h2>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Folio: {selectedFactura.folio}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowDetailModal(false)}
+                className="text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Monto Total</p>
+                  <p className="text-3xl font-black text-emerald-400">
+                    ${parseFloat(selectedFactura.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fecha de Emisión</p>
+                  <p className="text-xl font-bold text-white flex items-center justify-end gap-2">
+                    <Calendar size={18} className="text-blue-500" />
+                    {new Date(selectedFactura.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800/50 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-600/10 p-2 rounded-xl">
+                      <Truck className="text-blue-500" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad Asignada</p>
+                      <p className="text-white font-bold">
+                        {getUnidadInfo(selectedFactura.unidad) 
+                          ? `${getUnidadInfo(selectedFactura.unidad).numero_economico} (${getUnidadInfo(selectedFactura.unidad).placas})` 
+                          : 'Gasto General'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800/50 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-800 p-2 rounded-xl">
+                      <Store className="text-slate-400" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
+                      <p className="text-white font-bold">{selectedFactura.taller_nombre || 'No especificado'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800/50 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-slate-800 p-2 rounded-xl">
+                    <Tag className="text-slate-400" size={20} />
+                  </div>
+                  <div className="flex-grow">
+                    <p className="text-slate-500 text-[9px] font-bold uppercase">Concepto / Producto</p>
+                    <p className="text-white font-bold">
+                      <span className="text-blue-400">{selectedFactura.producto_categoria}:</span> {selectedFactura.producto_nombre || 'No especificado'}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedFactura.ticket_folio_interno && (
+                  <div className="flex items-center gap-3 pt-4 border-t border-slate-800/50">
+                    <div className="bg-amber-600/10 p-2 rounded-xl">
+                      <TicketIcon className="text-amber-500" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Relacionado con Ticket</p>
+                      <p className="text-amber-500 font-bold font-mono uppercase">{selectedFactura.ticket_folio_interno}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 px-1">
+                  <Info size={14} /> Descripción del Gasto
+                </p>
+                <div className="bg-slate-950/30 p-5 rounded-2xl border border-slate-800 text-slate-300 italic text-sm leading-relaxed">
+                  {selectedFactura.descripcion || 'Sin descripción adicional proporcionada.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="p-8 bg-slate-950/50 border-t border-slate-800 flex gap-4">
+              {selectedFactura.archivo_escaneado ? (
+                <a 
+                  href={selectedFactura.archivo_escaneado} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex-grow bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+                >
+                  <ExternalLink size={20} />
+                  VISUALIZAR DOCUMENTO ORIGINAL
+                </a>
+              ) : (
+                <div className="flex-grow bg-slate-800 text-slate-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-slate-700">
+                  <AlertCircle size={20} />
+                  SIN DOCUMENTO DIGITALIZADO
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Facturacion;

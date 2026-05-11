@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import InventarioRefacciones, OrdenTrabajo, MantenimientoPreventivo
+from .models import InventarioRefacciones, OrdenTrabajo, MantenimientoPreventivo, Taller
+
+@admin.register(Taller)
+class TallerAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'especialidad', 'telefono', 'direccion')
+    search_fields = ('nombre', 'especialidad')
+
 
 @admin.register(InventarioRefacciones)
 class InventarioRefaccionesAdmin(admin.ModelAdmin):
