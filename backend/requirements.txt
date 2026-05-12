@@ -1,4 +1,4 @@
-﻿asgiref==3.11.1
+asgiref==3.11.1
 certifi==2026.4.22
 charset-normalizer==3.4.7
 cloudinary==1.44.2
@@ -7,7 +7,7 @@ Django==6.0.4
 django-cloudinary-storage==0.3.0
 django-cors-headers==4.9.0
 djangorestframework==3.17.1
-djangorestframework_simplejwt==5.5.1
+djangorestframework-simplejwt==5.5.1
 et_xmlfile==2.0.0
 idna==3.13
 openpyxl==3.1.5
