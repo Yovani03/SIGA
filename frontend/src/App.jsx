@@ -7,7 +7,7 @@ import ListaVehiculos from './pages/ListaVehiculos';
 import Mantenimiento from './pages/Mantenimiento';
 import Logistica from './pages/Logistica';
 import Operadores from './pages/Operadores';
-import Monitoreo from './pages/Monitoreo';
+
 import Combustibles from './pages/Combustibles';
 import Catalogos from './pages/Catalogos';
 import Tickets from './pages/Tickets';
@@ -22,7 +22,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           
-          <Route element={<ProtectedRoute allowedRoles={['capturista', 'admin', 'jefe_logistica', 'monitoreo']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['capturista', 'admin', 'jefe_logistica']} />}>
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="facturacion" element={<Facturacion />} />
@@ -31,7 +31,7 @@ function App() {
               <Route path="catalogos" element={<Catalogos />} />
               <Route path="logistica" element={<Logistica />} />
               <Route path="operadores" element={<Operadores />} />
-              <Route path="monitoreo" element={<Monitoreo />} />
+
               <Route path="combustible" element={<Combustibles />} />
               <Route path="tickets" element={<Tickets />} />
             </Route>

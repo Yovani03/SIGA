@@ -32,7 +32,7 @@ const DashboardLayout = () => {
   };
 
   const allMenuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['admin', 'capturista', 'jefe_logistica', 'monitoreo'] },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['admin', 'capturista', 'jefe_logistica'] },
     { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin', 'capturista'] },
     { icon: <Ticket size={20} />, label: 'Tickets', path: '/tickets', roles: ['admin', 'capturista'] },
     { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin', 'capturista'] },
@@ -41,7 +41,6 @@ const DashboardLayout = () => {
     { icon: <Users size={20} />, label: 'Operadores', path: '/operadores', roles: ['admin', 'jefe_logistica'] },
     { icon: <MapPin size={20} />, label: 'Logística', path: '/logistica', roles: ['admin', 'jefe_logistica'] },
     { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin', 'capturista', 'jefe_logistica'] },
-    { icon: <Navigation size={20} />, label: 'Monitoreo', path: '/monitoreo', roles: ['admin', 'jefe_logistica', 'monitoreo'] },
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(user?.rol || 'admin'));

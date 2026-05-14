@@ -1,145 +1,197 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 import { 
   Truck, 
   Wrench, 
   AlertTriangle, 
   CheckCircle2,
   TrendingUp,
-  Clock
+  Clock,
+  Plus,
+  DollarSign,
+  Droplets,
+  Ticket,
+  ChevronRight,
+  ArrowUpRight,
+  Loader2,
+  FilePlus,
+  LayoutGrid
 } from 'lucide-react';
 
 const StatCard = ({ icon, label, value, subValue, trend, color }) => (
-  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all duration-300 group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl bg-opacity-10 ${color}`}>
-        {React.cloneElement(icon, { className: color.split(' ')[0].replace('bg-', 'text-') })}
+  <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 hover:border-blue-500/30 transition-all duration-500 group relative overflow-hidden shadow-2xl">
+    <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full bg-gradient-to-br ${color} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`} />
+    <div className="flex justify-between items-start mb-4 relative z-10">
+      <div className={`p-4 rounded-2xl bg-opacity-10 shadow-inner ${color}`}>
+        {React.cloneElement(icon, { size: 24, className: color.split(' ')[0].replace('bg-', 'text-') })}
       </div>
       {trend && (
-        <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">
+        <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full border border-emerald-400/10">
           <TrendingUp size={12} />
           {trend}
         </span>
       )}
     </div>
-    <div>
-      <p className="text-slate-400 text-sm font-medium mb-1">{label}</p>
-      <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
-      <p className="text-xs text-slate-500 mt-2">{subValue}</p>
+    <div className="relative z-10">
+      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{label}</p>
+      <h3 className="text-4xl font-black text-white tracking-tighter">{value}</h3>
+      <p className="text-[10px] font-bold text-slate-500 mt-2 flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-slate-700" />
+        {subValue}
+      </p>
     </div>
   </div>
 );
 
+const ActionCard = ({ icon, label, description, color, onClick }) => (
+  <button 
+    onClick={onClick}
+    className="group relative bg-slate-900/40 hover:bg-slate-800/40 border border-slate-800/50 rounded-[2rem] p-6 transition-all duration-500 flex flex-col items-start gap-4 text-left hover:scale-[1.02] active:scale-[0.98] shadow-xl hover:shadow-blue-900/10 overflow-hidden"
+  >
+    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${color} opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-500 rounded-bl-[100px]`} />
+    <div className={`p-4 rounded-2xl ${color} bg-opacity-10 text-opacity-100 group-hover:scale-110 transition-transform duration-500 shadow-inner`}>
+      {React.cloneElement(icon, { size: 28, className: color.split(' ')[0].replace('bg-', 'text-') })}
+    </div>
+    <div>
+      <h4 className="text-lg font-black text-white mb-1 group-hover:text-blue-400 transition-colors">{label}</h4>
+      <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{description}</p>
+    </div>
+    <div className="mt-2 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+      <Plus size={20} />
+    </div>
+  </button>
+);
+
 const Dashboard = () => {
-  return (
-    <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-1 lg:gap-2">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Resumen de Operaciones</h1>
-        <p className="text-slate-400 text-sm lg:text-base">Bienvenido de nuevo. Aquí tienes el estado actual de tu flota.</p>
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [stats, setStats] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [resVehiculos, resFacturas, resFuel] = await Promise.all([
+          api.get('vehiculos/'),
+          api.get('facturas/'),
+          api.get('cargas-combustible/')
+        ]);
+
+        const vehs = resVehiculos.data || [];
+        const facts = (resFacturas.data || []).filter(f => f.producto_categoria !== 'Combustible');
+        const fuel = resFuel.data || [];
+
+        setStats({
+          unidades: {
+            total: vehs.length,
+            operativas: vehs.filter(v => !v.estado || v.estado === 'operativa').length,
+            taller: vehs.filter(v => v.estado && v.estado !== 'operativa').length
+          },
+          mantenimientos: {
+            total: vehs.filter(v => v.estado && v.estado !== 'operativa').length,
+            proximos: 3 // Mockup for now
+          },
+          facturacion: {
+            total: facts.reduce((acc, f) => acc + parseFloat(f.monto || 0), 0),
+            count: facts.length
+          }
+        });
+
+        // Combine and sort recent activity
+        const combined = [
+          ...facts.map(f => ({ ...f, type: 'factura', sortDate: new Date(f.fecha) })),
+          ...fuel.map(f => ({ ...f, type: 'combustible', sortDate: new Date(f.fecha) }))
+        ].sort((a, b) => b.sortDate - a.sortDate).slice(0, 5);
+
+        setRecentActivity(combined);
+      } catch (err) {
+        console.error("Error fetching dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="text-blue-500 animate-spin" size={48} />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Sincronizando Dashboard...</p>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-10 lg:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <StatCard 
           icon={<Truck />} 
-          label="Total Unidades" 
-          value="42" 
-          subValue="38 operativas, 4 en taller"
-          trend="+2 este mes"
+          label="Unidades" 
+          value={stats?.unidades?.total || 0} 
+          subValue={`${stats?.unidades?.operativas || 0} activas, ${stats?.unidades?.taller || 0} en taller`}
+          trend="+2 esta sem"
           color="bg-blue-600"
         />
         <StatCard 
-          icon={<Wrench />} 
-          label="Mantenimientos" 
-          value="12" 
-          subValue="8 preventivos, 4 correctivos"
-          color="bg-amber-500"
-        />
-        <StatCard 
-          icon={<Clock />} 
-          label="Órdenes de Trabajo" 
-          value="07" 
-          subValue="Pendientes por asignar"
-          color="bg-indigo-600"
-        />
-        <StatCard 
-          icon={<AlertTriangle />} 
-          label="Alertas Críticas" 
-          value="02" 
-          subValue="Vencimiento de seguros"
-          color="bg-rose-500"
+          icon={<DollarSign />} 
+          label="Facturado (Mes)" 
+          value={`$${((stats?.facturacion?.total || 0) / 1000).toFixed(1)}k`} 
+          subValue={`${stats?.facturacion?.count || 0} comprobantes registrados`}
+          trend="+15%"
+          color="bg-emerald-500"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl">
-          <div className="p-4 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-sm">
-            <h3 className="font-semibold text-white">Estado Reciente de la Flota</h3>
-            <button className="text-sm text-blue-400 hover:text-blue-300 font-medium">Ver todo</button>
-          </div>
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead>
-                <tr className="bg-slate-950/30 text-slate-500 text-xs uppercase tracking-wider">
-                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Eco</th>
-                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Placas</th>
-                  <th className="px-4 lg:px-6 py-4 font-semibold text-[10px] lg:text-xs">Último Mant.</th>
-                  <th className="px-4 lg:px-6 py-4 font-semibold text-right text-[10px] lg:text-xs">Estatus</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {[
-                  { eco: 'T-102', plates: '65-AK-9J', date: '20 May 2026', status: 'En Ruta', color: 'text-emerald-400 bg-emerald-400/10' },
-                  { eco: 'T-105', plates: '22-BK-4L', date: '18 May 2026', status: 'Cargando', color: 'text-blue-400 bg-blue-400/10' },
-                  { eco: 'T-108', plates: '89-CL-1P', date: '12 May 2026', status: 'Taller', color: 'text-amber-400 bg-amber-400/10' },
-                  { eco: 'T-112', plates: '10-ZX-7M', date: 'Hoy', status: 'Disponible', color: 'text-emerald-400 bg-emerald-400/10' },
-                ].map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-800/30 transition-colors group text-sm lg:text-base">
-                    <td className="px-4 lg:px-6 py-4 font-medium text-white">{item.eco}</td>
-                    <td className="px-4 lg:px-6 py-4 text-slate-400">{item.plates}</td>
-                    <td className="px-4 lg:px-6 py-4 text-slate-400 whitespace-nowrap">{item.date}</td>
-                    <td className="px-4 lg:px-6 py-4 text-right">
-                      <span className={`px-2 lg:px-3 py-1 rounded-full text-[10px] lg:text-xs font-medium whitespace-nowrap ${item.color}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Quick Actions */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-1 bg-blue-600 rounded-full" />
+          <h3 className="text-2xl font-black text-white tracking-tight">Acciones Rápidas</h3>
         </div>
-
-        {/* Reminders/Alerts */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl p-5 lg:p-6 shadow-xl space-y-6">
-          <h3 className="font-semibold text-white">Alertas Próximas</h3>
-          <div className="space-y-4">
-            {[
-              { title: 'Servicio de Aceite T-102', time: 'En 2 días', type: 'preventivo' },
-              { title: 'Revisión Frenos T-105', time: 'Mañana', type: 'critico' },
-              { title: 'Vencimiento Seguro R-201', time: '30 May', type: 'documento' },
-            ].map((alert, i) => (
-              <div key={i} className="flex gap-3 lg:gap-4 items-start p-3 lg:p-4 bg-slate-950/50 rounded-xl lg:rounded-2xl border border-slate-800/50">
-                <div className={`p-2 rounded-lg shrink-0 ${
-                  alert.type === 'critico' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  {alert.type === 'critico' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm font-medium text-white truncate">{alert.title}</h4>
-                  <p className="text-xs text-slate-500 mt-1">{alert.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors">
-            Configurar Alertas
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <ActionCard 
+            icon={<FilePlus />} 
+            label="Capturar Factura" 
+            description="Registra gastos generales, refacciones o servicios externos."
+            color="bg-blue-600"
+            onClick={() => navigate('/facturacion')}
+          />
+          <ActionCard 
+            icon={<Droplets />} 
+            label="Carga Diésel" 
+            description="Registra consumo de combustible y kilometraje actual."
+            color="bg-amber-500"
+            onClick={() => navigate('/combustible')}
+          />
+          <ActionCard 
+            icon={<Ticket />} 
+            label="Generar Ticket" 
+            description="Crea órdenes de servicio internas para mantenimiento."
+            color="bg-indigo-600"
+            onClick={() => navigate('/tickets')}
+          />
+          <ActionCard 
+            icon={<Truck />} 
+            label="Alta de Unidad" 
+            description="Registra un nuevo vehículo en la flota activa."
+            color="bg-emerald-600"
+            onClick={() => navigate('/vehiculos')}
+          />
         </div>
       </div>
+
+
     </div>
   );
 };
 
-
 export default Dashboard;
+

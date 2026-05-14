@@ -34,6 +34,10 @@ const Facturacion = () => {
   const [selectedFactura, setSelectedFactura] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState('all'); // 'week', 'month', 'year', 'all'
+  const [referenceDate, setReferenceDate] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -70,12 +74,39 @@ const Facturacion = () => {
   const filteredFacturas = facturas.filter(f => {
     if (f.producto_categoria === 'Combustible') return false;
 
+    // Filter by date range
+    let start = null;
+    let end = null;
+    
+    if (dateRange === 'week') {
+      const day = referenceDate.getDay();
+      const diffToFriday = (day + 2) % 7;
+      start = new Date(referenceDate);
+      start.setDate(referenceDate.getDate() - diffToFriday);
+      start.setHours(0, 0, 0, 0);
+      
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+    } else if (dateRange === 'month') {
+      start = new Date(selectedYear, selectedMonth, 1);
+      end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
+    } else if (dateRange === 'year') {
+      start = new Date(selectedYear, 0, 1);
+      end = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
+    }
+
+    if (start && new Date(f.fecha) < start) return false;
+    if (end && new Date(f.fecha) > end) return false;
+
     const unidad = getUnidadInfo(f.unidad);
     const searchLower = searchTerm.toLowerCase();
     return (
       f.folio.toLowerCase().includes(searchLower) ||
       (f.descripcion && f.descripcion.toLowerCase().includes(searchLower)) ||
       (f.taller_nombre && f.taller_nombre.toLowerCase().includes(searchLower)) ||
+      (f.rfc_emisor && f.rfc_emisor.toLowerCase().includes(searchLower)) ||
+      (f.razon_social_emisor && f.razon_social_emisor.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.placas.toLowerCase().includes(searchLower))
     );
@@ -91,6 +122,12 @@ const Facturacion = () => {
   const totalPages = Math.ceil(filteredFacturas.length / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const stats = {
+    total: filteredFacturas.reduce((acc, curr) => acc + parseFloat(curr.monto), 0),
+    count: filteredFacturas.length,
+    units: [...new Set(filteredFacturas.map(f => f.unidad))].length
+  };
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
@@ -112,29 +149,128 @@ const Facturacion = () => {
         </button>
       </div>
 
+      {/* Date Filter Selector and Specific Controls */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <div className="flex bg-slate-900/80 p-1 rounded-2xl border border-slate-800 w-full max-w-md backdrop-blur-xl">
+          {[
+            { id: 'week', label: 'Semana' },
+            { id: 'month', label: 'Mes' },
+            { id: 'year', label: 'Año' },
+            { id: 'all', label: 'Todo' }
+          ].map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setDateRange(r.id)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
+                dateRange === r.id 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {r.label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* Specific Selectors based on Range */}
+        {dateRange === 'week' && (
+          <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+            <button 
+              onClick={() => {
+                const d = new Date(referenceDate);
+                d.setDate(d.getDate() - 7);
+                setReferenceDate(d);
+              }}
+              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="px-4 py-2 flex flex-col items-center min-w-[140px]">
+              <span className="text-[9px] text-blue-500 font-bold uppercase tracking-tighter leading-none mb-1">Semana del</span>
+              <span className="text-white text-xs font-black">
+                {(() => {
+                  const day = referenceDate.getDay();
+                  const diffToFriday = (day + 2) % 7;
+                  const start = new Date(referenceDate);
+                  start.setDate(referenceDate.getDate() - diffToFriday);
+                  const end = new Date(start);
+                  end.setDate(start.getDate() + 6);
+                  return `${start.toLocaleDateString('es-MX', {day:'2-digit', month:'short'})} - ${end.toLocaleDateString('es-MX', {day:'2-digit', month:'short'})}`;
+                })()}
+              </span>
+            </div>
+            <button 
+              onClick={() => {
+                const d = new Date(referenceDate);
+                d.setDate(d.getDate() + 7);
+                setReferenceDate(d);
+              }}
+              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+
+        {dateRange === 'month' && (
+          <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="bg-slate-950 text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+            >
+              {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
+                <option key={i} value={i}>{m}</option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="bg-slate-950 text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+            >
+              {[2024, 2025, 2026].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {dateRange === 'year' && (
+          <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+            <Calendar size={16} className="text-blue-500 ml-2" />
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="bg-transparent text-white text-xs font-black py-2 px-4 focus:outline-none cursor-pointer"
+            >
+              {[2024, 2025, 2026].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Facturado</p>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-emerald-500/30 transition-colors group">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-emerald-500 transition-colors">Total Facturado</p>
           <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
             <DollarSign className="text-emerald-500 shrink-0" size={24} />
-            {facturas
-              .filter(f => f.producto_categoria !== 'Combustible')
-              .reduce((acc, curr) => acc + parseFloat(curr.monto), 0)
-              .toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            {stats.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Comprobantes</p>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-blue-500/30 transition-colors group">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors">Comprobantes</p>
           <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
             <Hash className="text-blue-500 shrink-0" size={24} />
-            {facturas.filter(f => f.producto_categoria !== 'Combustible').length}
+            {stats.count}
           </p>
         </div>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg sm:col-span-2 lg:col-span-1">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Unidades con Gasto</p>
+        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg sm:col-span-2 lg:col-span-1 hover:border-indigo-500/30 transition-colors group">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-indigo-500 transition-colors">Unidades con Gasto</p>
           <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
             <Truck className="text-indigo-500 shrink-0" size={24} />
-            {[...new Set(facturas.filter(f => f.producto_categoria !== 'Combustible').map(f => f.unidad))].length}
+            {stats.units}
           </p>
         </div>
       </div>
@@ -145,7 +281,7 @@ const Facturacion = () => {
         </div>
         <input
           type="text"
-          placeholder="Buscar folio, descripción, taller, unidad o placa..."
+          placeholder="Buscar folio, descripción, taller, RFC, emisor, unidad o placa..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-blue-500 outline-none transition-all text-lg placeholder:text-slate-600 shadow-xl"
@@ -190,6 +326,11 @@ const Facturacion = () => {
                   <div className="min-w-0">
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio</p>
                     <p className="text-white font-mono text-2xl font-black tracking-tight truncate">{f.folio}</p>
+                    {f.ticket_folio_interno && (
+                      <p className="text-amber-500 text-[11px] font-mono font-bold mt-1 bg-amber-500/10 px-2 py-0.5 rounded-md inline-block border border-amber-500/20">
+                        Tk: {f.ticket_folio_interno}
+                      </p>
+                    )}
                     {f.producto_nombre && (
                       <div className="inline-block bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-blue-500/20 truncate max-w-full">
                         {f.producto_categoria}: {f.producto_nombre}
@@ -373,6 +514,12 @@ const Facturacion = () => {
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
                       <p className="text-white font-bold">{selectedFactura.taller_nombre || 'No especificado'}</p>
+                      {selectedFactura.razon_social_emisor && (
+                        <p className="text-slate-400 text-xs mt-1">{selectedFactura.razon_social_emisor}</p>
+                      )}
+                      {selectedFactura.rfc_emisor && (
+                        <p className="text-slate-500 text-xs font-mono mt-0.5">RFC: {selectedFactura.rfc_emisor}</p>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,9 @@ const NuevoTaller = ({ onSuccess, onClose }) => {
     especialidad: '',
     telefono: '',
     direccion: '',
-    url_mapa: ''
+    url_mapa: '',
+    rfc: '',
+    razon_social: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -147,6 +149,34 @@ const NuevoTaller = ({ onSuccess, onClose }) => {
             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
             placeholder="Ej. Taller El Toro"
           />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">RFC *</label>
+            <input
+              type="text"
+              name="rfc"
+              required
+              value={formData.rfc}
+              onChange={handleChange}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
+              placeholder="Ej. ABC123456T1"
+              maxLength={13}
+            />
+          </div>
+          <div>
+            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Nombre Emisor (Razón Social) *</label>
+            <input
+              type="text"
+              name="razon_social"
+              required
+              value={formData.razon_social}
+              onChange={handleChange}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
+              placeholder="Ej. Refacciones Automotrices S.A. de C.V."
+            />
+          </div>
         </div>
 
         <div>

@@ -33,6 +33,8 @@ class UnidadTractocamion(models.Model):
     capacidad = models.DecimalField(max_digits=4, decimal_places=1, choices=CAPACIDAD_CHOICES, default=Decimal('10.0'), verbose_name="Capacidad (Toneladas)")
     ultimo_kilometraje = models.IntegerField(default=0, verbose_name="Último Kilometraje")
     fecha_ultima_carga = models.DateField(null=True, blank=True, verbose_name="Fecha Última Carga")
+    ultimo_kilometraje_mantenimiento = models.IntegerField(default=0, verbose_name="Km en Último Mantenimiento")
+    fecha_ultimo_mantenimiento = models.DateField(null=True, blank=True, verbose_name="Fecha Último Mantenimiento")
     ignorar_kilometraje = models.BooleanField(default=False, verbose_name="Ignorar Kilometraje")
     ultimo_rendimiento = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Rendimiento")
 

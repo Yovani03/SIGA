@@ -439,7 +439,7 @@ const Bonos = () => {
       const detailData = stats.viajes.map(v => [
         new Date(v.fecha_llegada).toLocaleDateString(),
         v.vehiculo_detalle?.numero_economico,
-        `Tienda ${v.tienda}`,
+        v.destino || (v.tienda ? `Tienda ${v.tienda}` : 'Salida Especial'),
         v.role,
         `$${calculateTripBonus(v, v.role).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
       ]);
@@ -712,9 +712,9 @@ const Bonos = () => {
                 <tbody className="divide-y divide-slate-800/50">
                   {getStatsForOperador(selectedOpForDetails.id).viajes.map((v, idx) => (
                     <tr key={idx} className="text-sm text-slate-300">
-                      <td className="px-4 py-4">{new Date(v.fecha_llegada).toLocaleDateString()}</td>
+                      <td className="px-4 py-4">{v.fecha_llegada ? new Date(v.fecha_llegada).toLocaleDateString() : 'N/A'}</td>
                       <td className="px-4 py-4">{v.vehiculo_detalle?.numero_economico}</td>
-                      <td className="px-4 py-4">Tienda {v.tienda}</td>
+                      <td className="px-4 py-4">{v.destino || (v.tienda ? `Tienda ${v.tienda}` : 'Salida Especial')}</td>
                       <td className="px-4 py-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${v.role === 'Chofer' ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-400'}`}>
                           {v.role}
@@ -903,7 +903,7 @@ const Bonos = () => {
                   <span className="text-blue-500">#{selectedViajeForSancion.id}</span>
                 </div>
                 <p className="text-white font-bold">Unidad: {selectedViajeForSancion.vehiculo_detalle?.numero_economico}</p>
-                <p className="text-slate-400 text-sm">Tienda: {selectedViajeForSancion.tienda}</p>
+                <p className="text-slate-400 text-sm">Destino: {selectedViajeForSancion.destino || (selectedViajeForSancion.tienda ? `Tienda ${selectedViajeForSancion.tienda}` : 'Salida Especial')}</p>
               </div>
 
               <div className="space-y-2">

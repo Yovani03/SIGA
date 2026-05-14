@@ -45,6 +45,10 @@ class OrdenTrabajoViewSet(viewsets.ModelViewSet):
 
         # Update Unidad
         orden.unidad.estado = 'operativa'
+        if orden.tipo == 'preventivo':
+            from django.utils import timezone
+            orden.unidad.ultimo_kilometraje_mantenimiento = orden.unidad.ultimo_kilometraje
+            orden.unidad.fecha_ultimo_mantenimiento = timezone.now().date()
         orden.unidad.save()
 
         return Response({'status': 'Orden de trabajo completada y tickets asociados.'})

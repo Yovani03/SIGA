@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 import { 
   MapPin, 
   Truck, 
@@ -12,45 +13,162 @@ import {
   Navigation,
   Droplets,
   LayoutDashboard,
-  Award
+  Award,
+  Plus,
+  Clock,
+  User,
+  Store,
+  X,
+  History,
+  Building2,
+  UserPlus,
+  Calendar
 } from 'lucide-react';
 import Combustibles from './Combustibles';
 import Bonos from './Bonos';
 
 const Logistica = () => {
+  const { user } = useContext(AuthContext);
   const [vehiculos, setVehiculos] = useState([]);
   const [talleres, setTalleres] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [facturas, setFacturas] = useState([]);
   const [viajes, setViajes] = useState([]);
+  const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('monitor'); // 'monitor', 'combustible', or 'bonos'
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resVehiculos, resTalleres, resOrdenes, resFacturas, resViajes] = await Promise.all([
-          api.get('vehiculos/'),
-          api.get('talleres/'),
-          api.get('ordenes-trabajo/'),
-          api.get('facturas/'),
-          api.get('viajes/')
-        ]);
-        
-        setVehiculos(resVehiculos.data);
-        setTalleres(resTalleres.data);
-        setOrdenes(resOrdenes.data);
-        setFacturas(resFacturas.data);
-        setViajes(resViajes.data);
-      } catch (err) {
-        console.error("Error fetching logistics data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // States from Monitoreo
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
+  const [selectedViajeForArrival, setSelectedViajeForArrival] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [opSearch, setOpSearch] = useState('');
+  const [vehSearch, setVehSearch] = useState('');
+  const [tiendaSearch, setTiendaSearch] = useState('');
+  
+  const [formData, setFormData] = useState({
+    operador: '',
+    vehiculo: '',
+    tienda: '',
+    destino: '',
+    fecha_salida: '',
+    ayudante: '',
+    observaciones: ''
+  });
+  const [hasAyudante, setHasAyudante] = useState(false);
+  const [arrivalData, setArrivalData] = useState({
+    fecha_llegada: ''
+  });
 
+  const tiendas = Array.from({ length: 39 }, (_, i) => (i + 1) * 10);
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [resVehiculos, resTalleres, resOrdenes, resFacturas, resViajes, resOps] = await Promise.all([
+        api.get('vehiculos/'),
+        api.get('talleres/'),
+        api.get('ordenes-trabajo/'),
+        api.get('facturas/'),
+        api.get('viajes/'),
+        api.get('operadores/')
+      ]);
+      
+      setVehiculos(resVehiculos.data);
+      setTalleres(resTalleres.data);
+      setOrdenes(resOrdenes.data);
+      setFacturas(resFacturas.data);
+      setViajes(resViajes.data);
+      setOperadores(resOps.data);
+    } catch (err) {
+      console.error("Error fetching logistics data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openModal = () => {
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    setFormData({
+      operador: '',
+      vehiculo: '',
+      tienda: '',
+      destino: '',
+      fecha_salida: currentTime,
+      ayudante: '',
+      observaciones: ''
+    });
+    setHasAyudante(false);
+    setOpSearch('');
+    setVehSearch('');
+    setTiendaSearch('');
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => setIsModalOpen(false);
+
+  const formatWithCurrentDate = (timeStr) => {
+    if (!timeStr) return null;
+    const now = new Date();
+    const [hours, minutes] = timeStr.split(':');
+    now.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return now.toISOString();
+  };
+
+  const handleSubmitSalida = async (e) => {
+    e.preventDefault();
+    try {
+      const dataToSend = {
+        ...formData,
+        fecha_salida: formatWithCurrentDate(formData.fecha_salida),
+        ayudante: hasAyudante ? formData.ayudante : null,
+        tienda: formData.tienda === '' ? null : formData.tienda,
+        destino: formData.destino || null
+      };
+      await api.post('viajes/', dataToSend);
+      fetchData();
+      closeModal();
+    } catch (err) {
+      console.error("Error reporting departure", err);
+      alert(err.response?.data?.error || "Error al registrar la salida");
+    }
+  };
+
+  const openArrivalModal = (viaje) => {
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    
+    setSelectedViajeForArrival(viaje);
+    setArrivalData({ fecha_llegada: currentTime });
+    setIsArrivalModalOpen(true);
+  };
+
+  const closeArrivalModal = () => {
+    setIsArrivalModalOpen(false);
+    setSelectedViajeForArrival(null);
+  };
+
+  const handleSubmitArrival = async (e) => {
+    e.preventDefault();
+    try {
+      const dataToSend = {
+        fecha_llegada: formatWithCurrentDate(arrivalData.fecha_llegada)
+      };
+      await api.post(`viajes/${selectedViajeForArrival.id}/registrar_llegada/`, dataToSend);
+      fetchData();
+      closeArrivalModal();
+    } catch (err) {
+      console.error("Error reporting arrival", err);
+      alert("Error al registrar la llegada");
+    }
+  };
 
   if (loading) {
     return (
@@ -63,8 +181,31 @@ const Logistica = () => {
 
   const operativas = vehiculos.filter(v => !v.estado || v.estado === 'operativa');
   const enTaller = vehiculos.filter(v => v.estado && v.estado !== 'operativa');
+  const viajesActivos = viajes.filter(v => !v.completado);
+  
+  const filteredActivos = viajesActivos.filter(v => 
+    v.operador_detalle?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.tienda?.toString().includes(searchTerm)
+  );
 
+  const operadoresDisponibles = operadores.filter(op => op.estatus === 'patio');
+  const vehiculosEnViaje = viajesActivos.map(v => v.vehiculo);
+  const vehiculosDisponibles = vehiculos.filter(v => 
+    v.estado === 'operativa' && !vehiculosEnViaje.includes(v.id)
+  );
 
+  const filteredOps = operadoresDisponibles.filter(op => 
+    `${op.nombre} ${op.apellido}`.toLowerCase().includes(opSearch.toLowerCase())
+  );
+  
+  const filteredVehs = vehiculosDisponibles.filter(v => 
+    v.numero_economico?.toLowerCase().includes(vehSearch.toLowerCase())
+  );
+
+  const filteredTiendas = tiendas.filter(t => 
+    t.toString().includes(tiendaSearch)
+  );
 
   const getTallerForVehiculo = (vehiculo) => {
     if (!vehiculo.orden_activa) return { nombre: 'Desconocido', reporte: 'Sin orden activa' };
@@ -80,103 +221,210 @@ const Logistica = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-1 lg:gap-2">
-        <h1 className="text-2xl lg:text-4xl font-bold text-white tracking-tight flex items-center gap-3">
-          <MapPin className="text-blue-500 shrink-0" size={32} />
-          Panel de Logística
-        </h1>
-        <p className="text-slate-400 text-sm lg:text-lg">Supervisa operativas, mantenimientos y gastos por unidad.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 lg:gap-2">
+          <h1 className="text-2xl lg:text-4xl font-bold text-white tracking-tight flex items-center gap-3">
+            <MapPin className="text-blue-500 shrink-0" size={32} />
+            Panel de Logística
+          </h1>
+          <p className="text-slate-400 text-sm lg:text-lg">Control operativo, monitoreo de viajes y gestión de bonos.</p>
+        </div>
+        
+        {activeTab === 'monitor' && (
+          <button 
+            onClick={openModal}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+          >
+            <Plus size={20} />
+            Iniciar Nuevo Viaje
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
-      <div className="flex p-1 bg-slate-900/50 border border-slate-800 rounded-2xl w-full max-w-lg">
+      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-full max-w-lg backdrop-blur-xl shadow-inner">
         <button
           onClick={() => setActiveTab('monitor')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${
+          className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'monitor' 
-              ? 'bg-blue-600 text-white shadow-lg' 
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
           }`}
         >
-          <LayoutDashboard size={18} />
-          Monitor
+          {activeTab === 'monitor' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <LayoutDashboard size={18} />
+            Monitor
+          </span>
         </button>
         <button
           onClick={() => setActiveTab('combustible')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${
+          className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'combustible' 
-              ? 'bg-blue-600 text-white shadow-lg' 
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
           }`}
         >
-          <Droplets size={18} />
-          Combustible
+          {activeTab === 'combustible' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Droplets size={18} />
+            Combustible
+          </span>
         </button>
         <button
           onClick={() => setActiveTab('bonos')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${
+          className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'bonos' 
-              ? 'bg-blue-600 text-white shadow-lg' 
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
           }`}
         >
-          <Award size={18} />
-          Bonos
+          {activeTab === 'bonos' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Award size={18} />
+            Bonos
+          </span>
         </button>
       </div>
 
       {activeTab === 'monitor' && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Unidades Operativas</p>
               <div className="flex items-center gap-4">
-                <div className="bg-emerald-500/10 p-3 rounded-xl text-emerald-500">
-                  <CheckCircle2 size={24} />
+                <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-500">
+                  <Truck size={20} />
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm font-medium">Unidades Operativas</p>
-                  <h3 className="text-3xl font-bold text-white">{operativas.length}</h3>
-                </div>
+                <h3 className="text-3xl font-bold text-white">{operativas.length}</h3>
               </div>
             </div>
             
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">En Mantenimiento</p>
               <div className="flex items-center gap-4">
-                <div className="bg-rose-500/10 p-3 rounded-xl text-rose-500">
-                  <AlertTriangle size={24} />
+                <div className="bg-rose-500/10 p-2.5 rounded-xl text-rose-500">
+                  <Wrench size={20} />
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm font-medium">Unidades en Taller</p>
-                  <h3 className="text-3xl font-bold text-white">{enTaller.length}</h3>
-                </div>
+                <h3 className="text-3xl font-bold text-white">{enTaller.length}</h3>
               </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Viajes en Curso</p>
               <div className="flex items-center gap-4">
-                <div className="bg-blue-500/10 p-3 rounded-xl text-blue-500">
-                  <DollarSign size={24} />
+                <div className="bg-blue-500/10 p-2.5 rounded-xl text-blue-500">
+                  <Navigation size={20} />
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm font-medium">Gasto Total Flota</p>
-                  <h3 className="text-3xl font-bold text-white">
-                    ${facturas.reduce((sum, f) => sum + parseFloat(f.monto || 0), 0).toLocaleString()}
-                  </h3>
+                <h3 className="text-3xl font-bold text-white">{viajesActivos.length}</h3>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Personal Libre</p>
+              <div className="flex items-center gap-4">
+                <div className="bg-amber-500/10 p-2.5 rounded-xl text-amber-500">
+                  <User size={20} />
                 </div>
+                <h3 className="text-3xl font-bold text-white">{operadoresDisponibles.length}</h3>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Tr fico Activo */}
+            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col">
+              <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Clock size={22} className="text-blue-500" />
+                  Control de Tr fico
+                </h2>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar unidad u operador..." 
+                    className="bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500/50 transition-all w-full md:w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 flex-1 max-h-[600px] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredActivos.map(v => (
+                    <div key={v.id} className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 hover:border-blue-500/30 transition-all group">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-600/10 p-2 rounded-lg text-blue-500">
+                            <Truck size={20} />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-white">{v.vehiculo_detalle?.numero_economico || '---'}</h4>
+                            <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{v.vehiculo_detalle?.placas}</p>
+                          </div>
+                        </div>
+                        <div className="bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          EN RUTA
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-slate-400 text-xs">
+                          <User size={14} className="text-slate-500" />
+                          <span>Chofer: <strong className="text-slate-200">{v.operador_detalle?.nombre}</strong></span>
+                        </div>
+                        {v.ayudante_detalle && (
+                          <div className="flex items-center gap-2 text-emerald-400 text-xs">
+                            <UserPlus size={14} />
+                            <span>Ayudante: <strong>{v.ayudante_detalle.nombre}</strong></span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-slate-400 text-xs">
+                          <Store size={14} className="text-slate-500" />
+                          <span>Destino: <strong className="text-slate-200">{v.destino || (v.tienda ? `Tienda ${v.tienda}` : 'Salida Especial')}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-400 text-xs">
+                          <Clock size={14} className="text-slate-500" />
+                          <span>Salida: <strong className="text-slate-200">{new Date(v.fecha_salida).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong></span>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => openArrivalModal(v)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20"
+                      >
+                        <Building2 size={18} />
+                        Reportar Llegada a CEDIS
+                      </button>
+                    </div>
+                  ))}
+                  {filteredActivos.length === 0 && (
+                    <div className="col-span-full py-12 text-center">
+                      <Navigation className="mx-auto text-slate-800 mb-3 opacity-20" size={48} />
+                      <p className="text-slate-500 text-sm italic">No hay viajes activos en este momento.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Unidades en Taller */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6 flex flex-col h-fit">
               <h3 className="font-semibold text-white flex items-center gap-2 text-lg">
                 <Wrench className="text-amber-500" size={20} />
                 Unidades en Taller
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
                 {enTaller.length === 0 ? (
-                  <p className="text-slate-400 text-sm italic">No hay unidades en taller actualmente.</p>
+                  <p className="text-slate-400 text-sm italic">No hay unidades en taller.</p>
                 ) : (
                   enTaller.map(v => {
                     const infoTaller = getTallerForVehiculo(v);
@@ -184,56 +432,290 @@ const Logistica = () => {
                       <div key={v.id} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-white text-lg">{v.numero_economico}</span>
-                          <span className="text-xs font-bold px-2 py-1 bg-amber-500/10 text-amber-500 rounded-full">En Taller</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded-full uppercase">Mantenimiento</span>
                         </div>
-                        <p className="text-slate-400 text-sm">Taller: <strong className="text-slate-300">{infoTaller.nombre}</strong></p>
+                        <p className="text-slate-400 text-xs">Taller: <strong className="text-slate-300">{infoTaller.nombre}</strong></p>
+                        <p className="text-slate-500 text-[10px] italic line-clamp-1">{infoTaller.reporte}</p>
                       </div>
                     )
                   })
                 )}
               </div>
             </div>
-
-            {/* Unidades en Viaje (Monitor para Jefe) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl p-6 shadow-xl space-y-6">
-              <h3 className="font-semibold text-white flex items-center gap-2 text-lg">
-                <Navigation className="text-blue-500" size={20} />
-                Tráfico en Tiempo Real
-              </h3>
-              <div className="space-y-4">
-                {ordenes.filter(o => false).length === 0 && ( // Placeholder check, logic follows
-                  viajes.filter(v => !v.completado).length === 0 ? (
-                    <p className="text-slate-400 text-sm italic">No hay unidades en ruta actualmente.</p>
-                  ) : (
-                    viajes.filter(v => !v.completado).map(v => (
-                      <div key={v.id} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-white text-lg">{v.vehiculo_detalle?.numero_economico}</span>
-                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                            v.estatus === 'en_ruta' ? 'bg-blue-500/10 text-blue-500' :
-                            v.estatus === 'en_tienda' ? 'bg-amber-500/10 text-amber-500' :
-                            'bg-indigo-500/10 text-indigo-500'
-                          }`}>
-                            {v.estatus === 'en_ruta' ? 'EN RUTA' : v.estatus === 'en_tienda' ? 'EN TIENDA' : 'REGRESANDO'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Op: <strong className="text-slate-200">{v.operador_detalle?.nombre}</strong></span>
-                          <span className="text-slate-400">Tienda: <strong className="text-slate-200">{v.tienda}</strong></span>
-                        </div>
-                      </div>
-                    ))
-                  )
-                )}
-              </div>
-            </div>
-
-
           </div>
         </>
       )}
+
       {activeTab === 'combustible' && <Combustibles />}
       {activeTab === 'bonos' && <Bonos />}
+
+      {/* Modal Registrar Salida */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Navigation size={22} className="text-emerald-500" />
+                Registrar Salida de Unidad
+              </h2>
+              <button onClick={closeModal} className="text-slate-400 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitSalida} className="p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">Operador</label>
+                  <div className="relative group">
+                    <Search className="absolute left-3 top-3 text-slate-600 group-focus-within:text-blue-500 transition-colors" size={14} />
+                    <input 
+                      type="text"
+                      placeholder="Filtrar..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-t-xl pl-9 pr-4 py-2 text-[10px] text-white focus:ring-1 focus:ring-blue-500/50 outline-none border-b-0"
+                      value={opSearch}
+                      onChange={(e) => setOpSearch(e.target.value)}
+                    />
+                    <select 
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-b-xl px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none outline-none"
+                      value={formData.operador}
+                      onChange={(e) => setFormData({...formData, operador: e.target.value})}
+                    >
+                      <option value="">Seleccionar Operador</option>
+                      {filteredOps.map(op => (
+                        <option key={op.id} value={op.id}>{op.nombre} {op.apellido}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">Unidad</label>
+                  <div className="relative group">
+                    <Search className="absolute left-3 top-3 text-slate-600 group-focus-within:text-blue-500 transition-colors" size={14} />
+                    <input 
+                      type="text"
+                      placeholder="Filtrar..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-t-xl pl-9 pr-4 py-2 text-[10px] text-white focus:ring-1 focus:ring-blue-500/50 outline-none border-b-0"
+                      value={vehSearch}
+                      onChange={(e) => setVehSearch(e.target.value)}
+                    />
+                    <select 
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-b-xl px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none outline-none"
+                      value={formData.vehiculo}
+                      onChange={(e) => {
+                        const selectedId = parseInt(e.target.value);
+                        const vehiculo = vehiculos.find(v => v.id === selectedId);
+                        const isLigero = vehiculo?.capacidad === 0.0 || vehiculo?.capacidad === "0.0";
+                        const isTrailer = parseFloat(vehiculo?.capacidad) >= 30.0;
+                        
+                        setFormData({
+                          ...formData, 
+                          vehiculo: e.target.value,
+                          tienda: (isLigero || isTrailer) ? '' : formData.tienda,
+                          destino: isTrailer ? formData.destino : ''
+                        });
+                      }}
+                    >
+                      <option value="">Seleccionar Unidad</option>
+                      {filteredVehs.map(v => (
+                        <option key={v.id} value={v.id}>
+                          {v.numero_economico} {v.capacidad === "0.0" || v.capacidad === 0.0 ? '(Ligero)' : `(${v.capacidad}T)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">Hora de Salida</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-3 text-slate-600" size={16} />
+                    <input 
+                      type="time"
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none"
+                      value={formData.fecha_salida}
+                      onChange={(e) => setFormData({...formData, fecha_salida: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">
+                    {(() => {
+                      const vehiculo = vehiculos.find(v => v.id === parseInt(formData.vehiculo));
+                      if (!vehiculo) return 'Destino';
+                      if (vehiculo.capacidad === 0.0 || vehiculo.capacidad === "0.0") return 'Tipo de Salida';
+                      if (parseFloat(vehiculo.capacidad) >= 30.0) return 'Destino (Trailer)';
+                      return 'Tienda de Destino';
+                    })()}
+                  </label>
+                  {(() => {
+                    const vehiculo = vehiculos.find(v => v.id === parseInt(formData.vehiculo));
+                    if (!vehiculo) return (
+                      <div className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-600 text-sm italic">
+                        Seleccione una unidad primero
+                      </div>
+                    );
+                    
+                    if (vehiculo.capacidad === 0.0 || vehiculo.capacidad === "0.0") {
+                      return (
+                        <div className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-purple-400 font-bold text-sm">
+                          Salida Especial (Uso Administrativo)
+                        </div>
+                      );
+                    }
+
+                    if (parseFloat(vehiculo.capacidad) >= 30.0) {
+                      return (
+                        <div className="relative group">
+                          <MapPin className="absolute left-3 top-3 text-slate-600 group-focus-within:text-blue-500 transition-colors" size={16} />
+                          <input 
+                            type="text"
+                            required
+                            placeholder="Ingrese destino (ej. Planta, Cliente, etc.)"
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none"
+                            value={formData.destino}
+                            onChange={(e) => setFormData({...formData, destino: e.target.value})}
+                          />
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="relative group">
+                        <Search className="absolute left-3 top-3 text-slate-600 group-focus-within:text-blue-500 transition-colors" size={14} />
+                        <input 
+                          type="text"
+                          placeholder="Filtrar tienda..."
+                          className="w-full bg-slate-950 border border-slate-800 rounded-t-xl pl-9 pr-4 py-2 text-[10px] text-white focus:ring-1 focus:ring-blue-500/50 outline-none border-b-0"
+                          value={tiendaSearch}
+                          onChange={(e) => setTiendaSearch(e.target.value)}
+                        />
+                        <select 
+                          required
+                          className="w-full bg-slate-950 border border-slate-800 rounded-b-xl px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none outline-none"
+                          value={formData.tienda}
+                          onChange={(e) => setFormData({...formData, tienda: e.target.value})}
+                        >
+                          <option value="">Seleccionar Tienda</option>
+                          {filteredTiendas.map(t => (
+                            <option key={t} value={t}>Tienda {t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              <div className="space-y-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus size={18} className="text-blue-500" />
+                    <span className="text-sm font-bold text-white">¿Llevar  ayudante?</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setHasAyudante(!hasAyudante)}
+                    className={`w-12 h-6 rounded-full transition-all relative ${hasAyudante ? 'bg-blue-600' : 'bg-slate-700'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${hasAyudante ? 'right-1' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {hasAyudante && (
+                  <div className="animate-in slide-in-from-top-2 duration-200">
+                    <select 
+                      required={hasAyudante}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none"
+                      value={formData.ayudante}
+                      onChange={(e) => setFormData({...formData, ayudante: e.target.value})}
+                    >
+                      <option value="">Seleccionar Ayudante...</option>
+                      {operadores
+                        .filter(op => op.id !== parseInt(formData.operador))
+                        .filter(op => op.estatus === 'patio')
+                        .map(op => (
+                          <option key={op.id} value={op.id}>{op.nombre} {op.apellido}</option>
+                        ))
+                      }
+                    </select>
+                    <p className="text-[10px] text-slate-500 mt-2 px-1 italic">
+                      * El ayudante recibir  el 30% del bono proporcional del viaje.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">Observaciones</label>
+                <textarea 
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none min-h-[80px]"
+                  placeholder="Notas adicionales..."
+                  value={formData.observaciones}
+                  onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
+                ></textarea>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={closeModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all hover:bg-slate-700">Cancelar</button>
+                <button type="submit" className="flex-[2] bg-emerald-600 text-white font-bold py-3.5 rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-900/20">Iniciar Viaje</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Registrar Llegada */}
+      {isArrivalModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Building2 size={22} className="text-emerald-500" />
+                Registrar Llegada a CEDIS
+              </h2>
+              <button onClick={closeArrivalModal} className="text-slate-400 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitArrival} className="p-6 space-y-6">
+              <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
+                <p className="text-blue-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Viaje</p>
+                <p className="text-white font-bold text-lg">Unidad {selectedViajeForArrival?.vehiculo_detalle?.numero_economico}</p>
+                <p className="text-slate-400 text-sm">Chofer: {selectedViajeForArrival?.operador_detalle?.nombre}</p>
+                <p className="text-slate-400 text-sm">Destino: {selectedViajeForArrival?.destino || (selectedViajeForArrival?.tienda ? `Tienda ${selectedViajeForArrival.tienda}` : 'Salida Especial')}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-widest">Hora de Llegada Real</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-3 text-slate-600" size={16} />
+                  <input 
+                    type="time"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none"
+                    value={arrivalData.fecha_llegada}
+                    onChange={(e) => setArrivalData({...arrivalData, fecha_llegada: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={closeArrivalModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl">Cancelar</button>
+                <button type="submit" className="flex-[2] bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-900/20">Registrar Viaje</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

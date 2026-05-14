@@ -26,19 +26,24 @@ const Catalogos = () => {
           </div>
         </div>
 
-        <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 self-center">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 self-center backdrop-blur-xl shadow-inner w-full md:w-auto overflow-x-auto custom-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out whitespace-nowrap overflow-hidden ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                  ? 'text-white shadow-lg shadow-indigo-900/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              {tab.icon}
-              {tab.label}
+              {activeTab === tab.id && (
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-full" />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                {tab.icon}
+                {tab.label}
+              </span>
             </button>
           ))}
         </div>

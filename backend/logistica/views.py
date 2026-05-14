@@ -11,11 +11,23 @@ class ViajeViewSet(viewsets.ModelViewSet):
     serializer_class = ViajeSerializer
 
     def perform_create(self, serializer):
-        viaje = serializer.save()
+        # Si no se proporciona fecha_salida, usar la actual
+        fecha_salida = self.request.data.get('fecha_salida')
+        if not fecha_salida:
+            viaje = serializer.save(fecha_salida=timezone.now())
+        else:
+            viaje = serializer.save()
+            
         # Actualizar estatus del operador
         operador = viaje.operador
         operador.estatus = 'viaje'
         operador.save()
+        
+        # Actualizar estatus del ayudante si existe
+        if viaje.ayudante:
+            ayudante = viaje.ayudante
+            ayudante.estatus = 'viaje'
+            ayudante.save()
 
     @action(detail=True, methods=['post'])
     def avanzar_estatus(self, request, pk=None):
@@ -23,42 +35,29 @@ class ViajeViewSet(viewsets.ModelViewSet):
         if viaje.completado:
             return Response({'error': 'Este viaje ya ha sido completado.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if viaje.estatus == 'en_ruta':
-            if viaje.vehiculo.capacidad == 0.0:
-                # Salto directo a completado para vehículos ligeros
-                viaje.estatus = 'completado'
-                viaje.completado = True
-                viaje.fecha_llegada = timezone.now()
-                
-                # Liberar personal
-                operador = viaje.operador
-                operador.estatus = 'patio'
-                operador.save()
-                if viaje.ayudante:
-                    ayudante = viaje.ayudante
-                    ayudante.estatus = 'patio'
-                    ayudante.save()
-            else:
-                viaje.estatus = 'en_tienda'
-        elif viaje.estatus == 'en_tienda':
-            viaje.estatus = 'regresando'
-        elif viaje.estatus == 'regresando':
-            viaje.estatus = 'completado'
-            viaje.completado = True
+        # En el nuevo flujo, cualquier avance desde 'en_ruta' significa completar el viaje (llegada a CEDIS)
+        viaje.estatus = 'completado'
+        viaje.completado = True
+        
+        # Si se envía fecha_llegada en el body, usarla. Si no, usar la actual.
+        fecha_llegada = request.data.get('fecha_llegada')
+        if fecha_llegada:
+            viaje.fecha_llegada = fecha_llegada
+        else:
             viaje.fecha_llegada = timezone.now()
-            
-            # Actualizar estatus del operador de vuelta a patio
-            operador = viaje.operador
-            operador.estatus = 'patio'
-            operador.save()
-
-            # Si tiene ayudante, tambi n liberarlo
-            if viaje.ayudante:
-                ayudante = viaje.ayudante
-                ayudante.estatus = 'patio'
-                ayudante.save()
         
         viaje.save()
+
+        # Liberar personal
+        operador = viaje.operador
+        operador.estatus = 'patio'
+        operador.save()
+        
+        if viaje.ayudante:
+            ayudante = viaje.ayudante
+            ayudante.estatus = 'patio'
+            ayudante.save()
+            
         return Response(ViajeSerializer(viaje).data)
 
     @action(detail=True, methods=['post'])
@@ -87,18 +86,22 @@ class ViajeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def registrar_llegada(self, request, pk=None):
-        # Mantenemos este mtodo por compatibilidad o para salto directo a completado si fuera necesario
         viaje = self.get_object()
         viaje.estatus = 'completado'
         viaje.completado = True
-        viaje.fecha_llegada = timezone.now()
+        
+        fecha_llegada = request.data.get('fecha_llegada')
+        if fecha_llegada:
+            viaje.fecha_llegada = fecha_llegada
+        else:
+            viaje.fecha_llegada = timezone.now()
+            
         viaje.save()
 
         operador = viaje.operador
         operador.estatus = 'patio'
         operador.save()
         
-        # Si tiene ayudante, tambin liberarlo
         if viaje.ayudante:
             ayudante = viaje.ayudante
             ayudante.estatus = 'patio'

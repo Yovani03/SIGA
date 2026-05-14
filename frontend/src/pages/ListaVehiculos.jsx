@@ -286,18 +286,36 @@ const ListaVehiculos = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 bg-slate-900/50 p-1 rounded-xl lg:rounded-2xl border border-slate-800 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap">
+      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap backdrop-blur-xl shadow-inner">
         <button
           onClick={() => setActiveTab('lista')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-sm lg:text-base font-bold transition-all ${activeTab === 'lista' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 lg:px-8 py-2.5 rounded-full text-sm lg:text-base font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'lista' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
         >
-          <List size={18} /> Lista
+          {activeTab === 'lista' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <List size={18} /> Lista
+          </span>
         </button>
         <button
           onClick={() => setActiveTab('analisis')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-sm lg:text-base font-bold transition-all ${activeTab === 'analisis' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 lg:px-8 py-2.5 rounded-full text-sm lg:text-base font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'analisis' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
         >
-          <BarChart3 size={18} /> Análisis
+          {activeTab === 'analisis' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <BarChart3 size={18} /> Análisis
+          </span>
         </button>
       </div>
 

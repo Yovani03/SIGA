@@ -41,7 +41,9 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     ticket: '',
     taller: '',
     descripcion: '',
-    archivo_escaneado: null
+    archivo_escaneado: null,
+    rfc_emisor: '',
+    razon_social_emisor: ''
   });
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
@@ -75,6 +77,17 @@ const AltaFactura = ({ onSuccess, onClose }) => {
           setCategoriaSeleccionada(producto.categoria);
         }
 
+        let ticketRfc = prev.rfc_emisor;
+        let ticketRazon = prev.razon_social_emisor;
+
+        if (ticket.taller) {
+          const tallerTicket = talleres.find(t => t.id === ticket.taller);
+          if (tallerTicket) {
+            ticketRfc = tallerTicket.rfc || ticketRfc;
+            ticketRazon = tallerTicket.razon_social || ticketRazon;
+          }
+        }
+
         setFormData(prev => ({ 
           ...prev, 
           ticket: value,
@@ -83,7 +96,22 @@ const AltaFactura = ({ onSuccess, onClose }) => {
           producto: ticket.producto || '',
           taller: ticket.taller || '',
           descripcion: ticket.descripcion || '',
-          fecha: ticket.fecha
+          fecha: ticket.fecha,
+          rfc_emisor: ticketRfc,
+          razon_social_emisor: ticketRazon
+        }));
+        return;
+      }
+    }
+
+    if (name === 'taller' && value) {
+      const tallerObj = talleres.find(t => t.id === parseInt(value));
+      if (tallerObj) {
+        setFormData(prev => ({
+          ...prev,
+          taller: value,
+          rfc_emisor: tallerObj.rfc || prev.rfc_emisor || '',
+          razon_social_emisor: tallerObj.razon_social || prev.razon_social_emisor || ''
         }));
         return;
       }
@@ -128,6 +156,8 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     if (formData.unidad) data.append('unidad', formData.unidad);
     if (formData.producto) data.append('producto', formData.producto);
     if (formData.ticket) data.append('ticket', formData.ticket);
+    if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
+    if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
     if (formData.archivo_escaneado) data.append('archivo_escaneado', formData.archivo_escaneado);
 
     try {
@@ -138,7 +168,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', descripcion: '', archivo_escaneado: null });
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '' });
       setCategoriaSeleccionada('');
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -245,6 +275,35 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                     <option key={t.id} value={t.id}>{t.nombre}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <Hash size={14} /> RFC Emisor
+                </label>
+                <input
+                  type="text"
+                  name="rfc_emisor"
+                  value={formData.rfc_emisor}
+                  onChange={handleChange}
+                  placeholder="Ej. ABC123456T1"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <Store size={14} /> Razón Social Emisor
+                </label>
+                <input
+                  type="text"
+                  name="razon_social_emisor"
+                  value={formData.razon_social_emisor}
+                  onChange={handleChange}
+                  placeholder="Nombre de la empresa facturadora"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                />
               </div>
             </div>
 

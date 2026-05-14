@@ -33,10 +33,22 @@ const Combustibles = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [busqueda, setBusqueda] = useState('');
-  const [activeTab, setActiveTab] = useState('nuevo'); // 'nuevo' o 'historial'
+  const [activeTab, setActiveTab] = useState('nuevo'); // 'nuevo', 'especial' o 'historial'
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split('T')[0]);
+
+  // State for Special Load
+  const [cargaEspecial, setCargaEspecial] = useState({
+    unidad: '',
+    fecha: new Date().toISOString().split('T')[0],
+    tipo_combustible: 'diesel',
+    precio_unitario: '',
+    litros: '',
+    kilometraje: '',
+    ignorar_kilometraje: false
+  });
+  const [cargasEspecialesList, setCargasEspecialesList] = useState([]);
 
   useEffect(() => {
     fetchUnidades();
@@ -164,6 +176,72 @@ const Combustibles = () => {
     }
   };
 
+  const handleAddEspecialToList = (e) => {
+    e.preventDefault();
+    if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.kilometraje)) {
+      setError("Por favor completa todos los campos requeridos para la carga especial.");
+      return;
+    }
+
+    const unidadObj = unidades.find(u => u.id === parseInt(cargaEspecial.unidad));
+    if (!unidadObj) return;
+
+    setCargasEspecialesList([...cargasEspecialesList, {
+      ...cargaEspecial,
+      numero_economico: unidadObj.numero_economico,
+      placas: unidadObj.placas
+    }]);
+
+    setCargaEspecial(prev => ({
+      ...prev,
+      unidad: '',
+      litros: '',
+      kilometraje: '',
+      ignorar_kilometraje: false
+    }));
+    setError(null);
+  };
+
+  const handleRemoveEspecial = (index) => {
+    const newList = [...cargasEspecialesList];
+    newList.splice(index, 1);
+    setCargasEspecialesList(newList);
+  };
+
+  const handleSubmitEspecial = async () => {
+    if (cargasEspecialesList.length === 0) {
+      setError("Debes agregar al menos una carga especial a la lista.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const promises = cargasEspecialesList.map(carga => 
+        api.post('cargas-combustible/', {
+          unidad: parseInt(carga.unidad),
+          fecha: carga.fecha,
+          tipo_combustible: carga.tipo_combustible,
+          precio_unitario: parseFloat(carga.precio_unitario),
+          litros: parseFloat(carga.litros),
+          kilometraje: carga.ignorar_kilometraje ? null : parseInt(carga.kilometraje),
+          ignorar_kilometraje: carga.ignorar_kilometraje
+        })
+      );
+      
+      await Promise.all(promises);
+      
+      setSuccess(true);
+      setCargasEspecialesList([]);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch(err) {
+      console.error("Error saving special loads", err);
+      setError("Error al guardar las cargas especiales. Verifica los datos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredUnidades = unidades.filter(u => 
     u.numero_economico.toLowerCase().includes(busqueda.toLowerCase()) || 
     u.placas.toLowerCase().includes(busqueda.toLowerCase())
@@ -171,18 +249,51 @@ const Combustibles = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-max mb-2">
+      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-inner">
         <button 
           onClick={() => setActiveTab('nuevo')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'nuevo' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'nuevo' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
         >
-          <Plus size={18} /> Nuevo Registro
+          {activeTab === 'nuevo' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Plus size={18} /> Nuevo Registro
+          </span>
         </button>
         <button 
-          onClick={() => setActiveTab('historial')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'historial' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          onClick={() => { setActiveTab('especial'); setError(null); setSuccess(false); }}
+          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'especial' 
+              ? 'text-white shadow-lg shadow-amber-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
         >
-          <History size={18} /> Historial de Cargas
+          {activeTab === 'especial' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <AlertCircle size={18} /> Carga Especial
+          </span>
+        </button>
+        <button 
+          onClick={() => { setActiveTab('historial'); setError(null); setSuccess(false); }}
+          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'historial' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
+        >
+          {activeTab === 'historial' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <History size={18} /> Historial de Cargas
+          </span>
         </button>
       </div>
 
@@ -410,6 +521,210 @@ const Combustibles = () => {
             </div>
           </div>
         </>
+      ) : activeTab === 'especial' ? (
+        <div className="space-y-6 max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-amber-500/20 backdrop-blur-xl">
+            <div>
+              <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                <AlertCircle className="text-amber-500" size={32} />
+                Carga Especial
+              </h2>
+              <p className="text-slate-400 mt-1">Registra cargas de múltiples días con fechas y costos personalizados.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAddEspecialToList} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6 lg:p-8 space-y-6 backdrop-blur-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Unidad</label>
+                <select 
+                  required
+                  value={cargaEspecial.unidad}
+                  onChange={(e) => setCargaEspecial({...cargaEspecial, unidad: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">Seleccionar Unidad...</option>
+                  {unidades.map(u => (
+                    <option key={u.id} value={u.id}>{u.numero_economico} - {u.placas}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Fecha Exacta de Carga</label>
+                <input 
+                  type="date" 
+                  required
+                  value={cargaEspecial.fecha}
+                  onChange={(e) => setCargaEspecial({...cargaEspecial, fecha: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo de Combustible</label>
+                <select 
+                  value={cargaEspecial.tipo_combustible}
+                  onChange={(e) => setCargaEspecial({...cargaEspecial, tipo_combustible: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="diesel">Diesel</option>
+                  <option value="magna">Magna</option>
+                  <option value="premium">Premium</option>
+                  <option value="electrico">Eléctrico</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-amber-400 uppercase tracking-widest">Precio Especial (por Litro)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                  <input 
+                    type="number" 
+                    required
+                    step="0.01"
+                    value={cargaEspecial.precio_unitario}
+                    onChange={(e) => setCargaEspecial({...cargaEspecial, precio_unitario: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Litros Cargados</label>
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    required
+                    step="0.01"
+                    value={cargaEspecial.litros}
+                    onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pr-8 pl-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="0.00"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">L</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Kilometraje (Opcional)</label>
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <input 
+                      type="number" 
+                      step="1"
+                      disabled={cargaEspecial.ignorar_kilometraje}
+                      value={cargaEspecial.kilometraje}
+                      onChange={(e) => setCargaEspecial({...cargaEspecial, kilometraje: e.target.value})}
+                      className={`w-full bg-slate-950 border border-slate-700 rounded-xl pr-8 pl-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      placeholder="Km actual"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs">KM</span>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap bg-slate-950 px-3 py-3 rounded-xl border border-slate-700">
+                    <input 
+                      type="checkbox"
+                      checked={cargaEspecial.ignorar_kilometraje}
+                      onChange={(e) => setCargaEspecial({...cargaEspecial, ignorar_kilometraje: e.target.checked})}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 focus:ring-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Odm. Dañado</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-slate-800 flex items-center justify-end">
+              <button 
+                type="submit"
+                className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border border-slate-700"
+              >
+                <Plus size={18} />
+                Agregar a la lista
+              </button>
+            </div>
+          </form>
+
+          {cargasEspecialesList.length > 0 && (
+            <div className="bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden backdrop-blur-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-widest font-bold">
+                      <th className="px-6 py-4">Unidad</th>
+                      <th className="px-6 py-4">Detalles</th>
+                      <th className="px-6 py-4 text-right">Monto Calculado</th>
+                      <th className="px-6 py-4 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {cargasEspecialesList.map((carga, idx) => (
+                      <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+                              <Truck size={20} />
+                            </div>
+                            <div>
+                              <p className="text-white font-bold">{carga.numero_economico}</p>
+                              <p className="text-[10px] text-slate-500">{carga.fecha}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-slate-300 font-medium uppercase">{carga.tipo_combustible}</span>
+                            <span className="text-xs text-slate-500">{carga.litros}L a ${carga.precio_unitario}/L</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-amber-400 font-black">
+                            ${(parseFloat(carga.litros) * parseFloat(carga.precio_unitario)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button 
+                            onClick={() => handleRemoveEspecial(idx)}
+                            className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-6 border-t border-slate-800 bg-slate-900/30 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-sm">Total a guardar</span>
+                  <span className="text-white text-2xl font-bold">{cargasEspecialesList.length}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  {error && (
+                    <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-4 py-2 rounded-xl text-sm border border-rose-400/20">
+                      <AlertCircle size={16} /> {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-xl text-sm border border-emerald-400/20">
+                      <CheckCircle2 size={16} /> Registrado exitosamente
+                    </div>
+                  )}
+                  <button 
+                    onClick={handleSubmitEspecial}
+                    disabled={loading}
+                    className="bg-amber-600 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-600 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-xl shadow-amber-900/20 hover:scale-105 active:scale-95"
+                  >
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                    Guardar Todas las Cargas
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 backdrop-blur-xl">

@@ -20,6 +20,7 @@ import {
   Ticket as TicketIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ProyeccionesMantenimiento from './ProyeccionesMantenimiento';
 
 const Spinner = () => (
   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -185,34 +186,43 @@ const Mantenimiento = () => {
       </div>
 
       {/* Top Filters */}
-      <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-xl lg:rounded-2xl border border-slate-800 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap">
+      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap backdrop-blur-xl shadow-inner">
         {[
           { id: 'todos', label: 'TODOS', count: stats.total },
           { id: 'en proceso', label: 'PROCESO', count: stats.proceso },
           { id: 'en espera', label: 'ESPERA', count: stats.espera },
-          { id: 'completado', label: 'OK', count: stats.completados }
+          { id: 'completado', label: 'OK', count: stats.completados },
+          { id: 'proyecciones', label: 'PROYECCIONES', count: '⏱️' }
         ].map(tab => (
           <button 
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 sm:flex-none px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${
+            className={`relative flex-1 sm:flex-none px-5 py-2.5 rounded-full text-[10px] lg:text-xs font-bold uppercase transition-all duration-300 ease-out overflow-hidden flex items-center justify-center gap-2 ${
               activeTab === tab.id 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'text-white shadow-lg shadow-blue-900/20' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            {tab.label}
-            <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
-              activeTab === tab.id ? 'bg-blue-800 text-blue-100' : 'bg-slate-800 text-slate-300'
-            }`}>
-              {tab.count}
+            {activeTab === tab.id && (
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              {tab.label}
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                activeTab === tab.id ? 'bg-black/20 text-blue-100' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {tab.count}
+              </span>
             </span>
           </button>
         ))}
       </div>
 
-      {/* Cards List */}
-      <div className="space-y-4">
+      {/* Cards List or Proyecciones */}
+      {activeTab === 'proyecciones' ? (
+        <ProyeccionesMantenimiento />
+      ) : (
+        <div className="space-y-4">
         {loading ? (
           <div className="text-center py-12"><Spinner /></div>
         ) : filteredOrdenes.length === 0 ? (
@@ -253,21 +263,23 @@ const Mantenimiento = () => {
                    {o.costo_total > 0 && <div className="flex items-center gap-1 text-emerald-400 font-bold"><DollarSign size={14} className="shrink-0"/> {o.costo_total}</div>}
                  </div>
                  {o.taller_info && (
-                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2 bg-slate-950 p-3 lg:p-3.5 rounded-xl border border-slate-800 w-full sm:w-fit">
-                     <div className="flex items-center gap-3 min-w-0">
-                       <Wrench size={16} className="text-blue-500 shrink-0" />
-                       <div className="min-w-0">
-                         <p className="text-xs font-bold text-white truncate">{o.taller_info.nombre}</p>
-                         <p className="text-[10px] text-slate-400 truncate mt-0.5">{o.taller_info.direccion}</p>
+                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3 bg-slate-950 p-3 lg:p-4 rounded-xl border border-slate-800 w-full overflow-hidden">
+                     <div className="flex items-center gap-3 flex-1 min-w-0">
+                       <div className="bg-blue-500/10 p-2 rounded-lg shrink-0">
+                         <Wrench size={16} className="text-blue-500" />
+                       </div>
+                       <div className="min-w-0 flex-1">
+                         <p className="text-xs lg:text-sm font-bold text-white truncate">{o.taller_info.nombre}</p>
+                         <p className="text-[10px] lg:text-xs text-slate-400 truncate mt-0.5">{o.taller_info.direccion}</p>
                        </div>
                      </div>
                      <a 
                        href={o.taller_info.url_mapa || `https://maps.google.com/?q=${encodeURIComponent(o.taller_info.direccion || o.taller_info.nombre)}`} 
                        target="_blank" 
                        rel="noreferrer"
-                       className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-colors border border-blue-500/20 shrink-0"
+                       className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-bold text-white bg-blue-600 px-4 py-2.5 rounded-lg hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 shrink-0 w-full sm:w-auto"
                      >
-                       <MapPin size={12} /> MAPA
+                       <MapPin size={14} /> MAPA
                      </a>
                    </div>
                  )}
@@ -300,6 +312,7 @@ const Mantenimiento = () => {
           ))
         )}
       </div>
+      )}
 
       {/* Modal Nueva Orden */}
       {showModal && (

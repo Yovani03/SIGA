@@ -100,6 +100,8 @@ class Factura(models.Model):
         related_name='facturas_facturacion',
         verbose_name="Taller/Origen"
     )
+    rfc_emisor = models.CharField(max_length=13, blank=True, null=True, verbose_name="RFC Emisor")
+    razon_social_emisor = models.CharField(max_length=255, blank=True, null=True, verbose_name="Razón Social Emisor")
     unidad = models.ForeignKey(
         UnidadTractocamion, 
         on_delete=models.SET_NULL, 
@@ -133,6 +135,24 @@ class Factura(models.Model):
         ordering = ['-fecha']
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if is_new and not self.ticket:
+            # Auto-generar ticket si no se proporcionó uno
+            from django.core.files.base import ContentFile
+            
+            nuevo_ticket = Ticket.objects.create(
+                fecha=self.fecha,
+                monto=self.monto,
+                descripcion=f"Auto-generado por Factura {self.folio}. {self.descripcion or ''}"[:255],
+                taller=self.taller,
+                unidad=self.unidad,
+                producto=self.producto,
+                convertido_en_factura=True
+            )
+            # Opcionalmente, no duplicamos el archivo escaneado para ahorrar espacio, 
+            # pero el ticket quedará vinculado y se podrá ver desde la factura.
+            self.ticket = nuevo_ticket
+
         if self.ticket:
             self.ticket.convertido_en_factura = True
             self.ticket.save()
