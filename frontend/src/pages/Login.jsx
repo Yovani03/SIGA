@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Truck, MapPin, ShieldCheck, ArrowRight, Lock, User, AlertCircle } from 'lucide-react';
+import logo from '../assets/logo_final.png';
 import notify from '../utils/notifications';
 
 const Login = () => {
@@ -48,8 +49,12 @@ const Login = () => {
                         to { opacity: 1; transform: translateY(0); }
                     }
                     @keyframes pulseGlow {
-                        0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-                        50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+                        0%, 100% { filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3)); }
+                        50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)); }
+                    }
+                    @keyframes neonPulse {
+                        0%, 100% { text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6, 0 0 15px #3b82f6; color: #fff; }
+                        50% { text-shadow: 0 0 10px #60a5fa, 0 0 20px #60a5fa, 0 0 30px #60a5fa; color: #dbeafe; }
                     }
                     
                     .animate-drive-slow { animation: driveRight 25s linear infinite; }
@@ -59,6 +64,7 @@ const Login = () => {
                     .delay-100 { animation-delay: 100ms; }
                     .delay-200 { animation-delay: 200ms; }
                     .delay-300 { animation-delay: 300ms; }
+                    .neon-text { animation: neonPulse 2s infinite ease-in-out; }
                     
                     /* Ocultar barra de desplazamiento */
                     ::-webkit-scrollbar { display: none; }
@@ -72,7 +78,7 @@ const Login = () => {
                 <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 rounded-full bg-indigo-900/20 blur-3xl"></div>
             </div>
 
-            {/* Animación de camioncitos */}
+            {/* Animación de camioncitos (Restaurada) */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
                 <div className="absolute top-[15%] w-full flex animate-drive-slow">
                     <Truck size={48} className="text-blue-500" />
@@ -86,21 +92,43 @@ const Login = () => {
             </div>
 
             {/* Contenedor principal del Login */}
-            <div className="relative z-10 w-full max-w-md px-6 py-12">
+            <div className="relative z-10 w-full max-w-4xl px-6 py-12">
                 
                 {/* Logo y Encabezado */}
-                <div className="text-center mb-10 animate-fade-in">
-                    <div className="mx-auto w-20 h-20 bg-blue-600/20 rounded-2xl flex items-center justify-center border border-blue-500/30 mb-6 shadow-[0_0_15px_rgba(59,130,246,0.5)]" style={{ animation: 'pulseGlow 3s infinite' }}>
-                        <Truck className="text-blue-500 w-10 h-10" />
+                <div className="text-center mb-12 animate-fade-in flex flex-col items-center">
+                    <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
+                        <div className="w-32 h-32 md:w-48 md:h-48 flex items-center justify-center relative overflow-hidden rounded-full">
+                            <img 
+                                src={logo} 
+                                alt="Logo" 
+                                className="w-full h-full object-contain relative z-10" 
+                                style={{ 
+                                    mixBlendMode: 'screen',
+                                    filter: 'contrast(1.1) brightness(1.1)'
+                                }} 
+                            />
+                        </div>
+                        <div className="text-center md:text-left">
+                            <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white leading-none">
+                                TRANSPORT
+                            </h1>
+                            <p className="neon-text text-xl md:text-2xl font-bold tracking-[0.2em] mt-2 uppercase">
+                                Técnicos en largas distancias
+                            </p>
+                        </div>
                     </div>
-                    <h2 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-                        SIGA
-                    </h2>
-                    <p className="text-slate-400 font-medium">Sistema Integral de Gestión de Autotransporte</p>
+                    
+                    <div className="w-full max-w-md border-t border-slate-800 pt-6">
+                        <h2 className="text-3xl font-black tracking-[0.3em] text-blue-500 mb-1 uppercase">
+                            SIGA
+                        </h2>
+                        <p className="text-slate-500 font-semibold tracking-wider text-sm">SISTEMA INTEGRAL DE GESTIÓN DE AUTOTRANSPORTE</p>
+                    </div>
                 </div>
 
-                {/* Tarjeta de Formulario (Glassmorphism) */}
-                <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl shadow-2xl shadow-black/50 animate-fade-in delay-100 opacity-0">
+                {/* Tarjeta de Formulario (Glassmorphism) - Centrada y con ancho controlado */}
+                <div className="max-w-md mx-auto">
+                    <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl shadow-2xl shadow-black/50 animate-fade-in delay-100 opacity-0">
                     
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,6 +192,7 @@ const Login = () => {
                             </button>
                         </div>
                     </form>
+                </div>
                 </div>
                 
                 {/* Footer Decorativo */}

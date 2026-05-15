@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import logo from '../assets/logo_neon.png';
 import {
   LayoutDashboard,
   Truck,
@@ -65,10 +66,15 @@ const DashboardLayout = () => {
       `}>
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Truck className="text-white" size={24} />
+            <div className="flex items-center justify-center">
+              <img 
+                src={logo} 
+                alt="Logo" 
+                className="w-10 h-10 object-contain" 
+                style={{ mixBlendMode: 'screen' }} 
+              />
             </div>
-            <h1 className="font-bold text-xl tracking-tight text-white">SIGA</h1>
+            <h1 className="font-bold text-xl tracking-tight text-white uppercase">SIGA</h1>
           </div>
           <button 
             onClick={toggleSidebar}
