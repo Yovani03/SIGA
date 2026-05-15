@@ -51,6 +51,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     unidades: [],
     detalles_unidades: []
   });
+  const [ivaIncluido, setIvaIncluido] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
@@ -196,6 +197,18 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       detalles_unidades: prev.detalles_unidades.map(d => 
         d.unidad === unidadId ? { ...d, monto } : d
       )
+    }));
+  };
+
+  const handleAgregarIVA = () => {
+    const nuevoEstado = !ivaIncluido;
+    setIvaIncluido(nuevoEstado);
+    setFormData(prev => ({
+      ...prev,
+      detalles_unidades: prev.detalles_unidades.map(d => ({
+        ...d,
+        monto: d.monto ? (nuevoEstado ? (parseFloat(d.monto) * 1.16) : (parseFloat(d.monto) / 1.16)).toFixed(2) : ''
+      }))
     }));
   };
 
@@ -502,10 +515,22 @@ const AltaFactura = ({ onSuccess, onClose }) => {
 
             {formData.unidades.length > 1 && (
               <div className="mt-2 space-y-6 bg-slate-950/50 p-6 rounded-3xl border border-amber-500/20 animate-in slide-in-from-top-2 duration-300 w-full">
-                <div className="flex items-center justify-between border-b border-amber-500/10 pb-4">
-                  <p className="text-[12px] text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
-                    <Info size={16} /> Desglose de Gastos por Unidad
-                  </p>
+                <div className="flex flex-wrap items-center justify-between border-b border-amber-500/10 pb-4 gap-4">
+                  <div className="flex items-center gap-4">
+                    <p className="text-[12px] text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
+                      <Info size={16} /> Desglose de Gastos por Unidad
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAgregarIVA}
+                      className={`${ivaIncluido ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500 text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg shadow-amber-900/20 flex items-center gap-2`}
+                    >
+                      <div className={`w-3 h-3 rounded-full border-2 border-slate-950 flex items-center justify-center ${ivaIncluido ? 'bg-slate-950' : 'bg-transparent'}`}>
+                        {ivaIncluido && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
+                      </div>
+                      {ivaIncluido ? 'IVA APLICADO (16%)' : 'AGREGAR IVA (16%)'}
+                    </button>
+                  </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-slate-500 font-bold uppercase">Suma Total:</span>
                     <span className={`text-sm font-black px-4 py-1.5 rounded-full ${
