@@ -15,6 +15,7 @@ import {
   Info,
   Search
 } from 'lucide-react';
+import notify from '../utils/notifications';
 
 const Spinner = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -23,7 +24,7 @@ const Spinner = () => (
   </svg>
 );
 
-const AltaFactura = ({ onSuccess, onClose }) => {
+const AltaFactura = ({ onSuccess, onClose, factura }) => {
   const [vehiculos, setVehiculos] = useState([]);
   const [productos, setProductos] = useState([]);
   const [ticketsPendientes, setTicketsPendientes] = useState([]);
@@ -31,8 +32,6 @@ const AltaFactura = ({ onSuccess, onClose }) => {
   const [proveedores, setProveedores] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
     fecha: '',
@@ -78,6 +77,29 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     })
     .catch(err => console.error("Error cargando datos:", err));
   }, []);
+
+  useEffect(() => {
+    if (factura) {
+      setFormData({
+        fecha: factura.fecha,
+        monto: factura.monto,
+        folio: factura.folio,
+        unidad: factura.unidad || '',
+        producto: factura.producto || '',
+        ticket: factura.ticket || '',
+        taller: factura.taller || '',
+        proveedor: factura.proveedor || '',
+        descripcion: factura.descripcion || '',
+        archivo_escaneado: null,
+        rfc_emisor: factura.rfc_emisor || '',
+        razon_social_emisor: factura.razon_social_emisor || '',
+        categoria: factura.categoria || 'Otro',
+        unidades: factura.unidades || [],
+        detalles_unidades: factura.detalles_unidades?.map(d => ({ unidad: d.unidad, monto: d.monto })) || []
+      });
+      setIvaIncluido(factura.iva_aplicado || false);
+    }
+  }, [factura]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -176,16 +198,15 @@ const AltaFactura = ({ onSuccess, onClose }) => {
 
   const handleScan = async () => {
     setScanning(true);
-    setError(null);
     try {
       const response = await fetch('http://localhost:3001/api/scan');
       if (!response.ok) throw new Error('Fallo al conectar con el escáner');
       const blob = await response.blob();
       const file = new File([blob], `factura_escaneada_${Date.now()}.pdf`, { type: "application/pdf" });
       setFormData(prev => ({ ...prev, archivo_escaneado: file }));
-      setSuccess(false);
+      notify.success('Documento escaneado correctamente');
     } catch (err) {
-      setError('Asegúrate de encender el escáner y que tu perfil se llame "Brother" en NAPS2.');
+      notify.error('Fallo al conectar con el escáner. Verifica NAPS2.');
     } finally {
       setScanning(false);
     }
@@ -215,14 +236,29 @@ const AltaFactura = ({ onSuccess, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(false);
 
     const data = new FormData();
+    
+    // Validaciones
+    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!formData.unidad && formData.unidades.length === 0)) {
+      setError("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad.");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.unidades.length > 1) {
+      const suma = formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0);
+      if (Math.abs(suma - parseFloat(formData.monto)) > 0.01) {
+        notify.error(`La suma del desglose ($${suma.toFixed(2)}) no coincide con el total ($${parseFloat(formData.monto).toFixed(2)})`);
+        setLoading(false);
+        return;
+      }
+    }
+
     data.append('fecha', formData.fecha);
     data.append('monto', formData.monto);
     data.append('folio', formData.folio);
-    data.append('descripcion', formData.descripcion);
+    data.append('descripcion', formData.descripcion || '');
     if (formData.taller) data.append('taller', formData.taller);
     if (formData.proveedor) data.append('proveedor', formData.proveedor);
     if (formData.unidad) data.append('unidad', formData.unidad);
@@ -232,12 +268,13 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
     if (formData.archivo_escaneado) data.append('archivo_escaneado', formData.archivo_escaneado);
+    data.append('iva_aplicado', ivaIncluido);
 
     // Enviar detalles de unidades como JSON string si el backend lo soporta o desglosado
     if (formData.unidades.length > 1) {
       const totalDetalles = formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0);
       if (Math.abs(totalDetalles - parseFloat(formData.monto)) > 0.01) {
-        setError(`La suma de los montos por unidad ($${totalDetalles.toFixed(2)}) debe ser igual al monto total ($${parseFloat(formData.monto).toFixed(2)})`);
+        notify.error(`La suma de los montos por unidad ($${totalDetalles.toFixed(2)}) debe ser igual al monto total ($${parseFloat(formData.monto).toFixed(2)})`);
         setLoading(false);
         return;
       }
@@ -245,10 +282,16 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     }
 
     try {
-      await api.post('facturas/', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setSuccess(true);
+      if (factura) {
+        await api.put(`facturas/${factura.id}/`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        await api.post('facturas/', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      notify.success(factura ? 'Factura actualizada' : 'Factura registrada con éxito');
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
@@ -256,7 +299,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       setBusquedaTicket('');
       setBusquedaUnidad('');
     } catch (err) {
-      setError(err.response?.data ? JSON.stringify(err.response.data) : "Error al guardar la factura");
+      notify.error(err.response?.data ? 'Error en los datos enviados' : "Error al guardar la factura");
     } finally {
       setLoading(false);
     }
@@ -282,8 +325,12 @@ const AltaFactura = ({ onSuccess, onClose }) => {
             <FilePlus className="text-blue-500" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Registro de Factura</h1>
-            <p className="text-slate-400 text-sm">Completa los datos para registrar el nuevo documento.</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              {factura ? 'Editar Factura' : 'Registro de Factura'}
+            </h1>
+            <p className="text-slate-400 text-sm">
+              {factura ? `Editando factura con folio ${factura.folio}` : 'Completa los datos para registrar el nuevo documento.'}
+            </p>
           </div>
         </div>
         {onClose && (
@@ -617,19 +664,6 @@ const AltaFactura = ({ onSuccess, onClose }) => {
             )}
           </div>
 
-          {success && (
-            <div className="bg-emerald-500/10 border border-emerald-500/50 rounded-xl p-3 flex items-center gap-3 text-emerald-400">
-              <CheckCircle size={18} />
-              <span className="font-semibold text-xs">¡Factura registrada con éxito!</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-rose-500/10 border border-rose-500/50 rounded-xl p-3 flex items-center gap-3 text-rose-400">
-              <AlertCircle size={18} />
-              <span className="font-semibold text-xs truncate">{error}</span>
-            </div>
-          )}
 
           <button
             disabled={loading}
@@ -637,7 +671,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             {loading ? <Spinner /> : <FilePlus size={20} />}
-            <span>{loading ? 'REGISTRANDO...' : 'REGISTRAR FACTURA'}</span>
+            <span>{loading ? 'REGISTRANDO...' : (factura ? 'GUARDAR CAMBIOS' : 'REGISTRAR FACTURA')}</span>
           </button>
         </div>
       </form>

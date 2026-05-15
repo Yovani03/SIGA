@@ -21,10 +21,12 @@ import {
   X,
   Ticket as TicketIcon,
   TrendingUp,
-  Tag
+  Tag,
+  Pencil
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import AltaFactura from './AltaFactura';
+import notify from '../utils/notifications';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -32,9 +34,9 @@ const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
+  const [editingFactura, setEditingFactura] = useState(null);
   const [selectedFactura, setSelectedFactura] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showChartsModal, setShowChartsModal] = useState(false);
@@ -58,10 +60,9 @@ const Facturacion = () => {
       ]);
       setFacturas(facturasRes.data);
       setVehiculos(vehiculosRes.data);
-      setError(null);
     } catch (err) {
       console.error("Error cargando facturación", err);
-      setError("No se pudieron cargar los datos de facturación.");
+      notify.error("No se pudieron cargar los datos de facturación.");
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,14 @@ const Facturacion = () => {
 
   const handleAltaSuccess = () => {
     setShowAltaModal(false);
+    setEditingFactura(null);
     fetchData();
+  };
+
+  const handleEdit = (e, factura) => {
+    e.stopPropagation();
+    setEditingFactura(factura);
+    setShowAltaModal(true);
   };
 
   const getUnidadInfo = (unidadId) => {
@@ -316,12 +324,6 @@ const Facturacion = () => {
           <Loader2 className="text-blue-500 animate-spin" size={48} />
           <p className="text-slate-400 font-medium">Cargando facturación...</p>
         </div>
-      ) : error ? (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-10 text-center space-y-4">
-          <AlertCircle className="text-rose-500 mx-auto" size={48} />
-          <p className="text-rose-400 text-lg font-medium">{error}</p>
-          <button onClick={fetchData} className="text-blue-400 hover:text-blue-300 font-bold underline">Intentar de nuevo</button>
-        </div>
       ) : filteredFacturas.length === 0 ? (
         <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
           <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
@@ -414,13 +416,23 @@ const Facturacion = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
-                  <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
-                    <Calendar size={14} className="text-slate-600" />
-                    {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </p>
-                  
-                  {f.archivo_escaneado ? (
+                  <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
+                        <Calendar size={14} className="text-slate-600" />
+                        {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                      
+                      <button 
+                        onClick={(e) => handleEdit(e, f)}
+                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+                        title="Editar Factura"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </div>
+                    
+                    {f.archivo_escaneado ? (
                     <a 
                       href={f.archivo_escaneado} 
                       target="_blank" 
@@ -479,7 +491,11 @@ const Facturacion = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-6xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-blue-500/5">
             <AltaFactura 
               onSuccess={handleAltaSuccess} 
-              onClose={() => setShowAltaModal(false)} 
+              onClose={() => {
+                setShowAltaModal(false);
+                setEditingFactura(null);
+              }} 
+              factura={editingFactura}
             />
           </div>
         </div>

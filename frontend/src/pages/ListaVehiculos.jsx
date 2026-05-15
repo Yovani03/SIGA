@@ -34,11 +34,11 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AltaVehiculo from './AltaVehiculo';
 import AnalisisGastos from './AnalisisGastos';
+import notify from '../utils/notifications';
 
 const ListaVehiculos = () => {
   const [vehiculos, setVehiculos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Maintenance & Modal States
@@ -118,10 +118,9 @@ const ListaVehiculos = () => {
       setLoading(true);
       const res = await api.get('vehiculos/');
       setVehiculos(res.data);
-      setError(null);
     } catch (err) {
       console.error("Error cargando vehículos", err);
-      setError("No se pudieron cargar las unidades. Verifica la conexión con el servidor.");
+      notify.error("No se pudieron cargar las unidades.");
     } finally {
       setLoading(false);
     }
@@ -144,10 +143,11 @@ const ListaVehiculos = () => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar la unidad ${v.numero_economico}? Esta acción no se puede deshacer.`)) {
       try {
         await api.delete(`vehiculos/${v.id}/`);
+        notify.success("Unidad eliminada correctamente");
         fetchVehiculos();
       } catch (err) {
         console.error("Error eliminando vehículo", err);
-        alert("No se pudo eliminar el vehículo. Verifique que no tenga registros asociados.");
+        notify.error("No se pudo eliminar el vehículo.");
       }
     }
   };
@@ -223,12 +223,13 @@ const ListaVehiculos = () => {
         unidad: selectedVehiculo.id,
         ...ordenForm
       });
+      notify.success("Orden de salida generada");
       setShowOrdenModal(false);
-      fetchVehiculos(); // Esto actualizará el estado a 'en_mantenimiento'
+      fetchVehiculos(); 
       fetchOrdenes();
     } catch (err) {
       console.error("Error al crear orden", err);
-      alert("No se pudo crear la orden de trabajo.");
+      notify.error("No se pudo crear la orden de trabajo.");
     } finally {
       setFormLoading(false);
     }
@@ -236,7 +237,7 @@ const ListaVehiculos = () => {
 
   const handleCompletarOrden = async () => {
     if (facturasSeleccionadas.length === 0) {
-      alert("Debes seleccionar al menos una factura para dar el alta.");
+      notify.info("Debes seleccionar al menos una factura.");
       return;
     }
     setFormLoading(true);
@@ -244,13 +245,14 @@ const ListaVehiculos = () => {
       await api.post(`ordenes-trabajo/${selectedVehiculo.orden_activa}/completar/`, {
         facturas: facturasSeleccionadas
       });
+      notify.success("Unidad reintegrada a operación");
       setShowCompletarModal(false);
       setShowInfoMantenimientoModal(false);
-      fetchVehiculos(); // Esto actualizará el estado a 'operativa'
+      fetchVehiculos(); 
       fetchOrdenes();
     } catch (err) {
       console.error("Error al completar orden", err);
-      alert("Error al procesar el alta de la unidad.");
+      notify.error("Error al procesar el alta.");
     } finally {
       setFormLoading(false);
     }
@@ -351,17 +353,6 @@ const ListaVehiculos = () => {
             <div className="flex flex-col items-center justify-center py-16 lg:py-20 space-y-4">
               <Loader2 className="text-blue-500 animate-spin" size={40} />
               <p className="text-slate-400 font-medium">Cargando flota...</p>
-            </div>
-          ) : error ? (
-            <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl lg:rounded-3xl p-8 lg:p-10 text-center space-y-4">
-              <AlertCircle className="text-rose-500 mx-auto" size={40} />
-              <p className="text-rose-400 text-base lg:text-lg font-medium">{error}</p>
-              <button 
-                onClick={fetchVehiculos}
-                className="text-blue-400 hover:text-blue-300 font-bold underline"
-              >
-                Intentar de nuevo
-              </button>
             </div>
           ) : filteredVehiculos.length === 0 ? (
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-[2.5rem] p-12 lg:p-20 text-center space-y-6">

@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
+import notify from '../utils/notifications';
 
 const Combustibles = () => {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -30,8 +31,6 @@ const Combustibles = () => {
   const [unidades, setUnidades] = useState([]);
   const [cargas, setCargas] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [activeTab, setActiveTab] = useState('nuevo'); // 'nuevo', 'especial' o 'historial'
   const [historial, setHistorial] = useState([]);
@@ -129,23 +128,22 @@ const Combustibles = () => {
 
   const handleSubmit = async () => {
     if (!precios.magna || !precios.premium || !precios.diesel) {
-      setError("Debes ingresar los precios de los combustibles para este día.");
+      notify.info("Ingresa los precios del día.");
       return;
     }
     if (cargas.length === 0) {
-      setError("Debes agregar al menos una carga.");
+      notify.info("Agrega al menos una carga.");
       return;
     }
 
     for (let carga of cargas) {
       if (!carga.litros || (!carga.ignorar_kilometraje && !carga.kilometraje)) {
-        setError(`Faltan datos en la unidad ${carga.numero_economico}`);
+        notify.error(`Faltan datos en la unidad ${carga.numero_economico}`);
         return;
       }
     }
 
     setLoading(true);
-    setError(null);
 
     try {
       const data = {
@@ -164,13 +162,12 @@ const Combustibles = () => {
 
       await api.post('cargas-combustible/registro_diario/', data);
 
-      setSuccess(true);
+      notify.success("Registros guardados correctamente");
       setCargas([]);
       setBusqueda('');
-      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Error saving loads", err);
-      setError("Hubo un error al guardar los registros. Verifica que los datos sean correctos.");
+      notify.error("Error al guardar los registros.");
     } finally {
       setLoading(false);
     }
@@ -179,7 +176,7 @@ const Combustibles = () => {
   const handleAddEspecialToList = (e) => {
     e.preventDefault();
     if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.kilometraje)) {
-      setError("Por favor completa todos los campos requeridos para la carga especial.");
+      notify.info("Completa todos los campos requeridos.");
       return;
     }
 
@@ -199,7 +196,6 @@ const Combustibles = () => {
       kilometraje: '',
       ignorar_kilometraje: false
     }));
-    setError(null);
   };
 
   const handleRemoveEspecial = (index) => {
@@ -210,12 +206,11 @@ const Combustibles = () => {
 
   const handleSubmitEspecial = async () => {
     if (cargasEspecialesList.length === 0) {
-      setError("Debes agregar al menos una carga especial a la lista.");
+      notify.info("Agrega cargas a la lista.");
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
       const promises = cargasEspecialesList.map(carga => 
         api.post('cargas-combustible/', {
@@ -231,12 +226,11 @@ const Combustibles = () => {
       
       await Promise.all(promises);
       
-      setSuccess(true);
+      notify.success("Cargas especiales guardadas");
       setCargasEspecialesList([]);
-      setTimeout(() => setSuccess(false), 3000);
     } catch(err) {
       console.error("Error saving special loads", err);
-      setError("Error al guardar las cargas especiales. Verifica los datos.");
+      notify.error("Error al guardar las cargas especiales.");
     } finally {
       setLoading(false);
     }
@@ -491,19 +485,6 @@ const Combustibles = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                {error && (
-                  <div className="flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-xl text-sm border border-red-400/20">
-                    <AlertCircle size={16} />
-                    {error}
-                  </div>
-                )}
-                
-                {success && (
-                  <div className="flex items-center gap-2 text-green-400 bg-green-400/10 px-4 py-2 rounded-xl text-sm border border-green-400/20">
-                    <CheckCircle2 size={16} />
-                    Registro guardado exitosamente
-                  </div>
-                )}
 
                 <button 
                   onClick={handleSubmit}
@@ -702,16 +683,6 @@ const Combustibles = () => {
                   <span className="text-white text-2xl font-bold">{cargasEspecialesList.length}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  {error && (
-                    <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-4 py-2 rounded-xl text-sm border border-rose-400/20">
-                      <AlertCircle size={16} /> {error}
-                    </div>
-                  )}
-                  {success && (
-                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-xl text-sm border border-emerald-400/20">
-                      <CheckCircle2 size={16} /> Registrado exitosamente
-                    </div>
-                  )}
                   <button 
                     onClick={handleSubmitEspecial}
                     disabled={loading}

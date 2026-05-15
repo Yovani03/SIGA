@@ -14,6 +14,7 @@ import Tickets from './pages/Tickets';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import SileoToaster from './components/SileoToaster';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
+        <SileoToaster />
       </Router>
     </AuthProvider>
   );

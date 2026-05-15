@@ -19,12 +19,12 @@ import {
   Info
 } from 'lucide-react';
 import AltaTicket from './AltaTicket';
+import notify from '../utils/notifications';
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,10 +43,9 @@ const Tickets = () => {
       ]);
       setTickets(ticketsRes.data);
       setVehiculos(vehiculosRes.data);
-      setError(null);
     } catch (err) {
       console.error("Error cargando tickets", err);
-      setError("No se pudieron cargar los datos de tickets.");
+      notify.error("No se pudieron cargar los datos de tickets.");
     } finally {
       setLoading(false);
     }
@@ -150,12 +149,6 @@ const Tickets = () => {
         <div className="flex flex-col items-center justify-center py-20 space-y-4">
           <Loader2 className="text-amber-500 animate-spin" size={48} />
           <p className="text-slate-400 font-medium">Cargando tickets...</p>
-        </div>
-      ) : error ? (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-10 text-center space-y-4">
-          <AlertCircle className="text-rose-500 mx-auto" size={48} />
-          <p className="text-rose-400 text-lg font-medium">{error}</p>
-          <button onClick={fetchData} className="text-amber-400 hover:text-amber-300 font-bold underline">Intentar de nuevo</button>
         </div>
       ) : filteredTickets.length === 0 ? (
         <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">

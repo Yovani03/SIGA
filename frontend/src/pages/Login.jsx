@@ -2,11 +2,11 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Truck, MapPin, ShieldCheck, ArrowRight, Lock, User, AlertCircle } from 'lucide-react';
+import notify from '../utils/notifications';
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { login, user } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -20,12 +20,13 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setIsSubmitting(true);
         const success = await login(username.trim(), password);
         if (!success) {
-            setError('Credenciales inválidas. Por favor, intenta de nuevo.');
+            notify.error('Credenciales inválidas. Por favor, intenta de nuevo.');
             setIsSubmitting(false);
+        } else {
+            notify.success(`¡Bienvenido de nuevo!`);
         }
     };
 
@@ -101,12 +102,6 @@ const Login = () => {
                 {/* Tarjeta de Formulario (Glassmorphism) */}
                 <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl shadow-2xl shadow-black/50 animate-fade-in delay-100 opacity-0">
                     
-                    {error && (
-                        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-6 flex items-center gap-3 text-sm animate-fade-in">
-                            <AlertCircle size={18} />
-                            <span>{error}</span>
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Campo de Usuario */}

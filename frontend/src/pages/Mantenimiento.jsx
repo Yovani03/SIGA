@@ -19,6 +19,7 @@ import {
   Loader2,
   Ticket as TicketIcon
 } from 'lucide-react';
+import notify from '../utils/notifications';
 import { Link } from 'react-router-dom';
 import ProyeccionesMantenimiento from './ProyeccionesMantenimiento';
 
@@ -83,13 +84,14 @@ const Mantenimiento = () => {
       await api.post(`ordenes-trabajo/${ordenACompletar.id}/completar/`, {
         tickets: ticketsSeleccionados
       });
+      notify.success("Unidad reintegrada correctamente");
       setShowCompletarModal(false);
       setOrdenACompletar(null);
       setTicketsSeleccionados([]);
       fetchData();
     } catch (err) {
       console.error("Error al completar:", err);
-      alert(err.response?.data?.error || "Error al completar la orden");
+      notify.error(err.response?.data?.error || "Error al completar la orden");
     } finally {
       setFormLoading(false);
     }
@@ -100,6 +102,7 @@ const Mantenimiento = () => {
     setFormLoading(true);
     try {
       await api.post('ordenes-trabajo/', formData);
+      notify.success("Orden de trabajo creada");
       setShowModal(false);
       setFormData({
         unidad: '',
@@ -110,7 +113,7 @@ const Mantenimiento = () => {
       fetchData();
     } catch (err) {
       console.error("Error al crear orden:", err);
-      alert("Error al guardar la orden de trabajo");
+      notify.error("Error al guardar la orden de trabajo");
     } finally {
       setFormLoading(false);
     }
@@ -122,13 +125,13 @@ const Mantenimiento = () => {
       fetchData();
     } catch (err) {
       console.error("Error al actualizar estatus:", err);
-      alert("Error al actualizar estatus");
+      notify.error("Error al actualizar estatus");
     }
   };
 
   const handlePausar = async () => {
     if (!motivoEspera) {
-      alert("Debe seleccionar un motivo de espera.");
+      notify.info("Debe seleccionar un motivo de espera.");
       return;
     }
     setFormLoading(true);

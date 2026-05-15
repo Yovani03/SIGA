@@ -15,6 +15,7 @@ import {
   Info,
   Search
 } from 'lucide-react';
+import notify from '../utils/notifications';
 
 const Spinner = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -30,8 +31,6 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const [proveedores, setProveedores] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
     fecha: '',
@@ -98,22 +97,21 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(false);
     setGeneratedFolio('');
 
     try {
       const res = await api.post('tickets/', formData);
-      setSuccess(true);
+      notify.success(`Ticket registrado: ${res.data.folio_interno}`);
       setGeneratedFolio(res.data.folio_interno);
       
       if (onSuccess) {
-        setTimeout(() => onSuccess(res.data), 3000);
+        onSuccess(res.data);
       }
       setFormData({ fecha: '', monto: '', unidad: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
       setBusquedaUnidad('');
     } catch (err) {
-      setError(err.response?.data ? JSON.stringify(err.response.data) : "Error al guardar el ticket");
+      console.error("Error al guardar ticket:", err);
+      notify.error("Error al guardar el ticket");
     } finally {
       setLoading(false);
     }
@@ -307,25 +305,6 @@ const AltaTicket = ({ onSuccess, onClose }) => {
         </div>
 
         <div className="space-y-6">
-          {success && (
-            <div className="bg-emerald-500/10 border border-emerald-500/50 rounded-xl p-6 flex flex-col items-center text-center gap-4 text-emerald-400 animate-in zoom-in duration-300">
-              <CheckCircle size={48} />
-              <div>
-                <p className="font-bold text-base">¡Ticket registrado con éxito!</p>
-                <p className="text-white text-3xl font-black font-mono mt-2 bg-emerald-500/20 px-6 py-3 rounded-2xl border border-emerald-500/30 inline-block shadow-lg">
-                  {generatedFolio}
-                </p>
-                <p className="text-xs text-emerald-400/70 mt-3 font-bold uppercase tracking-widest">ANOTA ESTE FOLIO EN LA NOTA FÍSICA</p>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-rose-500/10 border border-rose-500/50 rounded-xl p-4 flex items-center gap-3 text-rose-400">
-              <AlertCircle size={20} />
-              <span className="font-semibold text-sm truncate">{error}</span>
-            </div>
-          )}
 
           <button
             disabled={loading}
