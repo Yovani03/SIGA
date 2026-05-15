@@ -48,7 +48,8 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     rfc_emisor: '',
     razon_social_emisor: '',
     categoria: 'Otro',
-    unidades: []
+    unidades: [],
+    detalles_unidades: []
   });
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
@@ -111,7 +112,8 @@ const AltaFactura = ({ onSuccess, onClose }) => {
             ticket: value,
             monto: ticket.monto,
             unidad: ticket.unidad || '',
-            unidades: ticket.unidades || [], // Sincronizar múltiples unidades
+            unidades: ticket.unidades || [],
+            detalles_unidades: ticket.detalles_unidades || (ticket.unidades || []).map(uId => ({ unidad: uId, monto: '' })),
             producto: ticket.producto || '',
             taller: ticket.taller || '',
             proveedor: ticket.proveedor || '',
@@ -148,16 +150,16 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       return;
     }
 
-    if (name === 'categoria') {
-      setFormData(prev => ({ ...prev, categoria: value }));
-      return;
-    }
-
     if (name === 'unidad' && value) {
       const uId = parseInt(value);
       setFormData(prev => {
         if (!prev.unidades.includes(uId)) {
-          return { ...prev, unidad: value, unidades: [...prev.unidades, uId] };
+          return { 
+            ...prev, 
+            unidad: value, 
+            unidades: [...prev.unidades, uId],
+            detalles_unidades: [...prev.detalles_unidades, { unidad: uId, monto: '' }]
+          };
         }
         return { ...prev, unidad: value };
       });
@@ -188,6 +190,15 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     }
   };
 
+  const handleDetalleChange = (unidadId, monto) => {
+    setFormData(prev => ({
+      ...prev,
+      detalles_unidades: prev.detalles_unidades.map(d => 
+        d.unidad === unidadId ? { ...d, monto } : d
+      )
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -209,6 +220,17 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
     if (formData.archivo_escaneado) data.append('archivo_escaneado', formData.archivo_escaneado);
 
+    // Enviar detalles de unidades como JSON string si el backend lo soporta o desglosado
+    if (formData.unidades.length > 1) {
+      const totalDetalles = formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0);
+      if (Math.abs(totalDetalles - parseFloat(formData.monto)) > 0.01) {
+        setError(`La suma de los montos por unidad ($${totalDetalles.toFixed(2)}) debe ser igual al monto total ($${parseFloat(formData.monto).toFixed(2)})`);
+        setLoading(false);
+        return;
+      }
+      data.append('detalles_unidades', JSON.stringify(formData.detalles_unidades));
+    }
+
     try {
       await api.post('facturas/', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -217,7 +239,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [] });
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
       setBusquedaTicket('');
       setBusquedaUnidad('');
     } catch (err) {
@@ -261,46 +283,48 @@ const AltaFactura = ({ onSuccess, onClose }) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-8 shadow-xl">
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
               <label className="block text-xs font-bold text-amber-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
                 <TicketIcon size={14} /> ¿Relacionar con un Ticket? (Opcional)
               </label>
               
-              <div className="relative mb-3">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <Search className="text-amber-500/40" size={12} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <Search className="text-amber-500/40" size={12} />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar folio o descripción..."
+                    value={busquedaTicket}
+                    onChange={(e) => setBusquedaTicket(e.target.value)}
+                    className="w-full bg-slate-950/50 border border-amber-500/20 rounded-lg pl-8 pr-4 py-3 text-[10px] text-white placeholder:text-amber-500/30 focus:border-amber-500/50 outline-none transition-all"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Buscar folio o descripción..."
-                  value={busquedaTicket}
-                  onChange={(e) => setBusquedaTicket(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-amber-500/20 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-white placeholder:text-amber-500/30 focus:border-amber-500/50 outline-none transition-all"
-                />
-              </div>
 
-              <select
-                name="ticket"
-                value={formData.ticket}
-                onChange={handleChange}
-                className="w-full bg-slate-950 border border-amber-500/30 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
-              >
-                <option value="">
-                  {busquedaTicket 
-                    ? `Resultados (${ticketsFiltrados.length})` 
-                    : ticketsPendientes.length > 0 
-                      ? `Seleccionar Ticket (${ticketsPendientes.length} pendientes)` 
-                      : 'No hay tickets pendientes'}
-                </option>
-                {ticketsFiltrados.map(t => (
-                  <option key={t.id} value={t.id}>{t.folio_interno} - {t.descripcion || 'Sin descripción'} (${t.monto})</option>
-                ))}
-              </select>
+                <select
+                  name="ticket"
+                  value={formData.ticket}
+                  onChange={handleChange}
+                  className="w-full bg-slate-950 border border-amber-500/30 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
+                >
+                  <option value="">
+                    {busquedaTicket 
+                      ? `Resultados (${ticketsFiltrados.length})` 
+                      : ticketsPendientes.length > 0 
+                        ? `Seleccionar Ticket (${ticketsPendientes.length} pendientes)` 
+                        : 'No hay tickets pendientes'}
+                  </option>
+                  {ticketsFiltrados.map(t => (
+                    <option key={t.id} value={t.id}>{t.folio_interno} - {t.descripcion || 'Sin descripción'} (${t.monto})</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Hash size={14} /> Folio de Factura
@@ -315,6 +339,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Store size={14} /> Taller / Proveedor
@@ -326,7 +351,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
                 >
-                  <option value="">Selecciona Taller o Proveedor...</option>
+                  <option value="">Seleccionar...</option>
                   {entidades.map(e => (
                     <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`}>
                       {e.nombre} ({e.tipo === 'taller' ? 'Taller' : 'Proveedor'})
@@ -334,9 +359,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   ))}
                 </select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Hash size={14} /> RFC Emisor
@@ -350,6 +373,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Store size={14} /> Razón Social Emisor
@@ -359,45 +383,43 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   name="razon_social_emisor"
                   value={formData.razon_social_emisor}
                   onChange={handleChange}
-                  placeholder="Nombre de la empresa facturadora"
+                  placeholder="Nombre de la empresa"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                <Info size={14} /> Descripción Breve
-              </label>
-              <input
-                required
-                type="text"
-                name="descripcion"
-                value={formData.descripcion}
-                onChange={handleChange}
-                placeholder="Ej. Compra de llantas para unidad 101"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                <Calendar size={14} /> Fecha de Emisión
-              </label>
-              <input
-                required
-                type="date"
-                name="fecha"
-                value={formData.fecha}
-                onChange={handleChange}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <DollarSign size={14} /> Monto
+                  <Info size={14} /> Descripción Breve
+                </label>
+                <input
+                  required
+                  type="text"
+                  name="descripcion"
+                  value={formData.descripcion}
+                  onChange={handleChange}
+                  placeholder="Ej. Compra de llantas"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <Calendar size={14} /> Fecha de Emisión
+                </label>
+                <input
+                  required
+                  type="date"
+                  name="fecha"
+                  value={formData.fecha}
+                  onChange={handleChange}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <DollarSign size={14} /> Monto Total
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
@@ -416,7 +438,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Truck size={14} /> Unidad
+                  <Truck size={14} /> Unidad(es)
                 </label>
                 <div className="relative mb-2">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -436,43 +458,29 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none text-sm"
                 >
-                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
+                  <option value="">Seleccionar...</option>
                   {vehiculosFiltrados.map(v => (
-                    <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>
+                    <option key={v.id} value={v.id}>{v.numero_economico}</option>
                   ))}
                 </select>
-
                 {formData.unidades.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-1">
                     {formData.unidades.map(uId => {
                       const v = vehiculos.find(veh => veh.id === uId);
                       return v ? (
-                        <div key={uId} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold">
+                        <div key={uId} className="flex items-center gap-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full text-[9px] font-black">
                           {v.numero_economico}
-                          <button 
-                            type="button" 
-                            onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId) }))}
-                            className="hover:text-white transition-colors"
-                          >
-                            ✕
-                          </button>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId), detalles_unidades: prev.detalles_unidades.filter(d => d.unidad !== uId) }))}>✕</button>
                         </div>
                       ) : null;
                     })}
                   </div>
                 )}
-                {formData.unidades.length > 1 && (
-                  <p className="text-[10px] text-amber-500 font-bold mt-2 italic flex items-center gap-1">
-                    <Info size={10} /> Gasto compartido entre {formData.unidades.length} unidades.
-                  </p>
-                )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Tag size={14} /> Categoría del Gasto
+                  <Tag size={14} /> Categoría
                 </label>
                 <select
                   required
@@ -481,7 +489,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
                 >
-                  <option value="Otro">Selecciona una categoría...</option>
+                  <option value="Otro">Seleccionar...</option>
                   <option value="Administrativo">Administrativo</option>
                   <option value="Mantenimiento y Refacciones">Mantenimiento y Refacciones</option>
                   <option value="Llantas">Llantas</option>
@@ -491,6 +499,50 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                 </select>
               </div>
             </div>
+
+            {formData.unidades.length > 1 && (
+              <div className="mt-2 space-y-6 bg-slate-950/50 p-6 rounded-3xl border border-amber-500/20 animate-in slide-in-from-top-2 duration-300 w-full">
+                <div className="flex items-center justify-between border-b border-amber-500/10 pb-4">
+                  <p className="text-[12px] text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
+                    <Info size={16} /> Desglose de Gastos por Unidad
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Suma Total:</span>
+                    <span className={`text-sm font-black px-4 py-1.5 rounded-full ${
+                      Math.abs(formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0) - parseFloat(formData.monto || 0)) < 0.01
+                      ? 'text-emerald-400 bg-emerald-400/10'
+                      : 'text-rose-400 bg-rose-400/10'
+                    }`}>
+                      ${formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col gap-4">
+                  {formData.detalles_unidades.map((detalle) => {
+                    const v = vehiculos.find(veh => veh.id === detalle.unidad);
+                    return v ? (
+                      <div key={detalle.unidad} className="flex items-center gap-4 bg-slate-900/80 p-3 rounded-2xl border border-slate-800 hover:border-amber-500/30 transition-all">
+                        <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 shrink-0 min-w-[80px] text-center">
+                          <span className="text-xs font-black text-white">{v.numero_economico}</span>
+                        </div>
+                        <div className="relative flex-grow">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={detalle.monto}
+                            onChange={(e) => handleDetalleChange(detalle.unidad, e.target.value)}
+                            placeholder="0.00"
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white focus:border-blue-500 outline-none transition-all font-mono"
+                          />
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
         </div>
 
         <div className="space-y-6">

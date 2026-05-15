@@ -476,7 +476,7 @@ const Facturacion = () => {
 
       {showAltaModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-4xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-blue-500/5">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-6xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-blue-500/5">
             <AltaFactura 
               onSuccess={handleAltaSuccess} 
               onClose={() => setShowAltaModal(false)} 
@@ -533,7 +533,16 @@ const Facturacion = () => {
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es) Asignada(s)</p>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {selectedFactura.unidades_info?.length > 1 ? (
+                        {selectedFactura.detalles_unidades?.length > 0 ? (
+                          <div className="space-y-2 mt-1 w-full">
+                            {selectedFactura.detalles_unidades.map(detalle => (
+                              <div key={detalle.id} className="flex justify-between items-center bg-purple-600/10 border border-purple-500/20 px-3 py-1.5 rounded-xl">
+                                <span className="text-purple-400 text-[10px] font-black uppercase">{detalle.unidad_nombre}</span>
+                                <span className="text-white text-xs font-bold">${parseFloat(detalle.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : selectedFactura.unidades_info?.length > 1 ? (
                           selectedFactura.unidades_info.map(uEco => (
                             <span key={uEco} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold">
                               {uEco}

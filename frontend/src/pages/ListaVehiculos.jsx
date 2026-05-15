@@ -174,8 +174,19 @@ const ListaVehiculos = () => {
     setLoadingFacturas(true);
     try {
       const res = await api.get('facturas/');
-      const filtered = res.data.filter(f => f.unidad === vehiculoId);
+      const filtered = res.data.reduce((acc, f) => {
+        // Buscar si esta unidad tiene un monto asignado específicamente
+        const detalle = f.detalles_unidades?.find(d => d.unidad === vehiculoId);
+        if (detalle) {
+          acc.push({ ...f, monto_especifico: detalle.monto, es_compartida: true });
+        } else if (f.unidad === vehiculoId) {
+          // Si es la unidad principal y no hay desglose, mostramos el total
+          acc.push({ ...f, monto_especifico: f.monto, es_compartida: (f.unidades_info?.length > 1) });
+        }
+        return acc;
+      }, []);
       setVehiculoFacturas(filtered);
+      setFacturas(filtered); // Sincronizar con el estado que usa el modal
       return filtered;
     } catch (err) {
       console.error("Error cargando facturas", err);
@@ -615,8 +626,13 @@ const ListaVehiculos = () => {
                           <p className="text-white font-mono text-base lg:text-lg font-bold truncate">{f.folio}</p>
                         </div>
                         <div className="text-right shrink-0 ml-4">
-                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto</p>
-                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">${f.monto}</p>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto {f.es_compartida ? '(Asignado)' : ''}</p>
+                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">
+                            ${parseFloat(f.monto_especifico || f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          {f.es_compartida && (
+                            <p className="text-[8px] text-purple-400 font-bold uppercase mt-1">Factura Compartida</p>
+                          )}
                         </div>
                       </div>
                       

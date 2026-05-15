@@ -203,3 +203,23 @@ class Factura(models.Model):
 
     def __str__(self):
         return f"{self.folio} - {self.unidad}"
+
+class TicketDetalleUnidad(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='detalles_unidades')
+    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE)
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Detalle de Gasto por Unidad (Ticket)"
+        verbose_name_plural = "Detalles de Gasto por Unidades (Tickets)"
+        unique_together = ('ticket', 'unidad')
+
+class FacturaDetalleUnidad(models.Model):
+    factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='detalles_unidades')
+    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE)
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Detalle de Gasto por Unidad (Factura)"
+        verbose_name_plural = "Detalles de Gasto por Unidades (Facturas)"
+        unique_together = ('factura', 'unidad')

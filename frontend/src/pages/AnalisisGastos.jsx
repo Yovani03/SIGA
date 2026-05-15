@@ -21,12 +21,25 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
   const facturasFiltradas = useMemo(() => {
     if (unidadSeleccionada === 'todas') return facturas;
     const uId = parseInt(unidadSeleccionada);
-    return facturas.filter(f => {
-      // Si la factura tiene múltiples unidades y estamos viendo una unidad específica, 
-      // la excluimos para no inflar el gasto individual (según petición de usuario).
-      if (f.unidades && f.unidades.length > 1) return false;
-      return f.unidad === uId;
-    });
+    
+    return facturas.reduce((acc, f) => {
+      // 1. Verificar si la unidad está en el desglose específico (Nueva lógica)
+      const detalle = f.detalles_unidades?.find(d => d.unidad === uId);
+      if (detalle) {
+        acc.push({ ...f, monto: detalle.monto });
+        return acc;
+      }
+
+      // 2. Lógica de respaldo para datos antiguos o unidad principal sin desglose
+      if (f.unidad === uId) {
+        // Si es la principal y tiene más unidades pero sin desglose, la excluimos para no inflar (comportamiento original)
+        if (f.unidades_info && f.unidades_info.length > 1 && (!f.detalles_unidades || f.detalles_unidades.length === 0)) {
+            return acc;
+        }
+        acc.push(f);
+      }
+      return acc;
+    }, []);
   }, [facturas, unidadSeleccionada]);
 
   const dataPorCategoria = useMemo(() => {
