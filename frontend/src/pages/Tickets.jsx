@@ -69,6 +69,7 @@ const Tickets = () => {
       t.folio_emision.toLowerCase().includes(searchLower) ||
       (t.descripcion && t.descripcion.toLowerCase().includes(searchLower)) ||
       (t.taller_nombre && t.taller_nombre.toLowerCase().includes(searchLower)) ||
+      (t.proveedor_nombre && t.proveedor_nombre.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.placas.toLowerCase().includes(searchLower))
     );
@@ -171,9 +172,14 @@ const Tickets = () => {
           {currentTickets.map((t) => {
             const unidad = getUnidadInfo(t.unidad);
             return (
-              <div key={t.id} className={`bg-slate-900/40 backdrop-blur-sm border ${t.convertido_en_factura ? 'border-slate-800 opacity-75' : 'border-amber-500/30'} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-2xl relative overflow-hidden flex flex-col`}>
+              <div key={t.id} className={`bg-slate-900/40 backdrop-blur-sm border ${t.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : (t.convertido_en_factura ? 'border-slate-800 opacity-75' : 'border-amber-500/30')} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-2xl relative overflow-hidden flex flex-col`}>
+                {t.unidades_info?.length > 1 && (
+                   <div className="absolute top-0 right-0 bg-purple-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest shadow-lg z-20">
+                     Gasto Compartido
+                   </div>
+                )}
                 {t.convertido_en_factura && (
-                   <div className="absolute top-2 right-2 bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest z-10">
+                   <div className={`absolute top-2 right-2 bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest z-10 ${t.unidades_info?.length > 1 ? 'mt-6' : ''}`}>
                      Facturado
                    </div>
                 )}
@@ -183,6 +189,11 @@ const Tickets = () => {
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio Interno</p>
                     <p className="text-amber-400 font-mono text-2xl font-black tracking-tight truncate">{t.folio_interno}</p>
                     <p className="text-slate-400 text-xs mt-1">Físico: <span className="text-slate-200 font-bold">{t.folio_emision}</span></p>
+                    {t.categoria && (
+                      <div className="inline-block bg-amber-600/20 text-amber-500 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-amber-500/20 truncate max-w-full">
+                        {t.categoria}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Monto</p>
@@ -196,9 +207,11 @@ const Tickets = () => {
                       <Truck className="text-amber-500" size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad</p>
-                      <p className="text-white text-sm font-bold truncate">
-                        {unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General'}
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
+                      <p className={`text-sm font-bold truncate ${t.unidades_info?.length > 1 ? 'text-purple-400' : 'text-white'}`}>
+                        {t.unidades_info?.length > 1 
+                          ? `${t.unidades_info.length} Unidades: ${t.unidades_info.join(', ')}` 
+                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
                       </p>
                     </div>
                   </div>
@@ -209,7 +222,7 @@ const Tickets = () => {
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Origen</p>
-                      <p className="text-slate-300 text-sm font-medium">{t.taller_nombre || 'No especificado'}</p>
+                      <p className="text-slate-300 text-sm font-medium">{t.taller_nombre || t.proveedor_nombre || 'No especificado'}</p>
                     </div>
                   </div>
 

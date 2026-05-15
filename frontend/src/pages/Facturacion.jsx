@@ -20,9 +20,13 @@ import {
   Info,
   X,
   Ticket as TicketIcon,
+  TrendingUp,
   Tag
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import AltaFactura from './AltaFactura';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
@@ -33,6 +37,7 @@ const Facturacion = () => {
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showChartsModal, setShowChartsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState('all'); // 'week', 'month', 'year', 'all'
   const [referenceDate, setReferenceDate] = useState(new Date());
@@ -105,6 +110,7 @@ const Facturacion = () => {
       f.folio.toLowerCase().includes(searchLower) ||
       (f.descripcion && f.descripcion.toLowerCase().includes(searchLower)) ||
       (f.taller_nombre && f.taller_nombre.toLowerCase().includes(searchLower)) ||
+      (f.proveedor_nombre && f.proveedor_nombre.toLowerCase().includes(searchLower)) ||
       (f.rfc_emisor && f.rfc_emisor.toLowerCase().includes(searchLower)) ||
       (f.razon_social_emisor && f.razon_social_emisor.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
@@ -128,6 +134,14 @@ const Facturacion = () => {
     count: filteredFacturas.length,
     units: [...new Set(filteredFacturas.map(f => f.unidad))].length
   };
+
+  const chartData = Object.entries(
+    filteredFacturas.reduce((acc, f) => {
+      const cat = f.categoria || f.producto_categoria || 'Otro';
+      acc[cat] = (acc[cat] || 0) + parseFloat(f.monto);
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
@@ -252,13 +266,22 @@ const Facturacion = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-emerald-500/30 transition-colors group">
+        <button 
+          onClick={() => setShowChartsModal(true)}
+          className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-emerald-500/50 transition-all group text-left relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <BarChart3 className="text-emerald-500" size={16} />
+          </div>
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-emerald-500 transition-colors">Total Facturado</p>
           <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
             <DollarSign className="text-emerald-500 shrink-0" size={24} />
             {stats.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </p>
-        </div>
+          <p className="text-[10px] text-emerald-500/50 font-bold mt-2 flex items-center gap-1 group-hover:text-emerald-400 transition-colors">
+            <TrendingUp size={10} /> Ver análisis por categoría
+          </p>
+        </button>
         <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-blue-500/30 transition-colors group">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors">Comprobantes</p>
           <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
@@ -320,8 +343,13 @@ const Facturacion = () => {
                   setSelectedFactura(f);
                   setShowDetailModal(true);
                 }}
-                className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-blue-500 transition-all group shadow-2xl flex flex-col relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                className={`bg-slate-900/40 backdrop-blur-sm border ${f.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : 'border-slate-800'} rounded-3xl p-6 hover:border-blue-500 transition-all group shadow-2xl flex flex-col relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98]`}
               >
+                {f.unidades_info?.length > 1 && (
+                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest shadow-lg">
+                    Gasto Compartido
+                  </div>
+                )}
                 <div className="flex justify-between items-start mb-6">
                   <div className="min-w-0">
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio</p>
@@ -331,7 +359,12 @@ const Facturacion = () => {
                         Tk: {f.ticket_folio_interno}
                       </p>
                     )}
-                    {f.producto_nombre && (
+                    {f.categoria && (
+                      <div className="inline-block bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-blue-500/20 truncate max-w-full">
+                        {f.categoria}
+                      </div>
+                    )}
+                    {!f.categoria && f.producto_nombre && (
                       <div className="inline-block bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-blue-500/20 truncate max-w-full">
                         {f.producto_categoria}: {f.producto_nombre}
                       </div>
@@ -349,9 +382,11 @@ const Facturacion = () => {
                       <Truck className="text-blue-500" size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad</p>
-                      <p className="text-white text-sm font-bold truncate">
-                        {unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General'}
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
+                      <p className={`text-sm font-bold truncate ${f.unidades_info?.length > 1 ? 'text-purple-400' : 'text-white'}`}>
+                        {f.unidades_info?.length > 1 
+                          ? `${f.unidades_info.length} Unidades: ${f.unidades_info.join(', ')}` 
+                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
                       </p>
                     </div>
                   </div>
@@ -362,7 +397,7 @@ const Facturacion = () => {
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
-                      <p className="text-slate-300 text-sm font-medium">{f.taller_nombre || 'No especificado'}</p>
+                      <p className="text-slate-300 text-sm font-medium">{f.taller_nombre || f.proveedor_nombre || 'No especificado'}</p>
                     </div>
                   </div>
 
@@ -496,12 +531,22 @@ const Facturacion = () => {
                       <Truck className="text-blue-500" size={20} />
                     </div>
                     <div>
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad Asignada</p>
-                      <p className="text-white font-bold">
-                        {getUnidadInfo(selectedFactura.unidad) 
-                          ? `${getUnidadInfo(selectedFactura.unidad).numero_economico} (${getUnidadInfo(selectedFactura.unidad).placas})` 
-                          : 'Gasto General'}
-                      </p>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es) Asignada(s)</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {selectedFactura.unidades_info?.length > 1 ? (
+                          selectedFactura.unidades_info.map(uEco => (
+                            <span key={uEco} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                              {uEco}
+                            </span>
+                          ))
+                        ) : (
+                          <p className="text-white font-bold">
+                            {getUnidadInfo(selectedFactura.unidad) 
+                              ? `${getUnidadInfo(selectedFactura.unidad).numero_economico} (${getUnidadInfo(selectedFactura.unidad).placas})` 
+                              : 'Gasto General'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -513,7 +558,7 @@ const Facturacion = () => {
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
-                      <p className="text-white font-bold">{selectedFactura.taller_nombre || 'No especificado'}</p>
+                      <p className="text-white font-bold">{selectedFactura.taller_nombre || selectedFactura.proveedor_nombre || 'No especificado'}</p>
                       {selectedFactura.razon_social_emisor && (
                         <p className="text-slate-400 text-xs mt-1">{selectedFactura.razon_social_emisor}</p>
                       )}
@@ -531,9 +576,13 @@ const Facturacion = () => {
                     <Tag className="text-slate-400" size={20} />
                   </div>
                   <div className="flex-grow">
-                    <p className="text-slate-500 text-[9px] font-bold uppercase">Concepto / Producto</p>
+                    <p className="text-slate-500 text-[9px] font-bold uppercase">Categoría / Concepto</p>
                     <p className="text-white font-bold">
-                      <span className="text-blue-400">{selectedFactura.producto_categoria}:</span> {selectedFactura.producto_nombre || 'No especificado'}
+                      {selectedFactura.categoria || (
+                        <>
+                          <span className="text-blue-400">{selectedFactura.producto_categoria}:</span> {selectedFactura.producto_nombre || 'No especificado'}
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -579,6 +628,67 @@ const Facturacion = () => {
                   SIN DOCUMENTO DIGITALIZADO
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showChartsModal && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-[3rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden">
+            <button 
+              onClick={() => setShowChartsModal(false)}
+              className="absolute top-6 right-6 text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-8">
+              <div className="bg-emerald-500/10 p-3 rounded-2xl">
+                <BarChart3 className="text-emerald-500" size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Análisis de Gastos</h2>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Distribución por Categoría</p>
+              </div>
+            </div>
+
+            <div className="h-80 w-full mb-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="rgba(0,0,0,0)"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', color: '#fff' }}
+                    itemStyle={{ color: '#fff', fontSize: '12px' }}
+                    formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX')}`}
+                  />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              {chartData.map((item, index) => (
+                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800/50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                    <span className="text-xs font-bold text-slate-300">{item.name}</span>
+                  </div>
+                  <span className="text-xs font-black text-white">${item.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

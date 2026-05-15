@@ -25,11 +25,21 @@ class Producto(models.Model):
         return f"{self.nombre} ({self.categoria})"
 
 class Ticket(models.Model):
+    CATEGORIAS = [
+        ('Mantenimiento y Refacciones', 'Mantenimiento y Refacciones'),
+        ('Administrativo', 'Administrativo'),
+        ('Operativo', 'Operativo'),
+        ('Llantas', 'Llantas'),
+        ('Combustible', 'Combustible'),
+        ('Otro', 'Otro'),
+    ]
+
     folio_interno = models.CharField(max_length=50, unique=True, verbose_name="Folio Interno", blank=True)
     folio_emision = models.CharField(max_length=50, verbose_name="Folio de Emisión", blank=True, null=True)
     fecha = models.DateField(verbose_name="Fecha del Ticket")
     monto = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
     descripcion = models.CharField(max_length=255, blank=True, null=True, verbose_name="Descripción Breve")
+    categoria = models.CharField(max_length=50, choices=CATEGORIAS, default='Otro', verbose_name="Categoría")
     taller = models.ForeignKey(
         Taller,
         on_delete=models.SET_NULL,
@@ -38,13 +48,27 @@ class Ticket(models.Model):
         related_name='tickets_facturacion',
         verbose_name="Taller/Origen"
     )
+    proveedor = models.ForeignKey(
+        'proveedores.Proveedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets_facturacion',
+        verbose_name="Proveedor"
+    )
     unidad = models.ForeignKey(
         UnidadTractocamion, 
         on_delete=models.SET_NULL, 
         null=True,
         blank=True,
         related_name='tickets',
-        verbose_name="Unidad"
+        verbose_name="Unidad Principal"
+    )
+    unidades = models.ManyToManyField(
+        UnidadTractocamion,
+        blank=True,
+        related_name='tickets_multiples',
+        verbose_name="Unidades Relacionadas"
     )
     producto = models.ForeignKey(
         Producto,
@@ -92,6 +116,7 @@ class Factura(models.Model):
     monto = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
     folio = models.CharField(max_length=50, unique=True, verbose_name="Folio de Factura")
     descripcion = models.CharField(max_length=255, blank=True, null=True, verbose_name="Descripción Breve")
+    categoria = models.CharField(max_length=50, choices=Ticket.CATEGORIAS, default='Otro', verbose_name="Categoría")
     taller = models.ForeignKey(
         Taller,
         on_delete=models.SET_NULL,
@@ -99,6 +124,14 @@ class Factura(models.Model):
         blank=True,
         related_name='facturas_facturacion',
         verbose_name="Taller/Origen"
+    )
+    proveedor = models.ForeignKey(
+        'proveedores.Proveedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='facturas',
+        verbose_name="Proveedor"
     )
     rfc_emisor = models.CharField(max_length=13, blank=True, null=True, verbose_name="RFC Emisor")
     razon_social_emisor = models.CharField(max_length=255, blank=True, null=True, verbose_name="Razón Social Emisor")
@@ -108,7 +141,13 @@ class Factura(models.Model):
         null=True,
         blank=True,
         related_name='facturas',
-        verbose_name="Unidad"
+        verbose_name="Unidad Principal"
+    )
+    unidades = models.ManyToManyField(
+        UnidadTractocamion,
+        blank=True,
+        related_name='facturas_multiples',
+        verbose_name="Unidades Relacionadas"
     )
     producto = models.ForeignKey(
         Producto,
@@ -144,13 +183,17 @@ class Factura(models.Model):
                 fecha=self.fecha,
                 monto=self.monto,
                 descripcion=f"Auto-generado por Factura {self.folio}. {self.descripcion or ''}"[:255],
+                categoria=self.categoria,
                 taller=self.taller,
+                proveedor=self.proveedor,
                 unidad=self.unidad,
                 producto=self.producto,
                 convertido_en_factura=True
             )
-            # Opcionalmente, no duplicamos el archivo escaneado para ahorrar espacio, 
-            # pero el ticket quedará vinculado y se podrá ver desde la factura.
+            # Vincular unidades ManyToMany
+            if self.pk:
+                nuevo_ticket.unidades.set(self.unidades.all())
+            
             self.ticket = nuevo_ticket
 
         if self.ticket:

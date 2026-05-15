@@ -27,6 +27,8 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const [vehiculos, setVehiculos] = useState([]);
   const [productos, setProductos] = useState([]);
   const [talleres, setTalleres] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -37,7 +39,10 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     unidad: '',
     producto: '',
     taller: '',
-    descripcion: ''
+    proveedor: '',
+    descripcion: '',
+    categoria: 'Otro',
+    unidades: []
   });
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
@@ -47,18 +52,46 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     Promise.all([
       api.get('vehiculos/'),
       api.get('productos/'),
-      api.get('talleres/')
+      api.get('talleres/'),
+      api.get('proveedores/')
     ])
-    .then(([vehiculosRes, productosRes, talleresRes]) => {
+    .then(([vehiculosRes, productosRes, talleresRes, proveedoresRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTalleres(talleresRes.data);
+      setProveedores(proveedoresRes.data);
+      setEntidades([
+        ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
+        ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
+      ]);
     })
     .catch(err => console.error("Error cargando datos:", err));
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'entidad' && value) {
+      const [tipo, id] = value.split('_');
+      setFormData(prev => ({
+        ...prev,
+        taller: tipo === 'taller' ? id : '',
+        proveedor: tipo === 'proveedor' ? id : ''
+      }));
+      return;
+    } else if (name === 'entidad' && !value) {
+      setFormData(prev => ({ ...prev, taller: '', proveedor: '' }));
+      return;
+    }
+    if (name === 'unidad' && value) {
+      const uId = parseInt(value);
+      setFormData(prev => {
+        if (!prev.unidades.includes(uId)) {
+          return { ...prev, unidad: value, unidades: [...prev.unidades, uId] };
+        }
+        return { ...prev, unidad: value };
+      });
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -77,8 +110,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         setTimeout(() => onSuccess(res.data), 3000);
       }
-      setFormData({ fecha: '', monto: '', unidad: '', producto: '', taller: '', descripcion: '' });
-      setCategoriaSeleccionada('');
+      setFormData({ fecha: '', monto: '', unidad: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
       setBusquedaUnidad('');
     } catch (err) {
       setError(err.response?.data ? JSON.stringify(err.response.data) : "Error al guardar el ticket");
@@ -144,14 +176,16 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 </label>
                 <select
                   required
-                  name="taller"
-                  value={formData.taller}
+                  name="entidad"
+                  value={formData.taller ? `taller_${formData.taller}` : formData.proveedor ? `proveedor_${formData.proveedor}` : ''}
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
                 >
-                  <option value="">Selecciona origen...</option>
-                  {talleres.map(t => (
-                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  <option value="">Selecciona Taller o Proveedor...</option>
+                  {entidades.map(e => (
+                    <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`}>
+                      {e.nombre} ({e.tipo === 'taller' ? 'Taller' : 'Proveedor'})
+                    </option>
                   ))}
                 </select>
               </div>
@@ -214,55 +248,58 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
                 >
-                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Sin unidad asignada'}</option>
+                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
                   {vehiculosFiltrados.map(v => (
                     <option key={v.id} value={v.id}>{v.numero_economico}</option>
                   ))}
                 </select>
+
+                {formData.unidades.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {formData.unidades.map(uId => {
+                      const v = vehiculos.find(veh => veh.id === uId);
+                      return v ? (
+                        <div key={uId} className="flex items-center gap-2 bg-amber-600/20 text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-bold">
+                          {v.numero_economico}
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId) }))}
+                            className="hover:text-white transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+                {formData.unidades.length > 1 && (
+                  <p className="text-[10px] text-amber-500 font-bold mt-2 italic flex items-center gap-1">
+                    <Info size={10} /> Nota compartida entre {formData.unidades.length} unidades.
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Tag size={14} /> Categoría
-                </label>
-                <select
-                  value={categoriaSeleccionada}
-                  onChange={(e) => {
-                    setCategoriaSeleccionada(e.target.value);
-                    setFormData(prev => ({ ...prev, producto: '' }));
-                  }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
-                >
-                  <option value="">Todas las categorías...</option>
-                  {[...new Set(productos.map(p => p.categoria))]
-                    .filter(cat => cat !== 'Combustible')
-                    .sort()
-                    .map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Tag size={14} /> Producto
+                  <Tag size={14} /> Categoría del Ticket
                 </label>
                 <select
                   required
-                  name="producto"
-                  value={formData.producto}
+                  name="categoria"
+                  value={formData.categoria}
                   onChange={handleChange}
-                  disabled={!categoriaSeleccionada}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
                 >
-                  <option value="">{categoriaSeleccionada ? 'Selecciona un producto...' : 'Primero elige categoría'}</option>
-                  {productos
-                    .filter(p => p.categoria === categoriaSeleccionada)
-                    .map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
+                  <option value="Otro">Selecciona una categoría...</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Mantenimiento y Refacciones">Mantenimiento y Refacciones</option>
+                  <option value="Llantas">Llantas</option>
+                  <option value="Operativo">Operativo</option>
+                  <option value="Combustible">Combustible</option>
+                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>

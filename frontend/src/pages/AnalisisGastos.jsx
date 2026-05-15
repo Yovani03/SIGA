@@ -20,13 +20,22 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
 
   const facturasFiltradas = useMemo(() => {
     if (unidadSeleccionada === 'todas') return facturas;
-    return facturas.filter(f => f.unidad === parseInt(unidadSeleccionada));
+    const uId = parseInt(unidadSeleccionada);
+    return facturas.filter(f => {
+      // Si la factura tiene múltiples unidades y estamos viendo una unidad específica, 
+      // la excluimos para no inflar el gasto individual (según petición de usuario).
+      if (f.unidades && f.unidades.length > 1) return false;
+      return f.unidad === uId;
+    });
   }, [facturas, unidadSeleccionada]);
 
   const dataPorCategoria = useMemo(() => {
     const categorias = {};
     facturasFiltradas.forEach(f => {
-      const cat = f.producto_categoria || 'Sin Categoría';
+      let cat = f.categoria || f.producto_categoria || 'Sin Categoría';
+      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
+        cat = 'Mantenimiento y Refacciones';
+      }
       const monto = parseFloat(f.monto);
       if (!categorias[cat]) categorias[cat] = 0;
       categorias[cat] += monto;
@@ -41,7 +50,11 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
       const mesAnio = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!meses[mesAnio]) meses[mesAnio] = { name: mesAnio, total: 0 };
       
-      const cat = f.producto_categoria || 'Sin Categoría';
+      let cat = f.categoria || f.producto_categoria || 'Sin Categoría';
+      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
+        cat = 'Mantenimiento y Refacciones';
+      }
+
       if (!meses[mesAnio][cat]) meses[mesAnio][cat] = 0;
       
       meses[mesAnio][cat] += parseFloat(f.monto);

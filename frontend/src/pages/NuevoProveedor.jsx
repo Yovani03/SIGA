@@ -9,7 +9,9 @@ const NuevoProveedor = ({ onSuccess, onClose }) => {
     telefono: '',
     email: '',
     direccion: '',
-    sitio_web: ''
+    sitio_web: '',
+    rfc: '',
+    razon_social: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -98,6 +100,31 @@ const NuevoProveedor = ({ onSuccess, onClose }) => {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">RFC</label>
+            <input
+              type="text"
+              name="rfc"
+              value={formData.rfc}
+              onChange={handleChange}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all"
+              placeholder="Ej. ABC123456T1"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Razón Social</label>
+            <input
+              type="text"
+              name="razon_social"
+              value={formData.razon_social}
+              onChange={handleChange}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all"
+              placeholder="Nombre fiscal de la empresa"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

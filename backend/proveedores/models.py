@@ -13,6 +13,8 @@ class Proveedor(models.Model):
 
     nombre = models.CharField(max_length=200)
     categoria = models.CharField(max_length=50, choices=CATEGORIAS)
+    rfc = models.CharField(max_length=13, blank=True, null=True, verbose_name="RFC")
+    razon_social = models.CharField(max_length=255, blank=True, null=True, verbose_name="Razón Social")
     telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)

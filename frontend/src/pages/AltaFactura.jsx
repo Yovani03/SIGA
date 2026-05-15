@@ -28,6 +28,8 @@ const AltaFactura = ({ onSuccess, onClose }) => {
   const [productos, setProductos] = useState([]);
   const [ticketsPendientes, setTicketsPendientes] = useState([]);
   const [talleres, setTalleres] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -40,10 +42,13 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     producto: '',
     ticket: '',
     taller: '',
+    proveedor: '',
     descripcion: '',
     archivo_escaneado: null,
     rfc_emisor: '',
-    razon_social_emisor: ''
+    razon_social_emisor: '',
+    categoria: 'Otro',
+    unidades: []
   });
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
@@ -55,13 +60,19 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       api.get('vehiculos/'),
       api.get('productos/'),
       api.get('tickets/pendientes/'),
-      api.get('talleres/')
+      api.get('talleres/'),
+      api.get('proveedores/')
     ])
-    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes]) => {
+    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTicketsPendientes(ticketsRes.data);
       setTalleres(talleresRes.data);
+      setProveedores(proveedoresRes.data);
+      setEntidades([
+        ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
+        ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
+      ]);
     })
     .catch(err => console.error("Error cargando datos:", err));
   }, []);
@@ -72,49 +83,85 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     if (name === 'ticket' && value) {
       const ticket = ticketsPendientes.find(t => t.id === parseInt(value));
       if (ticket) {
-        const producto = productos.find(p => p.id === ticket.producto);
-        if (producto) {
-          setCategoriaSeleccionada(producto.categoria);
-        }
-
-        let ticketRfc = prev.rfc_emisor;
-        let ticketRazon = prev.razon_social_emisor;
-
-        if (ticket.taller) {
-          const tallerTicket = talleres.find(t => t.id === ticket.taller);
-          if (tallerTicket) {
-            ticketRfc = tallerTicket.rfc || ticketRfc;
-            ticketRazon = tallerTicket.razon_social || ticketRazon;
+        setFormData(prev => {
+          const producto = productos.find(p => p.id === ticket.producto);
+          if (producto) {
+            setCategoriaSeleccionada(producto.categoria);
           }
-        }
 
-        setFormData(prev => ({ 
-          ...prev, 
-          ticket: value,
-          monto: ticket.monto,
-          unidad: ticket.unidad || '',
-          producto: ticket.producto || '',
-          taller: ticket.taller || '',
-          descripcion: ticket.descripcion || '',
-          fecha: ticket.fecha,
-          rfc_emisor: ticketRfc,
-          razon_social_emisor: ticketRazon
-        }));
+          let ticketRfc = prev.rfc_emisor;
+          let ticketRazon = prev.razon_social_emisor;
+
+          if (ticket.taller) {
+            const tallerTicket = talleres.find(t => t.id === ticket.taller);
+            if (tallerTicket) {
+              ticketRfc = tallerTicket.rfc || ticketRfc;
+              ticketRazon = tallerTicket.razon_social || ticketRazon;
+            }
+          } else if (ticket.proveedor) {
+            const provTicket = proveedores.find(p => p.id === ticket.proveedor);
+            if (provTicket) {
+              ticketRfc = provTicket.rfc || ticketRfc;
+              ticketRazon = provTicket.razon_social || ticketRazon;
+            }
+          }
+
+          return { 
+            ...prev, 
+            ticket: value,
+            monto: ticket.monto,
+            unidad: ticket.unidad || '',
+            unidades: ticket.unidades || [], // Sincronizar múltiples unidades
+            producto: ticket.producto || '',
+            taller: ticket.taller || '',
+            proveedor: ticket.proveedor || '',
+            descripcion: ticket.descripcion || '',
+            fecha: ticket.fecha,
+            rfc_emisor: ticketRfc,
+            razon_social_emisor: ticketRazon
+          };
+        });
         return;
       }
     }
 
-    if (name === 'taller' && value) {
-      const tallerObj = talleres.find(t => t.id === parseInt(value));
-      if (tallerObj) {
+    if (name === 'entidad' && value) {
+      const [tipo, id] = value.split('_');
+      const entidadObj = entidades.find(e => e.tipo === tipo && e.id === parseInt(id));
+      if (entidadObj) {
         setFormData(prev => ({
           ...prev,
-          taller: value,
-          rfc_emisor: tallerObj.rfc || prev.rfc_emisor || '',
-          razon_social_emisor: tallerObj.razon_social || prev.razon_social_emisor || ''
+          taller: tipo === 'taller' ? id : '',
+          proveedor: tipo === 'proveedor' ? id : '',
+          rfc_emisor: entidadObj.rfc || prev.rfc_emisor || '',
+          razon_social_emisor: entidadObj.razon_social || prev.razon_social_emisor || ''
         }));
         return;
       }
+    } else if (name === 'entidad' && !value) {
+      setFormData(prev => ({ ...prev, taller: '', proveedor: '' }));
+      return;
+    }
+
+    if (name === 'categoria') {
+      setFormData(prev => ({ ...prev, categoria: value }));
+      return;
+    }
+
+    if (name === 'categoria') {
+      setFormData(prev => ({ ...prev, categoria: value }));
+      return;
+    }
+
+    if (name === 'unidad' && value) {
+      const uId = parseInt(value);
+      setFormData(prev => {
+        if (!prev.unidades.includes(uId)) {
+          return { ...prev, unidad: value, unidades: [...prev.unidades, uId] };
+        }
+        return { ...prev, unidad: value };
+      });
+      return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -153,8 +200,10 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     data.append('folio', formData.folio);
     data.append('descripcion', formData.descripcion);
     if (formData.taller) data.append('taller', formData.taller);
+    if (formData.proveedor) data.append('proveedor', formData.proveedor);
     if (formData.unidad) data.append('unidad', formData.unidad);
-    if (formData.producto) data.append('producto', formData.producto);
+    formData.unidades.forEach(uId => data.append('unidades', uId));
+    if (formData.categoria) data.append('categoria', formData.categoria);
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
@@ -168,8 +217,7 @@ const AltaFactura = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '' });
-      setCategoriaSeleccionada('');
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [] });
       setBusquedaTicket('');
       setBusquedaUnidad('');
     } catch (err) {
@@ -179,10 +227,12 @@ const AltaFactura = ({ onSuccess, onClose }) => {
     }
   };
 
-  const ticketsFiltrados = ticketsPendientes.filter(t => 
-    t.folio_interno.toLowerCase().includes(busquedaTicket.toLowerCase()) ||
-    (t.descripcion && t.descripcion.toLowerCase().includes(busquedaTicket.toLowerCase()))
-  );
+  const ticketsFiltrados = ticketsPendientes.filter(t => {
+    const folio = (t.folio_interno || '').toLowerCase();
+    const desc = (t.descripcion || '').toLowerCase();
+    const search = busquedaTicket.toLowerCase();
+    return folio.includes(search) || desc.includes(search);
+  });
 
   const vehiculosFiltrados = vehiculos.filter(v => 
     v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
@@ -237,7 +287,13 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                 onChange={handleChange}
                 className="w-full bg-slate-950 border border-amber-500/30 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
               >
-                <option value="">-- {busquedaTicket ? `Resultados (${ticketsFiltrados.length})` : 'No relacionar'} --</option>
+                <option value="">
+                  {busquedaTicket 
+                    ? `Resultados (${ticketsFiltrados.length})` 
+                    : ticketsPendientes.length > 0 
+                      ? `Seleccionar Ticket (${ticketsPendientes.length} pendientes)` 
+                      : 'No hay tickets pendientes'}
+                </option>
                 {ticketsFiltrados.map(t => (
                   <option key={t.id} value={t.id}>{t.folio_interno} - {t.descripcion || 'Sin descripción'} (${t.monto})</option>
                 ))}
@@ -265,14 +321,16 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                 </label>
                 <select
                   required
-                  name="taller"
-                  value={formData.taller}
+                  name="entidad"
+                  value={formData.taller ? `taller_${formData.taller}` : formData.proveedor ? `proveedor_${formData.proveedor}` : ''}
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
                 >
-                  <option value="">Selecciona taller...</option>
-                  {talleres.map(t => (
-                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  <option value="">Selecciona Taller o Proveedor...</option>
+                  {entidades.map(e => (
+                    <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`}>
+                      {e.nombre} ({e.tipo === 'taller' ? 'Taller' : 'Proveedor'})
+                    </option>
                   ))}
                 </select>
               </div>
@@ -378,55 +436,58 @@ const AltaFactura = ({ onSuccess, onClose }) => {
                   onChange={handleChange}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none text-sm"
                 >
-                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Sin unidad asignada'}</option>
+                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
                   {vehiculosFiltrados.map(v => (
                     <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>
                   ))}
                 </select>
+
+                {formData.unidades.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {formData.unidades.map(uId => {
+                      const v = vehiculos.find(veh => veh.id === uId);
+                      return v ? (
+                        <div key={uId} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold">
+                          {v.numero_economico}
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId) }))}
+                            className="hover:text-white transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+                {formData.unidades.length > 1 && (
+                  <p className="text-[10px] text-amber-500 font-bold mt-2 italic flex items-center gap-1">
+                    <Info size={10} /> Gasto compartido entre {formData.unidades.length} unidades.
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Tag size={14} /> Categoría
-                </label>
-                <select
-                  value={categoriaSeleccionada}
-                  onChange={(e) => {
-                    setCategoriaSeleccionada(e.target.value);
-                    setFormData(prev => ({ ...prev, producto: '' }));
-                  }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
-                >
-                  <option value="">Todas las categorías...</option>
-                  {[...new Set(productos.map(p => p.categoria))]
-                    .filter(cat => cat !== 'Combustible')
-                    .sort()
-                    .map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Tag size={14} /> Producto
+                  <Tag size={14} /> Categoría del Gasto
                 </label>
                 <select
                   required
-                  name="producto"
-                  value={formData.producto}
+                  name="categoria"
+                  value={formData.categoria}
                   onChange={handleChange}
-                  disabled={!categoriaSeleccionada}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
                 >
-                  <option value="">{categoriaSeleccionada ? 'Selecciona un producto...' : 'Primero elige categoría'}</option>
-                  {productos
-                    .filter(p => p.categoria === categoriaSeleccionada)
-                    .map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
+                  <option value="Otro">Selecciona una categoría...</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Mantenimiento y Refacciones">Mantenimiento y Refacciones</option>
+                  <option value="Llantas">Llantas</option>
+                  <option value="Operativo">Operativo</option>
+                  <option value="Combustible">Combustible</option>
+                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>
