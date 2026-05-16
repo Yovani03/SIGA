@@ -89,11 +89,11 @@ const Tickets = () => {
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-2xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <TicketIcon className="text-amber-500 shrink-0" size={32} />
             Control de Tickets
           </h1>
-          <p className="text-slate-400 mt-1 text-sm lg:text-lg">Gestión de notas simples y folios físicos.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm lg:text-lg">Gestión de notas simples y folios físicos.</p>
         </div>
         
         <button 
@@ -106,16 +106,16 @@ const Tickets = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Pendientes de Facturar</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Clock className="text-amber-500 shrink-0" size={24} />
             {tickets.filter(t => !t.convertido_en_factura).length}
           </p>
         </div>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Monto Pendiente</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <DollarSign className="text-emerald-500 shrink-0" size={24} />
             {tickets
               .filter(t => !t.convertido_en_factura)
@@ -123,9 +123,9 @@ const Tickets = () => {
               .toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl sm:col-span-2 lg:col-span-1">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl sm:col-span-2 lg:col-span-1 shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Ya Facturados</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <CheckCircle2 className="text-blue-500 shrink-0" size={24} />
             {tickets.filter(t => t.convertido_en_factura).length}
           </p>
@@ -141,7 +141,7 @@ const Tickets = () => {
           placeholder="Buscar folio, descripción, taller, unidad o placas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-amber-500 outline-none transition-all text-lg placeholder:text-slate-600 shadow-xl"
+          className="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all text-lg placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-xl"
         />
       </div>
 
@@ -151,12 +151,12 @@ const Tickets = () => {
           <p className="text-slate-400 font-medium">Cargando tickets...</p>
         </div>
       ) : filteredTickets.length === 0 ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
-          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <TicketIcon className="text-slate-600" size={40} />
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6 shadow-sm">
+          <div className="bg-slate-50 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <TicketIcon className="text-slate-400 dark:text-slate-600" size={40} />
           </div>
-          <h3 className="text-2xl font-bold text-white">No se encontraron tickets</h3>
-          <p className="text-slate-400 max-w-md mx-auto">
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">No se encontraron tickets</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {searchTerm ? `No hay resultados para "${searchTerm}".` : "Aún no has registrado tickets o notas simples."}
           </p>
         </div>
@@ -165,7 +165,7 @@ const Tickets = () => {
           {currentTickets.map((t) => {
             const unidad = getUnidadInfo(t.unidad);
             return (
-              <div key={t.id} className={`bg-slate-900/40 backdrop-blur-sm border ${t.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : (t.convertido_en_factura ? 'border-slate-800 opacity-75' : 'border-amber-500/30')} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-2xl relative overflow-hidden flex flex-col`}>
+              <div key={t.id} className={`bg-white dark:bg-slate-900/40 backdrop-blur-sm border ${t.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : (t.convertido_en_factura ? 'border-slate-200 dark:border-slate-800 opacity-75 grayscale-[0.3]' : 'border-amber-500/30')} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-lg dark:shadow-2xl relative overflow-hidden flex flex-col`}>
                 {t.unidades_info?.length > 1 && (
                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest shadow-lg z-20">
                      Gasto Compartido
@@ -190,13 +190,13 @@ const Tickets = () => {
                 </div>
 
                 <div className="space-y-4 flex-grow">
-                  <div className="flex items-center gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50">
                     <div className="bg-amber-600/10 p-2 rounded-lg shrink-0">
                       <Truck className="text-amber-500" size={18} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
-                      <p className={`text-sm font-bold truncate ${t.unidades_info?.length > 1 ? 'text-purple-400' : 'text-white'}`}>
+                      <p className={`text-sm font-bold truncate ${t.unidades_info?.length > 1 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-900 dark:text-white'}`}>
                         {t.unidades_info?.length > 1 
                           ? `${t.unidades_info.length} Unidades: ${t.unidades_info.join(', ')}` 
                           : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
@@ -205,29 +205,29 @@ const Tickets = () => {
                   </div>
 
                   <div className="flex items-start gap-3 px-1">
-                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
-                      <Store className="text-slate-400" size={14} />
+                    <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700">
+                      <Store className="text-slate-400 dark:text-slate-400" size={14} />
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Origen</p>
-                      <p className="text-slate-300 text-sm font-medium">{t.taller_nombre || t.proveedor_nombre || 'No especificado'}</p>
+                      <p className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t.taller_nombre || t.proveedor_nombre || 'No especificado'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 px-1">
-                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
-                      <Info className="text-slate-400" size={14} />
+                    <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700">
+                      <Info className="text-slate-400 dark:text-slate-400" size={14} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Descripción</p>
-                      <p className="text-slate-300 text-sm italic truncate" title={t.descripcion}>
+                      <p className="text-slate-600 dark:text-slate-300 text-sm italic truncate" title={t.descripcion}>
                         {t.descripcion || 'Sin descripción'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
                     <Calendar size={14} className="text-slate-600" />
                     {new Date(t.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -295,7 +295,7 @@ const Tickets = () => {
 
       {showAltaModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-amber-500/5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-amber-500/5">
             <AltaTicket 
               onSuccess={handleAltaSuccess} 
               onClose={() => setShowAltaModal(false)} 

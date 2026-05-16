@@ -115,7 +115,7 @@ const Facturacion = () => {
     const unidad = getUnidadInfo(f.unidad);
     const searchLower = searchTerm.toLowerCase();
     return (
-      f.folio.toLowerCase().includes(searchLower) ||
+      f.folio.includes(searchTerm) ||
       (f.descripcion && f.descripcion.toLowerCase().includes(searchLower)) ||
       (f.taller_nombre && f.taller_nombre.toLowerCase().includes(searchLower)) ||
       (f.proveedor_nombre && f.proveedor_nombre.toLowerCase().includes(searchLower)) ||
@@ -155,11 +155,11 @@ const Facturacion = () => {
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-2xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <FilePlus className="text-blue-500 shrink-0" size={32} />
             Facturación
           </h1>
-          <p className="text-slate-400 mt-1 text-sm lg:text-lg">Gestión de comprobantes fiscales y gastos generales.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm lg:text-lg">Gestión de comprobantes fiscales y gastos generales.</p>
         </div>
         
         <button 
@@ -173,7 +173,7 @@ const Facturacion = () => {
 
       {/* Date Filter Selector and Specific Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-        <div className="flex bg-slate-900/80 p-1 rounded-2xl border border-slate-800 w-full max-w-md backdrop-blur-xl">
+        <div className="flex bg-white dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md backdrop-blur-xl shadow-sm">
           {[
             { id: 'week', label: 'Semana' },
             { id: 'month', label: 'Mes' },
@@ -186,7 +186,7 @@ const Facturacion = () => {
               className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
                 dateRange === r.id 
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-                  : 'text-slate-500 hover:text-slate-300'
+                  : 'text-slate-500 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-300'
               }`}
             >
               {r.label.toUpperCase()}
@@ -196,20 +196,20 @@ const Facturacion = () => {
 
         {/* Specific Selectors based on Range */}
         {dateRange === 'week' && (
-          <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1 rounded-2xl animate-in slide-in-from-left-2 duration-300 shadow-sm">
             <button 
               onClick={() => {
                 const d = new Date(referenceDate);
                 d.setDate(d.getDate() - 7);
                 setReferenceDate(d);
               }}
-              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 dark:hover:text-white rounded-xl transition-all"
             >
               <ChevronLeft size={20} />
             </button>
             <div className="px-4 py-2 flex flex-col items-center min-w-[140px]">
               <span className="text-[9px] text-blue-500 font-bold uppercase tracking-tighter leading-none mb-1">Semana del</span>
-              <span className="text-white text-xs font-black">
+              <span className="text-slate-900 dark:text-white text-xs font-black">
                 {(() => {
                   const day = referenceDate.getDay();
                   const diffToFriday = (day + 2) % 7;
@@ -227,7 +227,7 @@ const Facturacion = () => {
                 d.setDate(d.getDate() + 7);
                 setReferenceDate(d);
               }}
-              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl transition-all"
             >
               <ChevronRight size={20} />
             </button>
@@ -235,35 +235,35 @@ const Facturacion = () => {
         )}
 
         {dateRange === 'month' && (
-          <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+          <div className="flex items-center gap-3 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300 shadow-sm">
             <select 
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="bg-slate-950 text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
             >
               {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
-                <option key={i} value={i}>{m}</option>
+                <option key={i} value={i} className="bg-white dark:bg-slate-900">{m}</option>
               ))}
             </select>
             <select 
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="bg-slate-950 text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-bold py-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
             >
               {[2024, 2025, 2026].map(y => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y} className="bg-white dark:bg-slate-900">{y}</option>
               ))}
             </select>
           </div>
         )}
 
         {dateRange === 'year' && (
-          <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-2xl animate-in slide-in-from-left-2 duration-300 shadow-sm">
             <Calendar size={16} className="text-blue-500 ml-2" />
             <select 
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="bg-transparent text-white text-xs font-black py-2 px-4 focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-900 dark:text-white text-xs font-black py-2 px-4 focus:outline-none cursor-pointer"
             >
               {[2024, 2025, 2026].map(y => (
                 <option key={y} value={y}>{y}</option>
@@ -276,13 +276,13 @@ const Facturacion = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <button 
           onClick={() => setShowChartsModal(true)}
-          className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-emerald-500/50 transition-all group text-left relative overflow-hidden"
+          className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg hover:border-emerald-500/50 transition-all group text-left relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
             <BarChart3 className="text-emerald-500" size={16} />
           </div>
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-emerald-500 transition-colors">Total Facturado</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <DollarSign className="text-emerald-500 shrink-0" size={24} />
             {stats.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </p>
@@ -290,16 +290,16 @@ const Facturacion = () => {
             <TrendingUp size={10} /> Ver análisis por categoría
           </p>
         </button>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg hover:border-blue-500/30 transition-colors group">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg hover:border-blue-500/30 transition-colors group">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors">Comprobantes</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Hash className="text-blue-500 shrink-0" size={24} />
             {stats.count}
           </p>
         </div>
-        <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl shadow-lg sm:col-span-2 lg:col-span-1 hover:border-indigo-500/30 transition-colors group">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg sm:col-span-2 lg:col-span-1 hover:border-indigo-500/30 transition-colors group">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 group-hover:text-indigo-500 transition-colors">Unidades con Gasto</p>
-          <p className="text-2xl lg:text-3xl font-black text-white flex items-center gap-2">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Truck className="text-indigo-500 shrink-0" size={24} />
             {stats.units}
           </p>
@@ -315,7 +315,7 @@ const Facturacion = () => {
           placeholder="Buscar folio, descripción, taller, RFC, emisor, unidad o placa..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-blue-500 outline-none transition-all text-lg placeholder:text-slate-600 shadow-xl"
+          className="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all text-lg placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-xl"
         />
       </div>
 
@@ -325,12 +325,12 @@ const Facturacion = () => {
           <p className="text-slate-400 font-medium">Cargando facturación...</p>
         </div>
       ) : filteredFacturas.length === 0 ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
-          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <FilePlus className="text-slate-600" size={40} />
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6 shadow-xl">
+          <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <FilePlus className="text-slate-400 dark:text-slate-600" size={40} />
           </div>
-          <h3 className="text-2xl font-bold text-white">No se encontraron facturas</h3>
-          <p className="text-slate-400 max-w-md mx-auto">
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">No se encontraron facturas</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {searchTerm ? `No hay resultados para "${searchTerm}".` : "Aún no has registrado facturas."}
           </p>
         </div>
@@ -345,7 +345,7 @@ const Facturacion = () => {
                   setSelectedFactura(f);
                   setShowDetailModal(true);
                 }}
-                className={`bg-slate-900/40 backdrop-blur-sm border ${f.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : 'border-slate-800'} rounded-3xl p-6 hover:border-blue-500 transition-all group shadow-2xl flex flex-col relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98]`}
+                className={`bg-white dark:bg-slate-900/40 backdrop-blur-sm border ${f.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : 'border-slate-200 dark:border-slate-800'} rounded-3xl p-6 hover:border-blue-500 transition-all group shadow-lg dark:shadow-2xl flex flex-col relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98]`}
               >
                 {f.unidades_info?.length > 1 && (
                   <div className="absolute top-0 right-0 bg-purple-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest shadow-lg">
@@ -354,8 +354,8 @@ const Facturacion = () => {
                 )}
                 <div className="flex justify-between items-start mb-6">
                   <div className="min-w-0">
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio</p>
-                    <p className="text-white font-mono text-2xl font-black tracking-tight truncate">{f.folio}</p>
+                    <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio</p>
+                    <p className="text-slate-900 dark:text-white font-mono text-2xl font-black tracking-tight truncate">{f.folio}</p>
                     {f.ticket_folio_interno && (
                       <p className="text-amber-500 text-[11px] font-mono font-bold mt-1 bg-amber-500/10 px-2 py-0.5 rounded-md inline-block border border-amber-500/20">
                         Tk: {f.ticket_folio_interno}
@@ -379,13 +379,13 @@ const Facturacion = () => {
                 </div>
 
                 <div className="space-y-4 flex-grow">
-                  <div className="flex items-center gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50">
                     <div className="bg-blue-600/10 p-2 rounded-lg shrink-0">
                       <Truck className="text-blue-500" size={18} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
-                      <p className={`text-sm font-bold truncate ${f.unidades_info?.length > 1 ? 'text-purple-400' : 'text-white'}`}>
+                      <p className={`text-sm font-bold truncate ${f.unidades_info?.length > 1 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-900 dark:text-white'}`}>
                         {f.unidades_info?.length > 1 
                           ? `${f.unidades_info.length} Unidades: ${f.unidades_info.join(', ')}` 
                           : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
@@ -394,29 +394,29 @@ const Facturacion = () => {
                   </div>
 
                   <div className="flex items-start gap-3 px-1">
-                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
-                      <Store className="text-slate-400" size={14} />
+                    <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5 border border-slate-100 dark:border-slate-700">
+                      <Store className="text-slate-400 dark:text-slate-400" size={14} />
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
-                      <p className="text-slate-300 text-sm font-medium">{f.taller_nombre || f.proveedor_nombre || 'No especificado'}</p>
+                      <p className="text-slate-700 dark:text-slate-300 text-sm font-medium">{f.taller_nombre || f.proveedor_nombre || 'No especificado'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 px-1">
-                    <div className="bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5">
-                      <Info className="text-slate-400" size={14} />
+                    <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg shrink-0 mt-0.5 border border-slate-100 dark:border-slate-700">
+                      <Info className="text-slate-400 dark:text-slate-400" size={14} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Descripción</p>
-                      <p className="text-slate-300 text-sm italic truncate" title={f.descripcion}>
+                      <p className="text-slate-600 dark:text-slate-300 text-sm italic truncate" title={f.descripcion}>
                         {f.descripcion || 'Sin descripción'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
                         <Calendar size={14} className="text-slate-600" />
@@ -488,7 +488,7 @@ const Facturacion = () => {
 
       {showAltaModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-6xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-blue-500/5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-6xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar">
             <AltaFactura 
               onSuccess={handleAltaSuccess} 
               onClose={() => {
@@ -496,27 +496,28 @@ const Facturacion = () => {
                 setEditingFactura(null);
               }} 
               factura={editingFactura}
+              existingFacturas={facturas}
             />
           </div>
         </div>
       )}
       {showDetailModal && selectedFactura && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-0 shadow-2xl relative overflow-hidden shadow-blue-500/5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-0 shadow-2xl relative overflow-hidden shadow-blue-500/5">
             {/* Header del Modal */}
-            <div className="p-8 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="bg-blue-600/10 p-3 rounded-2xl">
                   <FilePlus className="text-blue-500" size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Detalles de Factura</h2>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Detalles de Factura</h2>
                   <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Folio: {selectedFactura.folio}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowDetailModal(false)}
-                className="text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
@@ -533,7 +534,7 @@ const Facturacion = () => {
                 </div>
                 <div className="space-y-1 text-right">
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fecha de Emisión</p>
-                  <p className="text-xl font-bold text-white flex items-center justify-end gap-2">
+                  <p className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-end gap-2">
                     <Calendar size={18} className="text-blue-500" />
                     {new Date(selectedFactura.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
@@ -541,7 +542,7 @@ const Facturacion = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800/50 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="bg-blue-600/10 p-2 rounded-xl">
                       <Truck className="text-blue-500" size={20} />
@@ -553,19 +554,19 @@ const Facturacion = () => {
                           <div className="space-y-2 mt-1 w-full">
                             {selectedFactura.detalles_unidades.map(detalle => (
                               <div key={detalle.id} className="flex justify-between items-center bg-purple-600/10 border border-purple-500/20 px-3 py-1.5 rounded-xl">
-                                <span className="text-purple-400 text-[10px] font-black uppercase">{detalle.unidad_nombre}</span>
-                                <span className="text-white text-xs font-bold">${parseFloat(detalle.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase">{detalle.unidad_nombre}</span>
+                                <span className="text-slate-900 dark:text-white text-xs font-bold">${parseFloat(detalle.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                               </div>
                             ))}
                           </div>
                         ) : selectedFactura.unidades_info?.length > 1 ? (
                           selectedFactura.unidades_info.map(uEco => (
-                            <span key={uEco} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                            <span key={uEco} className="bg-purple-600/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold">
                               {uEco}
                             </span>
                           ))
                         ) : (
-                          <p className="text-white font-bold">
+                          <p className="text-slate-900 dark:text-white font-bold">
                             {getUnidadInfo(selectedFactura.unidad) 
                               ? `${getUnidadInfo(selectedFactura.unidad).numero_economico} (${getUnidadInfo(selectedFactura.unidad).placas})` 
                               : 'Gasto General'}
@@ -576,16 +577,16 @@ const Facturacion = () => {
                   </div>
                 </div>
 
-                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800/50 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="bg-slate-800 p-2 rounded-xl">
-                      <Store className="text-slate-400" size={20} />
+                    <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
+                      <Store className="text-slate-500 dark:text-slate-400" size={20} />
                     </div>
                     <div>
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Taller / Proveedor</p>
-                      <p className="text-white font-bold">{selectedFactura.taller_nombre || selectedFactura.proveedor_nombre || 'No especificado'}</p>
+                      <p className="text-slate-900 dark:text-white font-bold">{selectedFactura.taller_nombre || selectedFactura.proveedor_nombre || 'No especificado'}</p>
                       {selectedFactura.razon_social_emisor && (
-                        <p className="text-slate-400 text-xs mt-1">{selectedFactura.razon_social_emisor}</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{selectedFactura.razon_social_emisor}</p>
                       )}
                       {selectedFactura.rfc_emisor && (
                         <p className="text-slate-500 text-xs font-mono mt-0.5">RFC: {selectedFactura.rfc_emisor}</p>
@@ -595,17 +596,17 @@ const Facturacion = () => {
                 </div>
               </div>
 
-              <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800/50 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="bg-slate-800 p-2 rounded-xl">
-                    <Tag className="text-slate-400" size={20} />
+                  <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
+                    <Tag className="text-slate-500 dark:text-slate-400" size={20} />
                   </div>
                   <div className="flex-grow">
                     <p className="text-slate-500 text-[9px] font-bold uppercase">Categoría / Concepto</p>
-                    <p className="text-white font-bold">
+                    <p className="text-slate-900 dark:text-white font-bold">
                       {selectedFactura.categoria || (
                         <>
-                          <span className="text-blue-400">{selectedFactura.producto_categoria}:</span> {selectedFactura.producto_nombre || 'No especificado'}
+                          <span className="text-blue-600 dark:text-blue-400">{selectedFactura.producto_categoria}:</span> {selectedFactura.producto_nombre || 'No especificado'}
                         </>
                       )}
                     </p>
@@ -629,14 +630,14 @@ const Facturacion = () => {
                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 px-1">
                   <Info size={14} /> Descripción del Gasto
                 </p>
-                <div className="bg-slate-950/30 p-5 rounded-2xl border border-slate-800 text-slate-300 italic text-sm leading-relaxed">
+                <div className="bg-slate-50 dark:bg-slate-950/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 italic text-sm leading-relaxed">
                   {selectedFactura.descripcion || 'Sin descripción adicional proporcionada.'}
                 </div>
               </div>
             </div>
 
             {/* Footer del Modal */}
-            <div className="p-8 bg-slate-950/50 border-t border-slate-800 flex gap-4">
+            <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
               {selectedFactura.archivo_escaneado ? (
                 <a 
                   href={selectedFactura.archivo_escaneado} 
@@ -648,7 +649,7 @@ const Facturacion = () => {
                   VISUALIZAR DOCUMENTO ORIGINAL
                 </a>
               ) : (
-                <div className="flex-grow bg-slate-800 text-slate-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-slate-700">
+                <div className="flex-grow bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700">
                   <AlertCircle size={20} />
                   SIN DOCUMENTO DIGITALIZADO
                 </div>
@@ -659,10 +660,10 @@ const Facturacion = () => {
       )}
       {showChartsModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-[3rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden">
             <button 
               onClick={() => setShowChartsModal(false)}
-              className="absolute top-6 right-6 text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors z-10"
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors z-10"
             >
               <X size={20} />
             </button>
@@ -672,7 +673,7 @@ const Facturacion = () => {
                 <BarChart3 className="text-emerald-500" size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Análisis de Gastos</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Análisis de Gastos</h2>
                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Distribución por Categoría</p>
               </div>
             </div>
@@ -706,12 +707,12 @@ const Facturacion = () => {
 
             <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               {chartData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800/50 rounded-xl">
+                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-xs font-bold text-slate-300">{item.name}</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{item.name}</span>
                   </div>
-                  <span className="text-xs font-black text-white">${item.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white">${item.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                 </div>
               ))}
             </div>

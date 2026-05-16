@@ -243,13 +243,13 @@ const Combustibles = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-inner">
+      <div className="flex bg-white dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-sm dark:shadow-inner">
         <button 
           onClick={() => setActiveTab('nuevo')}
           className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'nuevo' 
               ? 'text-white shadow-lg shadow-blue-900/20' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
           }`}
         >
           {activeTab === 'nuevo' && (
@@ -260,11 +260,11 @@ const Combustibles = () => {
           </span>
         </button>
         <button 
-          onClick={() => { setActiveTab('especial'); setError(null); setSuccess(false); }}
+          onClick={() => { setActiveTab('especial'); }}
           className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'especial' 
               ? 'text-white shadow-lg shadow-amber-900/20' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
           }`}
         >
           {activeTab === 'especial' && (
@@ -275,11 +275,11 @@ const Combustibles = () => {
           </span>
         </button>
         <button 
-          onClick={() => { setActiveTab('historial'); setError(null); setSuccess(false); }}
+          onClick={() => { setActiveTab('historial'); }}
           className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
             activeTab === 'historial' 
               ? 'text-white shadow-lg shadow-blue-900/20' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
           }`}
         >
           {activeTab === 'historial' && (
@@ -293,22 +293,22 @@ const Combustibles = () => {
 
       {activeTab === 'nuevo' ? (
         <>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-sm">
             <div>
-              <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <Droplets className="text-blue-500" size={32} />
                 Carga de Combustibles
               </h2>
-              <p className="text-slate-400 mt-1">Registro diario de suministros por unidad</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Registro diario de suministros por unidad</p>
             </div>
             
-            <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-2xl border border-slate-700">
-              <Calendar className="text-blue-400 ml-2" size={20} />
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <Calendar className="text-blue-500 dark:text-blue-400 ml-2" size={20} />
               <input 
                 type="date" 
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="bg-transparent border-none text-white focus:ring-0 cursor-pointer p-2 font-medium"
+                className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium outline-none"
               />
             </div>
           </div>
@@ -330,7 +330,7 @@ const Combustibles = () => {
                     placeholder="0.00"
                     value={precios[fuel.id]}
                     onChange={(e) => setPrecios({...precios, [fuel.id]: e.target.value})}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                    className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">MXN/L</span>
                 </div>
@@ -338,8 +338,8 @@ const Combustibles = () => {
             ))}
           </div>
 
-          <div className="bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden backdrop-blur-xl min-h-[400px] flex flex-col">
-            <div className="p-6 border-b border-slate-800 bg-slate-900/30">
+          <div className="bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden backdrop-blur-xl min-h-[400px] flex flex-col shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
               <div className="relative max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
                 <input 
@@ -351,19 +351,19 @@ const Combustibles = () => {
                 />
                 
                 {busqueda && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
                     {filteredUnidades.length > 0 ? (
                       filteredUnidades.map(u => (
                         <button 
                           key={u.id}
                           onClick={() => handleAddUnidad(u)}
-                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-800 last:border-0 transition-colors group"
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
                         >
                           <div>
-                            <div className="text-white font-bold group-hover:text-blue-400">{u.numero_economico}</div>
+                            <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">{u.numero_economico}</div>
                             <div className="text-xs text-slate-500">{u.placas} - {u.marca}</div>
                           </div>
-                          <Plus size={18} className="text-slate-500 group-hover:text-blue-400" />
+                          <Plus size={18} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                         </button>
                       ))
                     ) : (
@@ -378,7 +378,7 @@ const Combustibles = () => {
               {cargas.length > 0 ? (
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-widest font-bold">
+                    <tr className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">
                       <th className="px-6 py-4">Unidad</th>
                       <th className="px-6 py-4">Combustible</th>
                       <th className="px-6 py-4">Litros</th>
@@ -389,14 +389,14 @@ const Combustibles = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-800">
                     {cargas.map((carga, idx) => (
-                      <tr key={idx} className="group hover:bg-slate-800/30 transition-colors">
+                      <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
+                            <div className="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600 dark:text-blue-500 border border-blue-500/20">
                               <Truck size={20} />
                             </div>
                             <div>
-                              <p className="text-white font-bold">{carga.numero_economico}</p>
+                              <p className="text-slate-900 dark:text-white font-bold">{carga.numero_economico}</p>
                               <p className="text-xs text-slate-500">{carga.placas}</p>
                             </div>
                           </div>
@@ -405,7 +405,7 @@ const Combustibles = () => {
                           <select 
                             value={carga.tipo_combustible}
                             onChange={(e) => updateCarga(idx, 'tipo_combustible', e.target.value)}
-                            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="diesel">Diesel</option>
                             <option value="magna">Magna</option>
@@ -419,7 +419,7 @@ const Combustibles = () => {
                               type="number" 
                               value={carga.litros}
                               onChange={(e) => updateCarga(idx, 'litros', e.target.value)}
-                              className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
                               placeholder="0.0"
                             />
                             <span className="ml-2 text-slate-500 text-xs">L</span>
@@ -434,7 +434,7 @@ const Combustibles = () => {
                                 disabled={carga.ignorar_kilometraje}
                                 value={carga.kilometraje}
                                 onChange={(e) => updateCarga(idx, 'kilometraje', e.target.value ? parseInt(e.target.value) : '')}
-                                className={`w-32 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 ${carga.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                className={`w-32 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 ${carga.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
                                 placeholder="Km actual"
                               />
                               {!carga.ignorar_kilometraje && <Activity className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />}
@@ -451,7 +451,7 @@ const Combustibles = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-white font-medium">
+                          <div className="text-slate-900 dark:text-white font-medium">
                             ${(carga.litros * (precios[carga.tipo_combustible] || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </td>
@@ -478,10 +478,10 @@ const Combustibles = () => {
               )}
             </div>
 
-            <div className="p-8 border-t border-slate-800 bg-slate-900/30 flex items-center justify-between">
+            <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-slate-500 text-sm">Total de unidades</span>
-                <span className="text-white text-2xl font-bold">{cargas.length}</span>
+                <span className="text-slate-500 text-sm font-bold uppercase tracking-wider">Total de unidades</span>
+                <span className="text-slate-900 dark:text-white text-2xl font-black">{cargas.length}</span>
               </div>
 
               <div className="flex items-center gap-4">
@@ -504,17 +504,17 @@ const Combustibles = () => {
         </>
       ) : activeTab === 'especial' ? (
         <div className="space-y-6 max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-amber-500/20 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-amber-500/20 backdrop-blur-xl shadow-sm">
             <div>
-              <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <AlertCircle className="text-amber-500" size={32} />
                 Carga Especial
               </h2>
-              <p className="text-slate-400 mt-1">Registra cargas de múltiples días con fechas y costos personalizados.</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Registra cargas de múltiples días con fechas y costos personalizados.</p>
             </div>
           </div>
 
-          <form onSubmit={handleAddEspecialToList} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6 lg:p-8 space-y-6 backdrop-blur-xl">
+          <form onSubmit={handleAddEspecialToList} className="bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 lg:p-8 space-y-6 backdrop-blur-xl shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Unidad</label>
@@ -522,7 +522,7 @@ const Combustibles = () => {
                   required
                   value={cargaEspecial.unidad}
                   onChange={(e) => setCargaEspecial({...cargaEspecial, unidad: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                 >
                   <option value="">Seleccionar Unidad...</option>
                   {unidades.map(u => (
@@ -538,7 +538,7 @@ const Combustibles = () => {
                   required
                   value={cargaEspecial.fecha}
                   onChange={(e) => setCargaEspecial({...cargaEspecial, fecha: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                 />
               </div>
 
@@ -547,7 +547,7 @@ const Combustibles = () => {
                 <select 
                   value={cargaEspecial.tipo_combustible}
                   onChange={(e) => setCargaEspecial({...cargaEspecial, tipo_combustible: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                 >
                   <option value="diesel">Diesel</option>
                   <option value="magna">Magna</option>
@@ -566,7 +566,7 @@ const Combustibles = () => {
                     step="0.01"
                     value={cargaEspecial.precio_unitario}
                     onChange={(e) => setCargaEspecial({...cargaEspecial, precio_unitario: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                     placeholder="0.00"
                   />
                 </div>
@@ -581,7 +581,7 @@ const Combustibles = () => {
                     step="0.01"
                     value={cargaEspecial.litros}
                     onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pr-8 pl-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                     placeholder="0.00"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">L</span>
@@ -598,12 +598,12 @@ const Combustibles = () => {
                       disabled={cargaEspecial.ignorar_kilometraje}
                       value={cargaEspecial.kilometraje}
                       onChange={(e) => setCargaEspecial({...cargaEspecial, kilometraje: e.target.value})}
-                      className={`w-full bg-slate-950 border border-slate-700 rounded-xl pr-8 pl-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      className={`w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
                       placeholder="Km actual"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs">KM</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">KM</span>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap bg-slate-950 px-3 py-3 rounded-xl border border-slate-700">
+                  <label className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap bg-white dark:bg-slate-950 px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700">
                     <input 
                       type="checkbox"
                       checked={cargaEspecial.ignorar_kilometraje}
@@ -698,29 +698,29 @@ const Combustibles = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-sm">
             <div>
-              <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <History className="text-blue-500" size={32} />
                 Historial de Cargas
               </h2>
-              <p className="text-slate-400 mt-1">Consulta los registros de combustible por fecha</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Consulta los registros de combustible por fecha</p>
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-2xl border border-slate-700">
-                <Filter className="text-blue-400 ml-2" size={20} />
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <Filter className="text-blue-500 dark:text-blue-400 ml-2" size={20} />
                 <input 
                   type="date" 
                   value={fechaHistorial}
                   onChange={(e) => setFechaHistorial(e.target.value)}
-                  className="bg-transparent border-none text-white focus:ring-0 cursor-pointer p-2 font-medium"
+                  className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden backdrop-blur-xl">
+          <div className="bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden backdrop-blur-xl shadow-sm">
             {loadingHistorial ? (
               <div className="flex flex-col items-center justify-center py-24 gap-4">
                 <div className="h-12 w-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
@@ -730,7 +730,7 @@ const Combustibles = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-widest font-bold">
+                    <tr className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">
                       <th className="px-8 py-5">Unidad</th>
                       <th className="px-8 py-5">Combustible</th>
                       <th className="px-8 py-5 text-right">Litros</th>
@@ -745,11 +745,11 @@ const Combustibles = () => {
                       <tr key={idx} className="group hover:bg-blue-600/5 transition-colors">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-slate-800 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                               <Truck size={20} />
                             </div>
                             <div>
-                              <p className="text-white font-bold">{carga.unidad_detalle}</p>
+                              <p className="text-slate-900 dark:text-white font-bold">{carga.unidad_detalle}</p>
                               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">ID: {carga.id}</p>
                             </div>
                           </div>
@@ -770,7 +770,7 @@ const Combustibles = () => {
                           ${carga.precio_unitario}
                         </td>
                         <td className="px-8 py-5 text-right">
-                          <p className="text-emerald-400 font-black text-lg">${parseFloat(carga.monto_total).toLocaleString()}</p>
+                          <p className="text-emerald-600 dark:text-emerald-400 font-black text-lg">${parseFloat(carga.monto_total).toLocaleString()}</p>
                         </td>
                         <td className="px-8 py-5">
                           {carga.ignorar_kilometraje ? (

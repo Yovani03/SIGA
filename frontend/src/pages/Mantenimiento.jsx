@@ -53,7 +53,7 @@ const Mantenimiento = () => {
 
   const [showPausarModal, setShowPausarModal] = useState(false);
   const [ordenAPausar, setOrdenAPausar] = useState(null);
-  const [motivoEspera, setMotivoEspera] = useState('');
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -130,15 +130,15 @@ const Mantenimiento = () => {
   };
 
   const handlePausar = async () => {
-    if (!motivoEspera) {
+    if (!reason) {
       notify.info("Debe seleccionar un motivo de espera.");
       return;
     }
     setFormLoading(true);
-    await handleStatusChange(ordenAPausar.id, 'en espera', { motivo_espera: motivoEspera });
+    await handleStatusChange(ordenAPausar.id, 'en espera', { motivo_espera: reason });
     setShowPausarModal(false);
     setOrdenAPausar(null);
-    setMotivoEspera('');
+    setReason('');
     setFormLoading(false);
   };
 
@@ -156,11 +156,11 @@ const Mantenimiento = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
-            <Wrench className="text-blue-500 shrink-0" size={28} />
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <Wrench className="text-blue-600 dark:text-blue-500 shrink-0" size={28} />
             Mantenimiento
           </h1>
-          <p className="text-slate-400 mt-1 lg:mt-2 text-sm">Gestiona órdenes de trabajo y servicios.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 lg:mt-2 text-sm">Gestiona órdenes de trabajo y servicios.</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
@@ -173,23 +173,23 @@ const Mantenimiento = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Órdenes', value: stats.total, icon: <Hash className="text-blue-400" /> },
-          { label: 'En Espera', value: stats.espera, icon: <AlertCircle className="text-red-400" /> },
-          { label: 'En Proceso', value: stats.proceso, icon: <Clock className="text-amber-400" /> },
-          { label: 'Completadas', value: stats.completados, icon: <CheckCircle2 className="text-emerald-400" /> },
+          { label: 'Total Órdenes', value: stats.total, icon: <Hash className="text-blue-600 dark:text-blue-400" /> },
+          { label: 'En Espera', value: stats.espera, icon: <AlertCircle className="text-rose-600 dark:text-red-400" /> },
+          { label: 'En Proceso', value: stats.proceso, icon: <Clock className="text-amber-600 dark:text-amber-400" /> },
+          { label: 'Completadas', value: stats.completados, icon: <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" /> },
         ].map((s, idx) => (
-          <div key={idx} className="bg-slate-900/50 border border-slate-800 p-5 lg:p-6 rounded-2xl lg:rounded-3xl flex items-center justify-between">
+          <div key={idx} className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-5 lg:p-6 rounded-2xl lg:rounded-3xl flex items-center justify-between shadow-sm">
             <div>
-              <p className="text-slate-500 text-xs lg:text-sm font-medium">{s.label}</p>
-              <p className="text-xl lg:text-2xl font-bold text-white mt-1">{s.value}</p>
+              <p className="text-slate-400 dark:text-slate-500 text-xs lg:text-sm font-medium">{s.label}</p>
+              <p className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1">{s.value}</p>
             </div>
-            <div className="bg-slate-800 p-2.5 lg:p-3 rounded-xl lg:rounded-2xl shrink-0">{s.icon}</div>
+            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 lg:p-3 rounded-xl lg:rounded-2xl shrink-0 border border-slate-100 dark:border-700">{s.icon}</div>
           </div>
         ))}
       </div>
 
       {/* Top Filters */}
-      <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap backdrop-blur-xl shadow-inner">
+      <div className="flex bg-slate-200/50 dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap backdrop-blur-xl shadow-inner">
         {[
           { id: 'todos', label: 'TODOS', count: stats.total },
           { id: 'en proceso', label: 'PROCESO', count: stats.proceso },
@@ -203,7 +203,7 @@ const Mantenimiento = () => {
             className={`relative flex-1 sm:flex-none px-5 py-2.5 rounded-full text-[10px] lg:text-xs font-bold uppercase transition-all duration-300 ease-out overflow-hidden flex items-center justify-center gap-2 ${
               activeTab === tab.id 
                 ? 'text-white shadow-lg shadow-blue-900/20' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/50'
             }`}
           >
             {activeTab === tab.id && (
@@ -212,7 +212,7 @@ const Mantenimiento = () => {
             <span className="relative z-10 flex items-center gap-2">
               {tab.label}
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
-                activeTab === tab.id ? 'bg-black/20 text-blue-100' : 'bg-slate-800 text-slate-300'
+                activeTab === tab.id ? 'bg-black/20 text-blue-100' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
               }`}>
                 {tab.count}
               </span>
@@ -229,15 +229,15 @@ const Mantenimiento = () => {
         {loading ? (
           <div className="text-center py-12"><Spinner /></div>
         ) : filteredOrdenes.length === 0 ? (
-          <div className="text-center py-12 bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-3xl text-slate-500 italic text-sm">No hay reportes en esta categoría.</div>
+          <div className="text-center py-12 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl text-slate-400 dark:text-slate-500 italic text-sm shadow-sm">No hay reportes en esta categoría.</div>
         ) : (
           filteredOrdenes.map(o => (
-            <div key={o.id} className="bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-3xl p-5 lg:p-6 flex flex-col sm:flex-row gap-5 lg:gap-6 items-start sm:items-center hover:border-slate-700 transition-colors">
+            <div key={o.id} className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl p-5 lg:p-6 flex flex-col sm:flex-row gap-5 lg:gap-6 items-start sm:items-center hover:border-blue-500/30 transition-all shadow-sm dark:shadow-none group">
                
                <div className={`p-4 lg:p-5 rounded-full flex-shrink-0 border-2 ${
-                 o.estatus === 'en proceso' ? 'bg-amber-900/10 border-amber-500/20 text-amber-400' :
-                 o.estatus === 'en espera' ? 'bg-red-900/10 border-red-500/20 text-red-400' :
-                 'bg-emerald-900/10 border-emerald-500/20 text-emerald-400'
+                 o.estatus === 'en proceso' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' :
+                 o.estatus === 'en espera' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-red-400' :
+                 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                }`}>
                  {o.estatus === 'completado' ? <CheckCircle2 size={18} /> : 
                   o.estatus === 'en proceso' ? <Clock size={18} /> : <AlertCircle size={18} />}
@@ -246,34 +246,34 @@ const Mantenimiento = () => {
                <div className="flex-1 space-y-3 min-w-0">
                  <div className="flex flex-wrap items-center gap-2">
                    <span className={`px-2.5 py-1 rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-wider ${
-                     o.estatus === 'en proceso' ? 'bg-amber-500/10 text-amber-400' :
-                     o.estatus === 'en espera' ? 'bg-red-500/10 text-red-400' :
-                     'bg-emerald-500/10 text-emerald-400'
+                     o.estatus === 'en proceso' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                     o.estatus === 'en espera' ? 'bg-rose-500/10 text-rose-600 dark:text-red-400' :
+                     'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                    }`}>
                      • {o.estatus}
                    </span>
                    <span className={`px-2.5 py-1 rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-wider ${
-                     o.tipo === 'preventivo' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
+                     o.tipo === 'preventivo' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                    }`}>
                      {o.tipo}
                    </span>
-                   <span className="text-slate-500 text-[10px] font-mono">#{o.folio || `OT-${o.id}`}</span>
+                   <span className="text-slate-400 dark:text-slate-500 text-[10px] font-mono">#{o.folio || `OT-${o.id}`}</span>
                  </div>
-                 <h3 className="text-lg lg:text-2xl font-bold text-white leading-tight">{o.descripcion}</h3>
-                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] lg:text-sm text-slate-400">
+                 <h3 className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{o.descripcion}</h3>
+                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] lg:text-sm text-slate-500 dark:text-slate-400">
                    <div className="flex items-center gap-1.5"><Truck size={14} className="shrink-0"/> <span className="truncate">{o.unidad_nombre}</span></div>
                    <div className="flex items-center gap-1.5"><Calendar size={14} className="shrink-0"/> {new Date(o.fecha_creacion).toLocaleDateString()}</div>
-                   {o.costo_total > 0 && <div className="flex items-center gap-1 text-emerald-400 font-bold"><DollarSign size={14} className="shrink-0"/> {o.costo_total}</div>}
+                   {o.costo_total > 0 && <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-black"><DollarSign size={14} className="shrink-0"/> {o.costo_total}</div>}
                  </div>
                  {o.taller_info && (
-                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3 bg-slate-950 p-3 lg:p-4 rounded-xl border border-slate-800 w-full overflow-hidden">
+                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3 bg-slate-50 dark:bg-slate-950 p-3 lg:p-4 rounded-xl border border-slate-100 dark:border-slate-800 w-full overflow-hidden shadow-inner">
                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                       <div className="bg-blue-500/10 p-2 rounded-lg shrink-0">
-                         <Wrench size={16} className="text-blue-500" />
+                       <div className="bg-blue-600/10 p-2 rounded-lg shrink-0">
+                         <Wrench size={16} className="text-blue-600 dark:text-blue-500" />
                        </div>
                        <div className="min-w-0 flex-1">
-                         <p className="text-xs lg:text-sm font-bold text-white truncate">{o.taller_info.nombre}</p>
-                         <p className="text-[10px] lg:text-xs text-slate-400 truncate mt-0.5">{o.taller_info.direccion}</p>
+                         <p className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white truncate">{o.taller_info.nombre}</p>
+                         <p className="text-[10px] lg:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{o.taller_info.direccion}</p>
                        </div>
                      </div>
                      <a 
@@ -291,21 +291,21 @@ const Mantenimiento = () => {
                <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
                  {o.estatus === 'en proceso' && (
                    <>
-                     <button onClick={() => { setOrdenAPausar(o); setMotivoEspera(''); setShowPausarModal(true); }} className="flex-1 sm:flex-none bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl transition-all text-[10px] lg:text-xs">
+                     <button onClick={() => { setOrdenAPausar(o); setReason(''); setShowPausarModal(true); }} className="flex-1 sm:flex-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold py-2.5 px-4 rounded-xl transition-all text-[10px] lg:text-xs shadow-sm">
                        PAUSAR
                      </button>
-                     <button onClick={() => { setOrdenACompletar(o); setTicketsSeleccionados([]); setShowCompletarModal(true); }} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 lg:py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs">
+                     <button onClick={() => { setOrdenACompletar(o); setTicketsSeleccionados([]); setShowCompletarModal(true); }} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 lg:py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs shadow-lg shadow-emerald-900/20">
                        ALTA <CheckCircle2 size={16}/>
                      </button>
                    </>
                  )}
                  {o.estatus === 'en espera' && (
-                   <button onClick={() => handleStatusChange(o.id, 'en proceso')} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all text-sm">
+                   <button onClick={() => handleStatusChange(o.id, 'en proceso')} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all text-sm shadow-lg shadow-amber-900/20">
                      REANUDAR
                    </button>
                  )}
                  {o.estatus === 'completado' && (
-                   <div className="w-full flex sm:flex-col items-center justify-center gap-2 text-emerald-400 font-bold bg-emerald-900/10 px-4 py-3 rounded-xl border border-emerald-500/20 text-xs">
+                   <div className="w-full flex sm:flex-col items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-4 py-3 rounded-xl border border-emerald-500/20 text-xs">
                      <CheckCircle2 size={18} />
                      OK
                    </div>
@@ -320,68 +320,68 @@ const Mantenimiento = () => {
       {/* Modal Nueva Orden */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
-            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
-              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
-                <Plus className="text-blue-500 shrink-0" size={24} /> Nueva Orden
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
+            <div className="p-5 lg:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/50 sticky top-0 z-10">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                <Plus className="text-blue-600 dark:text-blue-500 shrink-0" size={24} /> Nueva Orden
               </h2>
               <button 
                 onClick={() => setShowModal(false)}
-                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 p-2 rounded-full transition-colors shrink-0 shadow-sm"
               >✕</button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 lg:p-6 space-y-5 lg:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unidad</label>
+                  <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Unidad</label>
                   <select 
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 text-sm shadow-inner cursor-pointer"
                     value={formData.unidad}
                     onChange={(e) => setFormData({...formData, unidad: e.target.value})}
                   >
-                    <option value="">Selecciona Unidad...</option>
+                    <option value="" className="bg-white dark:bg-slate-900">Selecciona Unidad...</option>
                     {vehiculos.filter(v => v.estado === 'operativa' || !v.estado).map(v => (
-                      <option key={v.id} value={v.id}>{v.numero_economico} - {v.marca}</option>
+                      <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico} - {v.marca}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo</label>
+                  <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tipo</label>
                   <select 
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 text-sm shadow-inner cursor-pointer"
                     value={formData.tipo}
                     onChange={(e) => setFormData({...formData, tipo: e.target.value})}
                   >
-                    <option value="correctivo">Correctivo</option>
-                    <option value="preventivo">Preventivo</option>
+                    <option value="correctivo" className="bg-white dark:bg-slate-900">Correctivo</option>
+                    <option value="preventivo" className="bg-white dark:bg-slate-900">Preventivo</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Taller / Mecánico</label>
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Taller / Mecánico</label>
                 <select 
                   required
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 text-sm shadow-inner cursor-pointer"
                   value={formData.taller}
                   onChange={(e) => setFormData({...formData, taller: e.target.value})}
                 >
-                  <option value="">Selecciona Taller...</option>
+                  <option value="" className="bg-white dark:bg-slate-900">Selecciona Taller...</option>
                   {talleres.map(t => (
-                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                    <option key={t.id} value={t.id} className="bg-white dark:bg-slate-900">{t.nombre}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción</label>
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Descripción</label>
                 <textarea 
                   required
                   rows="3"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 text-sm shadow-inner"
                   placeholder="Detalle de la reparación..."
                   value={formData.descripcion}
                   onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
@@ -404,33 +404,33 @@ const Mantenimiento = () => {
       {/* Modal Completar Orden */}
       {showCompletarModal && ordenACompletar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
-            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
-              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
-                <CheckCircle2 className="text-emerald-500 shrink-0" size={24} /> Reintegrar Unidad
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-xl max-h-[95vh] overflow-y-auto shadow-2xl custom-scrollbar">
+            <div className="p-5 lg:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/50 sticky top-0 z-10">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                <CheckCircle2 className="text-emerald-600 dark:text-emerald-500 shrink-0" size={24} /> Reintegrar Unidad
               </h2>
               <button 
                 onClick={() => setShowCompletarModal(false)}
-                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 p-2 rounded-full transition-colors shrink-0 shadow-sm"
               >✕</button>
             </div>
             <div className="p-5 lg:p-6 space-y-6">
-              <p className="text-slate-400 text-sm">Seleccione los tickets asociados a esta reparación para la unidad <span className="font-bold text-white">{ordenACompletar.unidad_nombre}</span>.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">Seleccione los tickets asociados a esta reparación para la unidad <span className="font-bold text-slate-900 dark:text-white">{ordenACompletar.unidad_nombre}</span>.</p>
               
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {tickets.filter(t => t.unidad === ordenACompletar.unidad).length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-8 bg-slate-950 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
-                    <div className="bg-slate-900 p-3 rounded-full">
-                      <TicketIcon className="text-slate-600" size={32} />
+                  <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3 shadow-inner">
+                    <div className="bg-white dark:bg-slate-900 p-3 rounded-full shadow-sm">
+                      <TicketIcon className="text-slate-400 dark:text-slate-600" size={32} />
                     </div>
-                    <p className="text-slate-500 italic text-xs max-w-[250px]">No hay tickets pendientes para esta unidad. Debe registrar un ticket primero.</p>
+                    <p className="text-slate-400 dark:text-slate-500 italic text-xs max-w-[250px]">No hay tickets pendientes para esta unidad. Debe registrar un ticket primero.</p>
                   </div>
                 ) : (
                   tickets.filter(t => t.unidad === ordenACompletar.unidad).map(t => (
                     <label key={t.id} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${
                       ticketsSeleccionados.includes(t.id) 
                         ? 'bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-900/10' 
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-blue-500/50 shadow-sm dark:shadow-none'
                     }`}>
                       <div className="relative flex items-center justify-center">
                         <input 
@@ -450,16 +450,16 @@ const Mantenimiento = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-white font-bold text-sm truncate uppercase tracking-tight">
-                            Folio: <span className="text-blue-400 font-mono">{t.folio_interno}</span>
+                          <p className="text-slate-900 dark:text-white font-bold text-sm truncate uppercase tracking-tight">
+                            Folio: <span className="text-blue-600 dark:text-blue-400 font-mono">{t.folio_interno}</span>
                           </p>
-                          <span className="text-emerald-400 font-black text-sm shrink-0">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-black text-sm shrink-0">
                             ${parseFloat(t.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
-                        <p className="text-slate-500 text-[10px] mt-1 flex items-center gap-2">
+                        <p className="text-slate-400 dark:text-slate-500 text-[10px] mt-1 flex items-center gap-2 font-medium">
                           <Calendar size={12} /> {new Date(t.fecha).toLocaleDateString()}
-                          <span className="text-slate-700">•</span>
+                          <span className="text-slate-300 dark:text-slate-700 font-black">•</span>
                           <span className="truncate">{t.descripcion || 'Sin descripción'}</span>
                         </p>
                       </div>
@@ -484,39 +484,39 @@ const Mantenimiento = () => {
       {/* Modal Pausar / En Espera */}
       {showPausarModal && ordenAPausar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="p-5 lg:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-              <h2 className="text-lg lg:text-xl font-bold text-white flex items-center gap-3">
-                <AlertCircle className="text-red-500 shrink-0" size={24} /> Pausar
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-5 lg:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/50">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                <AlertCircle className="text-rose-600 dark:text-red-500 shrink-0" size={24} /> Pausar
               </h2>
               <button 
                 onClick={() => setShowPausarModal(false)}
-                className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors shrink-0"
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 p-2 rounded-full transition-colors shrink-0 shadow-sm"
               >✕</button>
             </div>
             <div className="p-5 lg:p-6 space-y-6">
-              <p className="text-slate-400 text-sm">¿Por qué se pausará la unidad <span className="font-bold text-white">{ordenAPausar.unidad_nombre}</span>?</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">¿Por qué se pausará la unidad <span className="font-bold text-slate-900 dark:text-white">{ordenAPausar.unidad_nombre}</span>?</p>
               
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Motivo</label>
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Motivo</label>
                 <select 
                   required
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                  value={motivoEspera}
-                  onChange={(e) => setMotivoEspera(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg lg:rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 text-sm shadow-inner cursor-pointer"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
                 >
-                  <option value="">Seleccione el motivo...</option>
-                  <option value="falta_refaccion">Falta de refacción</option>
-                  <option value="taller_lleno">Sin espacio en taller</option>
-                  <option value="falta_presupuesto">Aprobación pendiente</option>
-                  <option value="otro">Otro motivo</option>
+                  <option value="" className="bg-white dark:bg-slate-900">Seleccione el motivo...</option>
+                  <option value="falta_refaccion" className="bg-white dark:bg-slate-900">Falta de refacción</option>
+                  <option value="taller_lleno" className="bg-white dark:bg-slate-900">Sin espacio en taller</option>
+                  <option value="falta_presupuesto" className="bg-white dark:bg-slate-900">Aprobación pendiente</option>
+                  <option value="otro" className="bg-white dark:bg-slate-900">Otro motivo</option>
                 </select>
               </div>
               
               <button 
                 onClick={handlePausar}
-                disabled={formLoading || !motivoEspera}
-                className="w-full py-4 bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                disabled={formLoading || !reason}
+                className="w-full py-4 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
               >
                 {formLoading ? <Spinner /> : <Clock size={20} />}
                 <span>{formLoading ? 'Procesando...' : 'Poner en Espera'}</span>

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 const StatCard = ({ icon, label, value, subValue, trend, color }) => (
-  <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 hover:border-blue-500/30 transition-all duration-500 group relative overflow-hidden shadow-2xl">
+  <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 hover:border-blue-500/30 transition-all duration-500 group relative overflow-hidden shadow-xl dark:shadow-2xl">
     <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full bg-gradient-to-br ${color} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`} />
     <div className="flex justify-between items-start mb-4 relative z-10">
       <div className={`p-4 rounded-2xl bg-opacity-10 shadow-inner ${color}`}>
@@ -35,10 +35,10 @@ const StatCard = ({ icon, label, value, subValue, trend, color }) => (
       )}
     </div>
     <div className="relative z-10">
-      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{label}</p>
-      <h3 className="text-4xl font-black text-white tracking-tighter">{value}</h3>
-      <p className="text-[10px] font-bold text-slate-500 mt-2 flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-slate-700" />
+      <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{label}</p>
+      <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</h3>
+      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
         {subValue}
       </p>
     </div>
@@ -48,17 +48,17 @@ const StatCard = ({ icon, label, value, subValue, trend, color }) => (
 const ActionCard = ({ icon, label, description, color, onClick }) => (
   <button 
     onClick={onClick}
-    className="group relative bg-slate-900/40 hover:bg-slate-800/40 border border-slate-800/50 rounded-[2rem] p-6 transition-all duration-500 flex flex-col items-start gap-4 text-left hover:scale-[1.02] active:scale-[0.98] shadow-xl hover:shadow-blue-900/10 overflow-hidden"
+    className="group relative bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 border border-slate-200 dark:border-slate-800/50 rounded-[2rem] p-6 transition-all duration-500 flex flex-col items-start gap-4 text-left hover:scale-[1.02] active:scale-[0.98] shadow-lg dark:shadow-xl hover:shadow-blue-500/10 dark:hover:shadow-blue-900/10 overflow-hidden"
   >
     <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${color} opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-500 rounded-bl-[100px]`} />
     <div className={`p-4 rounded-2xl ${color} bg-opacity-10 text-opacity-100 group-hover:scale-110 transition-transform duration-500 shadow-inner`}>
       {React.cloneElement(icon, { size: 28, className: color.split(' ')[0].replace('bg-', 'text-') })}
     </div>
     <div>
-      <h4 className="text-lg font-black text-white mb-1 group-hover:text-blue-400 transition-colors">{label}</h4>
-      <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{description}</p>
+      <h4 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">{label}</h4>
+      <p className="text-xs text-slate-500 dark:text-slate-500 font-medium leading-relaxed line-clamp-2">{description}</p>
     </div>
-    <div className="mt-2 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+    <div className="mt-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
       <Plus size={20} />
     </div>
   </button>
@@ -154,7 +154,7 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="h-8 w-1 bg-blue-600 rounded-full" />
-          <h3 className="text-2xl font-black text-white tracking-tight">Acciones Rápidas</h3>
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Acciones Rápidas</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <ActionCard 

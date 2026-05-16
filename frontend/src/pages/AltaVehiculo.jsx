@@ -107,13 +107,13 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
       <div className="flex items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="bg-indigo-600/10 p-3 rounded-2xl">
-            <Truck className="text-indigo-500" size={24} />
+            <Truck className="text-indigo-600 dark:text-indigo-500" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               {vehiculo ? 'Editar Unidad' : 'Alta de Unidad'}
             </h1>
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               {vehiculo ? 'Modifica los datos del camión.' : 'Completa los datos del nuevo camión.'}
             </p>
           </div>
@@ -121,7 +121,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
         {onClose && (
           <button 
             onClick={onClose}
-            className="text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors shadow-sm"
           >
             ✕
           </button>
@@ -131,9 +131,9 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Panel Izquierdo: Información Básica */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-2">
-              <Tag className="text-indigo-500" size={18} />
+          <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-2">
+              <Tag className="text-indigo-600 dark:text-indigo-500" size={18} />
               Detalles de la Unidad
             </h2>
             
@@ -149,7 +149,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   value={formData.numero_economico}
                   onChange={handleChange}
                   placeholder="Ej. T-105"
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-700"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 shadow-sm"
                 />
               </div>
 
@@ -164,7 +164,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   value={formData.placas}
                   onChange={handleChange}
                   placeholder="Ej. 12-AB-34"
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-700"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 shadow-sm"
                 />
               </div>
 
@@ -179,7 +179,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   value={formData.marca_modelo}
                   onChange={handleChange}
                   placeholder="Ej. Kenworth T680"
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-700"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 shadow-sm"
                 />
               </div>
 
@@ -193,7 +193,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   value={formData.numero_vin}
                   onChange={handleChange}
                   placeholder="17 caracteres"
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-700 uppercase"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 uppercase shadow-sm"
                 />
               </div>
 
@@ -208,7 +208,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   value={formData.anio}
                   onChange={handleChange}
                   placeholder="Ej. 2024"
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-700"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 shadow-sm"
                 />
               </div>
 
@@ -216,20 +216,20 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                 <label className="text-xs font-medium text-slate-400 flex items-center gap-2 ml-1">
                   <Truck size={14} className="text-indigo-500" /> Capacidad (Toneladas)
                 </label>
-                <select
+                 <select
                   required
                   name="capacidad"
                   value={formData.capacidad}
                   onChange={handleChange}
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer shadow-sm"
                 >
-                  <option value="0.0">Vehículo Ligero (Auto/Camioneta)</option>
-                  <option value="1.5">1.5 Toneladas</option>
-                  <option value="3.5">3.5 Toneladas</option>
-                  <option value="5.0">5 Toneladas</option>
-                  <option value="8.0">8 Toneladas</option>
-                  <option value="10.0">10 Toneladas</option>
-                  <option value="30.0">Trailer / Full</option>
+                  <option value="0.0" className="bg-white dark:bg-slate-900">Vehículo Ligero (Auto/Camioneta)</option>
+                  <option value="1.5" className="bg-white dark:bg-slate-900">1.5 Toneladas</option>
+                  <option value="3.5" className="bg-white dark:bg-slate-900">3.5 Toneladas</option>
+                  <option value="5.0" className="bg-white dark:bg-slate-900">5 Toneladas</option>
+                  <option value="8.0" className="bg-white dark:bg-slate-900">8 Toneladas</option>
+                  <option value="10.0" className="bg-white dark:bg-slate-900">10 Toneladas</option>
+                  <option value="30.0" className="bg-white dark:bg-slate-900">Trailer / Full</option>
                 </select>
               </div>
 
@@ -242,12 +242,12 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
                   name="tipo_combustible"
                   value={formData.tipo_combustible}
                   onChange={handleChange}
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer shadow-sm"
                 >
-                  <option value="diesel">Diesel</option>
-                  <option value="magna">Gasolina Magna</option>
-                  <option value="premium">Gasolina Premium</option>
-                  <option value="electrico">Eléctrico</option>
+                  <option value="diesel" className="bg-white dark:bg-slate-900">Diesel</option>
+                  <option value="magna" className="bg-white dark:bg-slate-900">Gasolina Magna</option>
+                  <option value="premium" className="bg-white dark:bg-slate-900">Gasolina Premium</option>
+                  <option value="electrico" className="bg-white dark:bg-slate-900">Eléctrico</option>
                 </select>
               </div>
             </div>
@@ -256,7 +256,7 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
 
         {/* Panel Derecho: Imagen y Feedback */}
         <div className="space-y-6">
-          <div className="bg-slate-900/80 border-2 border-dashed border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-center text-center group hover:border-indigo-500 transition-all relative min-h-[300px] overflow-hidden">
+          <div className="bg-white dark:bg-slate-900/80 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-center text-center group hover:border-indigo-500 transition-all relative min-h-[300px] overflow-hidden shadow-sm">
             <input
               type="file"
               onChange={handleFileChange}
@@ -281,11 +281,11 @@ const AltaVehiculo = ({ onSuccess, onClose, vehiculo = null }) => {
             ) : (
               <div className="space-y-3">
                 <div className="bg-indigo-600/10 p-4 rounded-full inline-block group-hover:scale-110 transition-transform duration-300">
-                  <Upload className="text-indigo-500" size={32} />
+                  <Upload className="text-indigo-600 dark:text-indigo-500" size={32} />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-white font-bold text-lg">Foto de la Unidad</p>
-                  <p className="text-slate-500 text-xs max-w-[150px] mx-auto">
+                  <p className="text-slate-900 dark:text-white font-bold text-lg">Foto de la Unidad</p>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs max-w-[150px] mx-auto">
                     Imagen del tractocamión.
                   </p>
                 </div>

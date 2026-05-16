@@ -25,7 +25,7 @@ const Spinner = () => (
   </svg>
 );
 
-const AltaFactura = ({ onSuccess, onClose, factura }) => {
+const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => {
   const [vehiculos, setVehiculos] = useState([]);
   const [productos, setProductos] = useState([]);
   const [ticketsPendientes, setTicketsPendientes] = useState([]);
@@ -57,6 +57,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scannedFiles, setScannedFiles] = useState([]);
+  const [folioStatus, setFolioStatus] = useState({ error: '', warning: '' });
 
   useEffect(() => {
     Promise.all([
@@ -189,6 +190,30 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
         return { ...prev, unidad: value };
       });
       return;
+    }
+
+    if (name === 'folio') {
+      const folioValue = value.trim();
+      let error = '';
+      let warning = '';
+      
+      if (folioValue) {
+        // Check for exact duplicate (case-sensitive as requested)
+        const exactDuplicate = existingFacturas.find(f => f.folio === folioValue && f.id !== factura?.id);
+        if (exactDuplicate) {
+          error = 'Este folio ya existe exactamente igual.';
+        } else {
+          // Check for similar last 6 characters
+          const suffix = folioValue.slice(-6);
+          if (suffix.length >= 4) { // Only check if suffix is significant
+            const suffixMatch = existingFacturas.find(f => f.folio.endsWith(suffix) && f.id !== factura?.id);
+            if (suffixMatch) {
+              warning = `Aviso: Existe la factura ${suffixMatch.folio} que termina igual (${suffix}).`;
+            }
+          }
+        }
+      }
+      setFolioStatus({ error, warning });
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -360,7 +385,11 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
       setBusquedaTicket('');
       setBusquedaUnidad('');
     } catch (err) {
-      notify.error(err.response?.data ? 'Error en los datos enviados' : "Error al guardar la factura");
+      if (err.response?.data?.folio) {
+        notify.error(`El folio ya existe o es inválido: ${err.response.data.folio.join(' ')}`);
+      } else {
+        notify.error(err.response?.data ? 'Error en los datos enviados' : "Error al guardar la factura");
+      }
     } finally {
       setLoading(false);
     }
@@ -386,10 +415,10 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
             <FilePlus className="text-blue-500" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               {factura ? 'Editar Factura' : 'Registro de Factura'}
             </h1>
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               {factura ? `Editando factura con folio ${factura.folio}` : 'Completa los datos para registrar el nuevo documento.'}
             </p>
           </div>
@@ -397,7 +426,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
         {onClose && (
           <button 
             onClick={onClose}
-            className="text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors"
           >
             ✕
           </button>
@@ -405,9 +434,9 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-8 shadow-xl">
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
-              <label className="block text-xs font-bold text-amber-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-8 shadow-xl">
+            <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 dark:border-amber-500/20 rounded-xl p-4 mb-4 shadow-sm">
+              <label className="block text-xs font-bold text-amber-600 dark:text-amber-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
                 <TicketIcon size={14} /> ¿Relacionar con un Ticket? (Opcional)
               </label>
               
@@ -421,7 +450,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                     placeholder="Buscar folio o descripción..."
                     value={busquedaTicket}
                     onChange={(e) => setBusquedaTicket(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-amber-500/20 rounded-lg pl-8 pr-4 py-3 text-[10px] text-white placeholder:text-amber-500/30 focus:border-amber-500/50 outline-none transition-all"
+                    className="w-full bg-white dark:bg-slate-950/50 border border-amber-500/20 rounded-lg pl-8 pr-4 py-3 text-[10px] text-slate-900 dark:text-white placeholder:text-amber-500/40 focus:border-amber-500/50 outline-none transition-all"
                   />
                 </div>
 
@@ -429,9 +458,9 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   name="ticket"
                   value={formData.ticket}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-amber-500/30 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
+                  className="w-full bg-white dark:bg-slate-950 border border-amber-500/20 dark:border-amber-500/30 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm"
                 >
-                  <option value="">
+                  <option value="" className="bg-white dark:bg-slate-900">
                     {busquedaTicket 
                       ? `Resultados (${ticketsFiltrados.length})` 
                       : ticketsPendientes.length > 0 
@@ -439,7 +468,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                         : 'No hay tickets pendientes'}
                   </option>
                   {ticketsFiltrados.map(t => (
-                    <option key={t.id} value={t.id}>{t.folio_interno} - {t.descripcion || 'Sin descripción'} (${t.monto})</option>
+                    <option key={t.id} value={t.id} className="bg-white dark:bg-slate-900">{t.folio_interno} - {t.descripcion || 'Sin descripción'} (${t.monto})</option>
                   ))}
                 </select>
               </div>
@@ -457,8 +486,10 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   value={formData.folio}
                   onChange={handleChange}
                   placeholder="Ej. F-99283"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all shadow-sm"
                 />
+                {folioStatus.error && <p className="text-rose-500 text-[10px] mt-1 font-bold animate-pulse">{folioStatus.error}</p>}
+                {folioStatus.warning && !folioStatus.error && <p className="text-amber-500 text-[10px] mt-1 font-bold italic">{folioStatus.warning}</p>}
               </div>
 
               <div>
@@ -470,7 +501,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   name="entidad"
                   value={formData.taller ? `taller_${formData.taller}` : formData.proveedor ? `proveedor_${formData.proveedor}` : ''}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all appearance-none text-sm"
                 >
                   <option value="">Seleccionar...</option>
                   {entidades.map(e => (
@@ -491,7 +522,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   value={formData.rfc_emisor}
                   onChange={handleChange}
                   placeholder="Ej. ABC123456T1"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
@@ -505,7 +536,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   value={formData.razon_social_emisor}
                   onChange={handleChange}
                   placeholder="Nombre de la empresa"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
@@ -520,7 +551,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   value={formData.descripcion}
                   onChange={handleChange}
                   placeholder="Ej. Compra de llantas"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
@@ -534,7 +565,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   name="fecha"
                   value={formData.fecha}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
@@ -552,7 +583,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                     value={formData.monto}
                     onChange={handleChange}
                     placeholder="0.00"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-3 text-white focus:border-blue-500 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -570,18 +601,18 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                     placeholder="Eco o placas..."
                     value={busquedaUnidad}
                     onChange={(e) => setBusquedaUnidad(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-white placeholder:text-slate-700 focus:border-blue-500/50 outline-none transition-all"
+                    className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500/50 outline-none transition-all"
                   />
                 </div>
                 <select
                   name="unidad"
                   value={formData.unidad}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none text-sm"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer text-sm"
                 >
-                  <option value="">Seleccionar...</option>
+                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar...</option>
                   {vehiculosFiltrados.map(v => (
-                    <option key={v.id} value={v.id}>{v.numero_economico}</option>
+                    <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico}</option>
                   ))}
                 </select>
                 {formData.unidades.length > 0 && (
@@ -608,32 +639,32 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   name="categoria"
                   value={formData.categoria}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all appearance-none"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer"
                 >
-                  <option value="Otro">Seleccionar...</option>
-                  <option value="Administrativo">Administrativo</option>
-                  <option value="Mantenimiento y Refacciones">Mantenimiento y Refacciones</option>
-                  <option value="Llantas">Llantas</option>
-                  <option value="Operativo">Operativo</option>
-                  <option value="Combustible">Combustible</option>
-                  <option value="Otro">Otro</option>
+                  <option value="Otro" className="bg-white dark:bg-slate-900">Seleccionar...</option>
+                  <option value="Administrativo" className="bg-white dark:bg-slate-900">Administrativo</option>
+                  <option value="Mantenimiento y Refacciones" className="bg-white dark:bg-slate-900">Mantenimiento y Refacciones</option>
+                  <option value="Llantas" className="bg-white dark:bg-slate-900">Llantas</option>
+                  <option value="Operativo" className="bg-white dark:bg-slate-900">Operativo</option>
+                  <option value="Combustible" className="bg-white dark:bg-slate-900">Combustible</option>
+                  <option value="Otro" className="bg-white dark:bg-slate-900">Otro</option>
                 </select>
               </div>
             </div>
 
             {formData.unidades.length > 1 && (
-              <div className="mt-2 space-y-6 bg-slate-950/50 p-6 rounded-3xl border border-amber-500/20 animate-in slide-in-from-top-2 duration-300 w-full">
+              <div className="mt-2 space-y-6 bg-slate-50 dark:bg-slate-950/50 p-6 rounded-3xl border border-amber-500/10 dark:border-amber-500/20 animate-in slide-in-from-top-2 duration-300 w-full shadow-inner">
                 <div className="flex flex-wrap items-center justify-between border-b border-amber-500/10 pb-4 gap-4">
                   <div className="flex items-center gap-4">
-                    <p className="text-[12px] text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
+                    <p className="text-[12px] text-amber-600 dark:text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
                       <Info size={16} /> Desglose de Gastos por Unidad
                     </p>
                     <button
                       type="button"
                       onClick={handleAgregarIVA}
-                      className={`${ivaIncluido ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500 text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg shadow-amber-900/20 flex items-center gap-2`}
+                      className={`${ivaIncluido ? 'bg-emerald-500 text-white dark:text-slate-950' : 'bg-amber-500 text-white dark:text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg shadow-amber-900/10 flex items-center gap-2`}
                     >
-                      <div className={`w-3 h-3 rounded-full border-2 border-slate-950 flex items-center justify-center ${ivaIncluido ? 'bg-slate-950' : 'bg-transparent'}`}>
+                      <div className={`w-3 h-3 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center ${ivaIncluido ? 'bg-white dark:bg-slate-950' : 'bg-transparent'}`}>
                         {ivaIncluido && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
                       </div>
                       {ivaIncluido ? 'IVA APLICADO (16%)' : 'AGREGAR IVA (16%)'}
@@ -643,8 +674,8 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                     <span className="text-[10px] text-slate-500 font-bold uppercase">Suma Total:</span>
                     <span className={`text-sm font-black px-4 py-1.5 rounded-full ${
                       Math.abs(formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0) - parseFloat(formData.monto || 0)) < 0.01
-                      ? 'text-emerald-400 bg-emerald-400/10'
-                      : 'text-rose-400 bg-rose-400/10'
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-400/10'
+                      : 'text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-400/10'
                     }`}>
                       ${formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0).toFixed(2)}
                     </span>
@@ -655,19 +686,19 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
                   {formData.detalles_unidades.map((detalle) => {
                     const v = vehiculos.find(veh => veh.id === detalle.unidad);
                     return v ? (
-                      <div key={detalle.unidad} className="flex items-center gap-4 bg-slate-900/80 p-3 rounded-2xl border border-slate-800 hover:border-amber-500/30 transition-all">
-                        <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 shrink-0 min-w-[80px] text-center">
-                          <span className="text-xs font-black text-white">{v.numero_economico}</span>
+                      <div key={detalle.unidad} className="flex items-center gap-4 bg-white dark:bg-slate-900/80 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/30 transition-all shadow-sm">
+                        <div className="bg-slate-50 dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 shrink-0 min-w-[80px] text-center">
+                          <span className="text-xs font-black text-slate-700 dark:text-white">{v.numero_economico}</span>
                         </div>
                         <div className="relative flex-grow">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold text-sm">$</span>
                           <input
                             type="number"
                             step="0.01"
                             value={detalle.monto}
                             onChange={(e) => handleDetalleChange(detalle.unidad, e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white focus:border-blue-500 outline-none transition-all font-mono"
+                            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all font-mono"
                           />
                         </div>
                       </div>
@@ -679,7 +710,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-dashed border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-center group hover:border-blue-500 transition-colors relative min-h-[250px]">
+          <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-center group hover:border-blue-500 transition-colors relative min-h-[250px] shadow-sm">
             <input
               type="file"
               onChange={handleFileChange}
@@ -688,23 +719,23 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
             />
             
             <div className="bg-blue-600/10 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
-              <Upload className="text-blue-500" size={24} />
+              <Upload className="text-blue-600 dark:text-blue-500" size={24} />
             </div>
             
             {scannedFiles.length > 0 ? (
               <div className="w-full space-y-3 relative z-20">
-                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                   <CheckCircle size={12} /> {scannedFiles.length} {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
                 </p>
                 
                 <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {scannedFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-slate-950/50 border border-slate-800 p-2 rounded-xl group/item hover:border-blue-500/50 transition-all">
+                    <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-2 rounded-xl group/item hover:border-blue-500/50 transition-all">
                       <div className="flex items-center gap-2 overflow-hidden">
-                        <div className="bg-blue-500/10 p-1.5 rounded-lg">
-                          <FilePlus size={12} className="text-blue-400" />
+                        <div className="bg-blue-600/10 p-1.5 rounded-lg">
+                          <FilePlus size={12} className="text-blue-600 dark:text-blue-400" />
                         </div>
-                        <p className="text-[10px] text-slate-300 truncate font-mono">
+                        <p className="text-[10px] text-slate-600 dark:text-slate-300 truncate font-mono">
                           {file.name}
                         </p>
                       </div>
@@ -741,18 +772,18 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
               </div>
             ) : (
               <div className="space-y-3 relative z-20 w-full px-4">
-                <p className="text-white font-semibold text-base">Adjuntar PDF o Imagen</p>
+                <p className="text-slate-900 dark:text-white font-semibold text-base">Adjuntar PDF o Imagen</p>
                 <div className="relative flex items-center py-1">
-                    <div className="flex-grow border-t border-slate-800"></div>
-                    <span className="flex-shrink-0 mx-3 text-slate-600 text-[10px] font-bold">O</span>
-                    <div className="flex-grow border-t border-slate-800"></div>
+                    <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                    <span className="flex-shrink-0 mx-3 text-slate-400 dark:text-slate-600 text-[10px] font-bold">O</span>
+                    <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleScan}
                   disabled={scanning}
-                  className="w-full py-2.5 bg-slate-800 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:opacity-50 text-slate-600 dark:text-white hover:text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
                 >
                   {scanning ? <Spinner /> : <FilePlus size={16} />}
                   <span>{scanning ? 'Escaneando...' : 'Escanear Ahora'}</span>

@@ -32,7 +32,7 @@ const Login = () => {
     };
 
     return (
-        <div className="relative min-h-screen bg-slate-950 flex items-center justify-center overflow-hidden font-sans text-slate-200">
+        <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden font-sans text-slate-900 dark:text-slate-200 transition-colors duration-500">
             {/* Animaciones CSS embebidas */}
             <style>
                 {`
@@ -73,9 +73,9 @@ const Login = () => {
 
             {/* Fondo decorativo (Malla y gradientes) */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
-                <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-blue-900/20 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 rounded-full bg-indigo-900/20 blur-3xl"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-blue-100/50 dark:bg-blue-900/20 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 rounded-full bg-indigo-100/50 dark:bg-indigo-900/20 blur-3xl"></div>
             </div>
 
             {/* Animación de camioncitos (Restaurada) */}
@@ -109,7 +109,7 @@ const Login = () => {
                             />
                         </div>
                         <div className="text-center md:text-left">
-                            <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white leading-none">
+                            <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-slate-900 dark:text-white leading-none">
                                 TRANSPORT
                             </h1>
                             <p className="neon-text text-xl md:text-2xl font-bold tracking-[0.2em] mt-2 uppercase">
@@ -118,7 +118,7 @@ const Login = () => {
                         </div>
                     </div>
                     
-                    <div className="w-full max-w-md border-t border-slate-800 pt-6">
+                    <div className="w-full max-w-md border-t border-slate-200 dark:border-slate-800 pt-6">
                         <h2 className="text-3xl font-black tracking-[0.3em] text-blue-500 mb-1 uppercase">
                             SIGA
                         </h2>
@@ -128,13 +128,13 @@ const Login = () => {
 
                 {/* Tarjeta de Formulario (Glassmorphism) - Centrada y con ancho controlado */}
                 <div className="max-w-md mx-auto">
-                    <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl shadow-2xl shadow-black/50 animate-fade-in delay-100 opacity-0">
+                    <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 p-8 rounded-3xl shadow-2xl shadow-slate-200 dark:shadow-black/50 animate-fade-in delay-100 opacity-0">
                     
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Campo de Usuario */}
                         <div className="animate-fade-in delay-200 opacity-0">
-                            <label className="block text-slate-400 text-sm font-semibold mb-2 ml-1" htmlFor="username">
+                            <label className="block text-slate-500 dark:text-slate-400 text-sm font-semibold mb-2 ml-1" htmlFor="username">
                                 Usuario
                             </label>
                             <div className="relative group">
@@ -144,7 +144,7 @@ const Login = () => {
                                 <input
                                     id="username"
                                     type="text"
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-950/50 border border-slate-700 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300"
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 shadow-inner"
                                     placeholder="Ingresa tu usuario"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
@@ -155,7 +155,7 @@ const Login = () => {
 
                         {/* Campo de Contraseña */}
                         <div className="animate-fade-in delay-300 opacity-0">
-                            <label className="block text-slate-400 text-sm font-semibold mb-2 ml-1" htmlFor="password">
+                            <label className="block text-slate-500 dark:text-slate-400 text-sm font-semibold mb-2 ml-1" htmlFor="password">
                                 Contraseña
                             </label>
                             <div className="relative group">
@@ -165,7 +165,7 @@ const Login = () => {
                                 <input
                                     id="password"
                                     type="password"
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-950/50 border border-slate-700 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300"
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 shadow-inner"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}

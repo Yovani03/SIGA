@@ -14,33 +14,36 @@ import Tickets from './pages/Tickets';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import SileoToaster from './components/SileoToaster';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route element={<ProtectedRoute allowedRoles={['capturista', 'admin', 'jefe_logistica']} />}>
-            <Route path="/" element={<DashboardLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="facturacion" element={<Facturacion />} />
-              <Route path="vehiculos" element={<ListaVehiculos />} />
-              <Route path="mantenimiento" element={<Mantenimiento />} />
-              <Route path="catalogos" element={<Catalogos />} />
-              <Route path="logistica" element={<Logistica />} />
-              <Route path="operadores" element={<Operadores />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route element={<ProtectedRoute allowedRoles={['capturista', 'admin', 'jefe_logistica']} />}>
+              <Route path="/" element={<DashboardLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="facturacion" element={<Facturacion />} />
+                <Route path="vehiculos" element={<ListaVehiculos />} />
+                <Route path="mantenimiento" element={<Mantenimiento />} />
+                <Route path="catalogos" element={<Catalogos />} />
+                <Route path="logistica" element={<Logistica />} />
+                <Route path="operadores" element={<Operadores />} />
 
-              <Route path="combustible" element={<Combustibles />} />
-              <Route path="tickets" element={<Tickets />} />
+                <Route path="combustible" element={<Combustibles />} />
+                <Route path="tickets" element={<Tickets />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-        <SileoToaster />
-      </Router>
-    </AuthProvider>
+          </Routes>
+          <SileoToaster />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

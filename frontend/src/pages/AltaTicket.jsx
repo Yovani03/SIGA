@@ -130,14 +130,14 @@ const AltaTicket = ({ onSuccess, onClose }) => {
             <TicketIcon className="text-amber-500" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Registro de Ticket / Nota</h1>
-            <p className="text-slate-400 text-sm">Ingresa los datos para generar el folio de seguimiento físico.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Registro de Ticket / Nota</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Ingresa los datos para generar el folio de seguimiento físico.</p>
           </div>
         </div>
         {onClose && (
           <button 
             onClick={onClose}
-            className="text-slate-500 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors"
           >
             ✕
           </button>
@@ -145,12 +145,12 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
           <div className="space-y-4">
-            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl mb-4">
-              <p className="text-amber-500 text-xs font-bold uppercase tracking-wider mb-1">Folio del Sistema</p>
-              <p className="text-white text-lg font-black font-mono">SE GENERARÁ AL GUARDAR</p>
-              <p className="text-slate-400 text-[10px] mt-1 italic">Este folio deberá anotarse en la nota física para su rastreo.</p>
+            <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 dark:border-amber-500/20 p-4 rounded-xl mb-4 shadow-sm">
+              <p className="text-amber-600 dark:text-amber-500 text-xs font-bold uppercase tracking-wider mb-1">Folio del Sistema</p>
+              <p className="text-slate-900 dark:text-white text-lg font-black font-mono">SE GENERARÁ AL GUARDAR</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] mt-1 italic">Este folio deberá anotarse en la nota física para su rastreo.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -164,7 +164,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   name="fecha"
                   value={formData.fecha}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all"
                 />
               </div>
 
@@ -177,11 +177,11 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   name="entidad"
                   value={formData.taller ? `taller_${formData.taller}` : formData.proveedor ? `proveedor_${formData.proveedor}` : ''}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer"
                 >
-                  <option value="">Selecciona Taller o Proveedor...</option>
+                  <option value="" className="bg-white dark:bg-slate-900">Selecciona Taller o Proveedor...</option>
                   {entidades.map(e => (
-                    <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`}>
+                    <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`} className="bg-white dark:bg-slate-900">
                       {e.nombre} ({e.tipo === 'taller' ? 'Taller' : 'Proveedor'})
                     </option>
                   ))}
@@ -200,7 +200,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 value={formData.descripcion}
                 onChange={handleChange}
                 placeholder="Ej. Cambio de balatas delanteras"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all placeholder:text-slate-700"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
               />
             </div>
 
@@ -219,7 +219,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                     value={formData.monto}
                     onChange={handleChange}
                     placeholder="0.00"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-3 text-white focus:border-amber-500 outline-none transition-all placeholder:text-slate-700"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
                   />
                 </div>
               </div>
@@ -237,18 +237,18 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                     placeholder="Eco o placas..."
                     value={busquedaUnidad}
                     onChange={(e) => setBusquedaUnidad(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-white placeholder:text-slate-700 focus:border-amber-500/50 outline-none transition-all"
+                    className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-amber-500/50 outline-none transition-all shadow-sm"
                   />
                 </div>
                 <select
                   name="unidad"
                   value={formData.unidad}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none text-sm"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm"
                 >
-                  <option value="">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
+                  <option value="" className="bg-white dark:bg-slate-900">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
                   {vehiculosFiltrados.map(v => (
-                    <option key={v.id} value={v.id}>{v.numero_economico}</option>
+                    <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico}</option>
                   ))}
                 </select>
 
@@ -289,15 +289,15 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   name="categoria"
                   value={formData.categoria}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer"
                 >
-                  <option value="Otro">Selecciona una categoría...</option>
-                  <option value="Administrativo">Administrativo</option>
-                  <option value="Mantenimiento y Refacciones">Mantenimiento y Refacciones</option>
-                  <option value="Llantas">Llantas</option>
-                  <option value="Operativo">Operativo</option>
-                  <option value="Combustible">Combustible</option>
-                  <option value="Otro">Otro</option>
+                  <option value="Otro" className="bg-white dark:bg-slate-900">Selecciona una categoría...</option>
+                  <option value="Administrativo" className="bg-white dark:bg-slate-900">Administrativo</option>
+                  <option value="Mantenimiento y Refacciones" className="bg-white dark:bg-slate-900">Mantenimiento y Refacciones</option>
+                  <option value="Llantas" className="bg-white dark:bg-slate-900">Llantas</option>
+                  <option value="Operativo" className="bg-white dark:bg-slate-900">Operativo</option>
+                  <option value="Combustible" className="bg-white dark:bg-slate-900">Combustible</option>
+                  <option value="Otro" className="bg-white dark:bg-slate-900">Otro</option>
                 </select>
               </div>
             </div>

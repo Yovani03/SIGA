@@ -18,14 +18,18 @@ import {
   Navigation,
   Droplets,
   Ticket,
-  LayoutGrid
+  LayoutGrid,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -49,7 +53,7 @@ const DashboardLayout = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 font-sans overflow-hidden transition-colors duration-300">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
@@ -60,11 +64,11 @@ const DashboardLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out
         lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center">
               <img 
@@ -74,7 +78,7 @@ const DashboardLayout = () => {
                 style={{ mixBlendMode: 'screen' }} 
               />
             </div>
-            <h1 className="font-bold text-xl tracking-tight text-white uppercase">SIGA</h1>
+            <h1 className="font-bold text-xl tracking-tight text-slate-900 dark:text-white uppercase">SIGA</h1>
           </div>
           <button 
             onClick={toggleSidebar}
@@ -92,7 +96,7 @@ const DashboardLayout = () => {
               onClick={() => setIsSidebarOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${location.pathname === item.path
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-slate-200'
                 }`}
             >
               {item.icon}
@@ -101,7 +105,7 @@ const DashboardLayout = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <button 
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-red-400 hover:bg-red-900/10 rounded-xl transition-colors"
@@ -114,7 +118,7 @@ const DashboardLayout = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-20 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <header className="h-20 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleSidebar}
@@ -122,21 +126,31 @@ const DashboardLayout = () => {
             >
               <Menu size={24} />
             </button>
-            <h2 className="text-lg lg:text-xl font-semibold text-white truncate">Gestión de Autotransporte</h2>
+            <h2 className="text-lg lg:text-xl font-semibold text-slate-900 dark:text-white truncate">Gestión de Autotransporte</h2>
           </div>
           
-          <div className="flex items-center gap-3 lg:gap-4">
+          <div className="flex items-center gap-3 lg:gap-6">
+            <button
+              onClick={toggleTheme}
+              className="relative z-50 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-amber-400 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer shadow-sm active:scale-90"
+              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            <div className="flex items-center gap-3 lg:gap-4 border-l border-slate-200 dark:border-slate-800 pl-4 lg:pl-6">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-white capitalize">{user?.rol || 'Usuario'}</p>
-              <p className="text-xs text-slate-500">{user?.username || 'user'}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white capitalize leading-tight">{user?.rol || 'Usuario'}</p>
+              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest">{user?.username || 'user'}</p>
             </div>
-            <div className="h-9 w-9 lg:h-10 lg:w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold border-2 border-slate-700 shrink-0 uppercase">
+            <div className="h-9 w-9 lg:h-10 lg:w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold border-2 border-white dark:border-slate-700 shrink-0 uppercase shadow-lg">
               {user?.username ? user.username.substring(0, 2) : 'US'}
+            </div>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar bg-slate-950">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
           <div className="max-w-[1600px] mx-auto">
             <Outlet />
           </div>
