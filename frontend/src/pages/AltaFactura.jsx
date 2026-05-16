@@ -16,6 +16,7 @@ import {
   Search
 } from 'lucide-react';
 import notify from '../utils/notifications';
+import { PDFDocument } from 'pdf-lib';
 
 const Spinner = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -55,6 +56,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [scannedFiles, setScannedFiles] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -193,7 +195,10 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
   };
 
   const handleFileChange = (e) => {
-    setFormData(prev => ({ ...prev, archivo_escaneado: e.target.files[0] }));
+    const file = e.target.files[0];
+    if (file) {
+      setScannedFiles(prev => [...prev, file]);
+    }
   };
 
   const handleScan = async () => {
@@ -202,13 +207,50 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
       const response = await fetch('http://localhost:3001/api/scan');
       if (!response.ok) throw new Error('Fallo al conectar con el escáner');
       const blob = await response.blob();
-      const file = new File([blob], `factura_escaneada_${Date.now()}.pdf`, { type: "application/pdf" });
-      setFormData(prev => ({ ...prev, archivo_escaneado: file }));
-      notify.success('Documento escaneado correctamente');
+      const file = new File([blob], `escaneo_${Date.now()}.pdf`, { type: "application/pdf" });
+      setScannedFiles(prev => [...prev, file]);
+      notify.success('Página escaneada correctamente');
     } catch (err) {
       notify.error('Fallo al conectar con el escáner. Verifica NAPS2.');
     } finally {
       setScanning(false);
+    }
+  };
+
+  const mergePDFs = async (files) => {
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        if (file.type === 'application/pdf') {
+          const pdf = await PDFDocument.load(arrayBuffer);
+          const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        } else if (file.type.startsWith('image/')) {
+          let image;
+          if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+            image = await mergedPdf.embedJpg(arrayBuffer);
+          } else if (file.type === 'image/png') {
+            image = await mergedPdf.embedPng(arrayBuffer);
+          } else {
+            continue; // Ignorar otros tipos de imagen
+          }
+          
+          // Crear una página con las dimensiones de la imagen
+          const page = mergedPdf.addPage([image.width, image.height]);
+          page.drawImage(image, {
+            x: 0,
+            y: 0,
+            width: image.width,
+            height: image.height,
+          });
+        }
+      }
+      const mergedPdfBytes = await mergedPdf.save();
+      return new File([mergedPdfBytes], `factura_${formData.folio || 'escaneada'}.pdf`, { type: "application/pdf" });
+    } catch (err) {
+      console.error("Error al unir documentos:", err);
+      throw new Error("No se pudieron unir los documentos. Asegúrate de que sean PDFs o imágenes válidas.");
     }
   };
 
@@ -267,7 +309,25 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
-    if (formData.archivo_escaneado) data.append('archivo_escaneado', formData.archivo_escaneado);
+    
+    // Procesar archivos escaneados
+    if (scannedFiles.length > 0) {
+      if (scannedFiles.length === 1) {
+        data.append('archivo_escaneado', scannedFiles[0]);
+      } else {
+        try {
+          const mergedFile = await mergePDFs(scannedFiles);
+          data.append('archivo_escaneado', mergedFile);
+        } catch (err) {
+          notify.error(err.message);
+          setLoading(false);
+          return;
+        }
+      }
+    } else if (formData.archivo_escaneado) {
+       data.append('archivo_escaneado', formData.archivo_escaneado);
+    }
+    
     data.append('iva_aplicado', ivaIncluido);
 
     // Enviar detalles de unidades como JSON string si el backend lo soporta o desglosado
@@ -296,6 +356,7 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
         setTimeout(() => onSuccess(), 1500);
       }
       setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
+      setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
     } catch (err) {
@@ -630,17 +691,53 @@ const AltaFactura = ({ onSuccess, onClose, factura }) => {
               <Upload className="text-blue-500" size={24} />
             </div>
             
-            {formData.archivo_escaneado ? (
-              <div className="space-y-2 relative z-20">
-                <p className="text-emerald-400 text-xs font-medium">Archivo listo:</p>
-                <p className="text-slate-300 text-[10px] italic bg-slate-800 px-3 py-1.5 rounded-lg truncate max-w-[200px]">{formData.archivo_escaneado.name}</p>
-                <button 
-                  type="button" 
-                  onClick={() => setFormData(prev => ({...prev, archivo_escaneado: null}))}
-                  className="text-rose-400 text-[10px] font-bold hover:underline"
-                >
-                  Cambiar
-                </button>
+            {scannedFiles.length > 0 ? (
+              <div className="w-full space-y-3 relative z-20">
+                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                  <CheckCircle size={12} /> {scannedFiles.length} {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
+                </p>
+                
+                <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {scannedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-slate-950/50 border border-slate-800 p-2 rounded-xl group/item hover:border-blue-500/50 transition-all">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="bg-blue-500/10 p-1.5 rounded-lg">
+                          <FilePlus size={12} className="text-blue-400" />
+                        </div>
+                        <p className="text-[10px] text-slate-300 truncate font-mono">
+                          {file.name}
+                        </p>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-slate-600 hover:text-rose-500 p-1 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleScan}
+                    disabled={scanning}
+                    className="w-full py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30 transition-all flex items-center justify-center gap-2"
+                  >
+                    {scanning ? <Spinner /> : <FilePlus size={14} />}
+                    <span>ESCANEAR OTRA HOJA</span>
+                  </button>
+                  
+                  <button 
+                    type="button" 
+                    onClick={() => setScannedFiles([])}
+                    className="text-rose-400 text-[9px] font-bold hover:underline uppercase tracking-tighter"
+                  >
+                    Limpiar todo
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3 relative z-20 w-full px-4">

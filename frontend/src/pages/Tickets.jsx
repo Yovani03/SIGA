@@ -171,11 +171,6 @@ const Tickets = () => {
                      Gasto Compartido
                    </div>
                 )}
-                {t.convertido_en_factura && (
-                   <div className={`absolute top-2 right-2 bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest z-10 ${t.unidades_info?.length > 1 ? 'mt-6' : ''}`}>
-                     Facturado
-                   </div>
-                )}
                 
                 <div className="flex justify-between items-start mb-6">
                   <div className="min-w-0">
@@ -237,8 +232,16 @@ const Tickets = () => {
                     <Calendar size={14} className="text-slate-600" />
                     {new Date(t.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
-                  
-                  {t.archivo_escaneado && (
+
+                  <div className="flex items-center gap-2">
+                    {t.convertido_en_factura && (
+                      <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+                        <CheckCircle2 size={10} />
+                        Facturado
+                      </div>
+                    )}
+                    
+                    {t.archivo_escaneado && (
                     <a 
                       href={t.archivo_escaneado} 
                       target="_blank" 
@@ -250,8 +253,9 @@ const Tickets = () => {
                   )}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
         </div>
       )}
 
