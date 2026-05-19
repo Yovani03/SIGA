@@ -64,9 +64,20 @@ class CargaCombustible(models.Model):
         
         # Update unit's info
         self.unidad.fecha_ultima_carga = self.fecha
+        
         if not self.ignorar_kilometraje and self.kilometraje:
             self.unidad.ultimo_kilometraje = self.kilometraje
+            # Si es la primera carga con kilometraje de la unidad, o nunca se ha reiniciado el mantenimiento,
+            # tomamos este kilometraje como el punto inicial para empezar a calcular el próximo mantenimiento.
+            if self.unidad.ultimo_kilometraje_mantenimiento == 0:
+                self.unidad.ultimo_kilometraje_mantenimiento = self.kilometraje
         
+        # Para camionetas (o cualquier unidad) que no tenga una fecha de último mantenimiento registrada,
+        # inicializamos la fecha del último mantenimiento con la fecha de este primer registro de combustible.
+        # Esto permite empezar a calcular el tiempo transcurrido desde este punto de partida real.
+        if not self.unidad.fecha_ultimo_mantenimiento:
+            self.unidad.fecha_ultimo_mantenimiento = self.fecha
+
         if self.rendimiento:
             self.unidad.ultimo_rendimiento = self.rendimiento
             

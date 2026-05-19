@@ -13,7 +13,6 @@ import {
   AlertCircle,
   Filter,
   BarChart3,
-  List,
   ChevronLeft,
   ChevronRight,
   Store,
@@ -24,11 +23,50 @@ import {
   Tag,
   Pencil
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent
+} from '../components/ui/chart';
 import AltaFactura from './AltaFactura';
 import notify from '../utils/notifications';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+const categoryChartConfig = {
+  value: {
+    label: "Monto",
+  },
+  "Mantenimiento y Refacciones": {
+    label: "Mantenimiento",
+    color: "#3b82f6",
+  },
+  "Llantas": {
+    label: "Llantas",
+    color: "#10b981",
+  },
+  "Combustible": {
+    label: "Combustible",
+    color: "#f59e0b",
+  },
+  "Operativo": {
+    label: "Operativo",
+    color: "#ef4444",
+  },
+  "Administrativo": {
+    label: "Administrativo",
+    color: "#8b5cf6",
+  },
+  "Otro": {
+    label: "Otro",
+    color: "#ec4899",
+  },
+  "Sin Categoría": {
+    label: "Sin Categoría",
+    color: "#64748b",
+  }
+};
 
 const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
@@ -143,13 +181,23 @@ const Facturacion = () => {
     units: [...new Set(filteredFacturas.map(f => f.unidad))].length
   };
 
-  const chartData = Object.entries(
+  const chartDataConFills = Object.entries(
     filteredFacturas.reduce((acc, f) => {
-      const cat = f.categoria || f.producto_categoria || 'Otro';
+      let cat = f.categoria;
+      if (!cat || cat === 'Otro') {
+        cat = f.producto_categoria || 'Otro';
+      }
+      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
+        cat = 'Mantenimiento y Refacciones';
+      }
       acc[cat] = (acc[cat] || 0) + parseFloat(f.monto);
       return acc;
     }, {})
-  ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  ).map(([name, value], index) => ({
+    name,
+    value,
+    fill: categoryChartConfig[name]?.color || COLORS[index % COLORS.length]
+  })).sort((a, b) => b.value - a.value);
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
@@ -416,23 +464,23 @@ const Facturacion = () => {
                   </div>
                 </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
-                        <Calendar size={14} className="text-slate-600" />
-                        {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
-                      
-                      <button 
-                        onClick={(e) => handleEdit(e, f)}
-                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
-                        title="Editar Factura"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
+                      <Calendar size={14} className="text-slate-600" />
+                      {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
                     
-                    {f.archivo_escaneado ? (
+                    <button 
+                      onClick={(e) => handleEdit(e, f)}
+                      className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+                      title="Editar Factura"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </div>
+                  
+                  {f.archivo_escaneado ? (
                     <a 
                       href={f.archivo_escaneado} 
                       target="_blank" 
@@ -501,6 +549,7 @@ const Facturacion = () => {
           </div>
         </div>
       )}
+
       {showDetailModal && selectedFactura && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-0 shadow-2xl relative overflow-hidden shadow-blue-500/5">
@@ -658,6 +707,7 @@ const Facturacion = () => {
           </div>
         </div>
       )}
+
       {showChartsModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden">
@@ -678,44 +728,58 @@ const Facturacion = () => {
               </div>
             </div>
 
-            <div className="h-80 w-full mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="rgba(0,0,0,0)"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', color: '#fff' }}
-                    itemStyle={{ color: '#fff', fontSize: '12px' }}
-                    formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX')}`}
-                  />
-                  <Legend iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-              {chartData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{item.name}</span>
-                  </div>
-                  <span className="text-xs font-black text-slate-900 dark:text-white">${item.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+            {chartDataConFills.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="h-64 w-full">
+                  <ChartContainer config={categoryChartConfig} className="h-full w-full">
+                    <PieChart>
+                      <Pie
+                        data={chartDataConFills}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={90}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="rgba(0,0,0,0)"
+                      >
+                        {chartDataConFills.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent config={categoryChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
+                    </PieChart>
+                  </ChartContainer>
                 </div>
-              ))}
-            </div>
+                
+                <div className="space-y-2.5 max-h-[16.5rem] overflow-y-auto pr-2 custom-scrollbar">
+                  {(() => {
+                    const total = chartDataConFills.reduce((acc, curr) => acc + curr.value, 0);
+                    return chartDataConFills.map((item) => {
+                      const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0.0';
+                      return (
+                        <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50 rounded-2xl transition-all hover:bg-slate-100 dark:hover:bg-slate-900/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{categoryChartConfig[item.name]?.label || item.name}</p>
+                              <p className="text-[10px] text-slate-500 font-bold">{percentage}%</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-black text-slate-900 dark:text-white shrink-0 ml-4 font-mono">
+                            ${item.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-slate-500 font-medium italic bg-slate-50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                No hay datos disponibles para esta selección
+              </div>
+            )}
           </div>
         </div>
       )}

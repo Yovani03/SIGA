@@ -17,9 +17,6 @@ class UnidadViewSet(viewsets.ModelViewSet):
         hoy = timezone.now().date()
 
         for u in unidades:
-            if u.ignorar_kilometraje:
-                continue
-                
             # Reglas de intervalo
             if u.capacidad <= 1.0 and u.tipo_combustible in ['magna', 'premium']:
                 tipo_vehiculo = 'Coche Gasolina'
@@ -46,9 +43,6 @@ class UnidadViewSet(viewsets.ModelViewSet):
             km_ultimo = u.ultimo_kilometraje_mantenimiento or 0
             fecha_ultimo = u.fecha_ultimo_mantenimiento
             
-            km_limite = km_ultimo + intervalo_km
-            km_restante = km_limite - km_actual
-            
             if fecha_ultimo:
                 fecha_limite = fecha_ultimo + timedelta(days=intervalo_meses * 30)
                 dias_restantes = (fecha_limite - hoy).days
@@ -57,14 +51,32 @@ class UnidadViewSet(viewsets.ModelViewSet):
                 dias_restantes = None
             
             # Determinar estado
-            if not fecha_ultimo:
-                estado = 'sin_iniciar'
-            elif km_restante <= 0 or (dias_restantes is not None and dias_restantes <= 0):
-                estado = 'vencido'
-            elif km_restante <= 1000 or (dias_restantes is not None and dias_restantes <= 15):
-                estado = 'proximo'
+            if u.ignorar_kilometraje:
+                km_limite = None
+                km_restante = None
+                
+                # Determinar estado únicamente por tiempo transcurrido
+                if not fecha_ultimo:
+                    estado = 'sin_iniciar'
+                elif dias_restantes is not None and dias_restantes <= 0:
+                    estado = 'vencido'
+                elif dias_restantes is not None and dias_restantes <= 15:
+                    estado = 'proximo'
+                else:
+                    estado = 'ok'
             else:
-                estado = 'ok'
+                km_limite = km_ultimo + intervalo_km
+                km_restante = km_limite - km_actual
+                
+                # Determinar estado por kilometraje o por tiempo
+                if not fecha_ultimo:
+                    estado = 'sin_iniciar'
+                elif km_restante <= 0 or (dias_restantes is not None and dias_restantes <= 0):
+                    estado = 'vencido'
+                elif km_restante <= 1000 or (dias_restantes is not None and dias_restantes <= 15):
+                    estado = 'proximo'
+                else:
+                    estado = 'ok'
                 
             proyecciones.append({
                 'id': u.id,

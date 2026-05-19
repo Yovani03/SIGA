@@ -146,7 +146,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
             descripcion: ticket.descripcion || '',
             fecha: ticket.fecha,
             rfc_emisor: ticketRfc,
-            razon_social_emisor: ticketRazon
+            razon_social_emisor: ticketRazon,
+            categoria: ticket.categoria || 'Otro'
           };
         });
         return;

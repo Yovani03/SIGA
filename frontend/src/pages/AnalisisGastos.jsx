@@ -1,10 +1,58 @@
 import React, { useMemo, useState } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
-import { PieChart as PieChartIcon, BarChart3, TrendingUp, Calendar as CalendarIcon, Filter, Truck, Search } from 'lucide-react';
+import { PieChart as PieChartIcon, BarChart3, TrendingUp, Filter, Truck, Search } from 'lucide-react';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent
+} from '../components/ui/chart';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+const categoryChartConfig = {
+  value: {
+    label: "Monto",
+  },
+  "Mantenimiento y Refacciones": {
+    label: "Mantenimiento",
+    color: "#3b82f6",
+  },
+  "Llantas": {
+    label: "Llantas",
+    color: "#10b981",
+  },
+  "Combustible": {
+    label: "Combustible",
+    color: "#f59e0b",
+  },
+  "Operativo": {
+    label: "Operativo",
+    color: "#ef4444",
+  },
+  "Administrativo": {
+    label: "Administrativo",
+    color: "#8b5cf6",
+  },
+  "Otro": {
+    label: "Otro",
+    color: "#ec4899",
+  },
+  "Sin Categoría": {
+    label: "Sin Categoría",
+    color: "#64748b",
+  }
+};
+
+const trendChartConfig = {
+  total: {
+    label: "Monto Total",
+    color: "#10b981",
+  }
+};
 
 const AnalisisGastos = ({ facturas, vehiculos }) => {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState('todas');
@@ -14,7 +62,7 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     if (!vehiculos) return [];
     return vehiculos.filter(v => 
       v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
-      v.placas.toLowerCase().includes(busquedaUnidad.toLowerCase())
+      v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
     );
   }, [vehiculos, busquedaUnidad]);
 
@@ -23,16 +71,13 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     const uId = parseInt(unidadSeleccionada);
     
     return facturas.reduce((acc, f) => {
-      // 1. Verificar si la unidad está en el desglose específico (Nueva lógica)
       const detalle = f.detalles_unidades?.find(d => d.unidad === uId);
       if (detalle) {
         acc.push({ ...f, monto: detalle.monto });
         return acc;
       }
 
-      // 2. Lógica de respaldo para datos antiguos o unidad principal sin desglose
       if (f.unidad === uId) {
-        // Si es la principal y tiene más unidades pero sin desglose, la excluimos para no inflar (comportamiento original)
         if (f.unidades_info && f.unidades_info.length > 1 && (!f.detalles_unidades || f.detalles_unidades.length === 0)) {
             return acc;
         }
@@ -45,7 +90,10 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
   const dataPorCategoria = useMemo(() => {
     const categorias = {};
     facturasFiltradas.forEach(f => {
-      let cat = f.categoria || f.producto_categoria || 'Sin Categoría';
+      let cat = f.categoria;
+      if (!cat || cat === 'Otro') {
+        cat = f.producto_categoria || 'Otro';
+      }
       if (cat === 'Mantenimiento' || cat === 'Refacciones') {
         cat = 'Mantenimiento y Refacciones';
       }
@@ -56,6 +104,13 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     return Object.entries(categorias).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
   }, [facturasFiltradas]);
 
+  const dataPorCategoriaConFills = useMemo(() => {
+    return dataPorCategoria.map((item, index) => ({
+      ...item,
+      fill: categoryChartConfig[item.name]?.color || COLORS[index % COLORS.length]
+    }));
+  }, [dataPorCategoria]);
+
   const dataPorMes = useMemo(() => {
     const meses = {};
     facturasFiltradas.forEach(f => {
@@ -63,7 +118,10 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
       const mesAnio = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!meses[mesAnio]) meses[mesAnio] = { name: mesAnio, total: 0 };
       
-      let cat = f.categoria || f.producto_categoria || 'Sin Categoría';
+      let cat = f.categoria;
+      if (!cat || cat === 'Otro') {
+        cat = f.producto_categoria || 'Otro';
+      }
       if (cat === 'Mantenimiento' || cat === 'Refacciones') {
         cat = 'Mantenimiento y Refacciones';
       }
@@ -75,23 +133,6 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     });
     return Object.values(meses).sort((a, b) => a.name.localeCompare(b.name));
   }, [facturasFiltradas]);
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl">
-          <p className="text-white font-bold mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-sm">
-              <span style={{ color: entry.color }}>{entry.name}:</span>
-              <span className="font-mono text-white font-bold">${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -119,13 +160,13 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
               />
             </div>
           </div>
-
+ 
           <div className="relative">
             <Truck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
             <select
               value={unidadSeleccionada}
               onChange={(e) => setUnidadSeleccionada(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none font-medium"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none font-medium cursor-pointer"
             >
               <option value="todas">
                 {busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Todas las Unidades (Global)'}
@@ -149,28 +190,51 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
             <h3 className="text-xl font-bold text-white">Distribución de Gastos</h3>
           </div>
           
-          {dataPorCategoria.length > 0 ? (
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dataPorCategoria}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={110}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="rgba(0,0,0,0)"
-                  >
-                    {dataPorCategoria.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip content={<CustomTooltip />} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
+          {dataPorCategoriaConFills.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="h-64 w-full">
+                <ChartContainer config={categoryChartConfig} className="h-full w-full">
+                  <PieChart>
+                    <Pie
+                      data={dataPorCategoriaConFills}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="rgba(0,0,0,0)"
+                    >
+                      {dataPorCategoriaConFills.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent config={categoryChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
+                  </PieChart>
+                </ChartContainer>
+              </div>
+              <div className="space-y-3">
+                {(() => {
+                  const total = dataPorCategoriaConFills.reduce((acc, curr) => acc + curr.value, 0);
+                  return dataPorCategoriaConFills.map((item) => {
+                    const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0.0';
+                    return (
+                      <div key={item.name} className="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/80 rounded-2xl transition-all hover:bg-slate-900/60">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white truncate">{categoryChartConfig[item.name]?.label || item.name}</p>
+                            <p className="text-[10px] text-slate-500 font-bold">{percentage}% del total</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-white shrink-0 ml-4 font-mono">
+                          ${parseFloat(item.value).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           ) : (
             <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
@@ -190,23 +254,23 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
           
           {dataPorMes.length > 0 ? (
             <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dataPorMes} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
-                  <RechartsTooltip content={<CustomTooltip />} />
+              <ChartContainer config={trendChartConfig} className="h-full w-full">
+                <LineChart data={dataPorMes} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                  <YAxis stroke="#64748b" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
+                  <ChartTooltip content={<ChartTooltipContent config={trendChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
                   <Line 
                     type="monotone" 
                     dataKey="total" 
-                    name="Total" 
-                    stroke="#10b981" 
+                    name="total" 
+                    stroke="var(--color-total)" 
                     strokeWidth={4}
-                    dot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} 
-                    activeDot={{ r: 8 }} 
+                    dot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} 
+                    activeDot={{ r: 7 }} 
                   />
                 </LineChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
           ) : (
             <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
@@ -226,19 +290,35 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
           
           {dataPorMes.length > 0 ? (
             <div className="h-96 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dataPorMes} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
-                  <RechartsTooltip content={<CustomTooltip />} />
-                  <Legend iconType="circle" />
+              <ChartContainer config={categoryChartConfig} className="h-full w-full">
+                <AreaChart data={dataPorMes} margin={{ top: 20, right: 15, left: -10, bottom: 5 }}>
+                  <defs>
+                    {dataPorCategoriaConFills.map((cat) => (
+                      <linearGradient key={`grad-${cat.name}`} id={`color-${cat.name}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={cat.fill} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={cat.fill} stopOpacity={0.0}/>
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                  <YAxis stroke="#64748b" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
+                  <ChartTooltip content={<ChartTooltipContent config={categoryChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
+                  <ChartLegend content={<ChartLegendContent config={categoryChartConfig} />} />
                   
-                  {dataPorCategoria.map((cat, index) => (
-                    <Bar key={cat.name} dataKey={cat.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === dataPorCategoria.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                  {dataPorCategoriaConFills.map((cat) => (
+                    <Area 
+                      key={cat.name} 
+                      type="monotone"
+                      dataKey={cat.name} 
+                      stackId="a" 
+                      stroke={cat.fill}
+                      strokeWidth={2}
+                      fill={`url(#color-${cat.name})`} 
+                    />
                   ))}
-                </BarChart>
-              </ResponsiveContainer>
+                </AreaChart>
+              </ChartContainer>
             </div>
           ) : (
             <div className="h-96 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">

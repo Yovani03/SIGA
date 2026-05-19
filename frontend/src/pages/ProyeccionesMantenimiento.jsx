@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw, Car, Truck, Zap, Calendar, Info } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw, Car, Truck, Zap, Calendar, Info, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 
 const ProyeccionesMantenimiento = () => {
   const [proyecciones, setProyecciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resettingId, setResettingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const fetchProyecciones = async () => {
     try {
@@ -21,6 +24,10 @@ const ProyeccionesMantenimiento = () => {
   useEffect(() => {
     fetchProyecciones();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleReset = async (id) => {
     if (!window.confirm("¿Confirmas que se le hizo el mantenimiento a esta unidad HOY? Esto reiniciará sus contadores.")) return;
@@ -59,6 +66,21 @@ const ProyeccionesMantenimiento = () => {
     );
   }
 
+  const filteredProyecciones = proyecciones.filter(p => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      p.numero_economico.toLowerCase().includes(term) ||
+      (p.placas && p.placas.toLowerCase().includes(term)) ||
+      (p.tipo_vehiculo && p.tipo_vehiculo.toLowerCase().includes(term))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredProyecciones.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProyecciones.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-6">
@@ -66,13 +88,30 @@ const ProyeccionesMantenimiento = () => {
           <TrendingDown className="text-blue-500" />
           Proyecciones de Mantenimiento Preventivo
         </h3>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-400 text-sm mb-4">
           Este sistema cruza el kilometraje actual (obtenido de las cargas de combustible) con las reglas de cada tipo de vehículo para calcular cuándo les toca su próximo mantenimiento.
         </p>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Search className="text-slate-500" size={18} />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar por unidad, placas o tipo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-slate-300 focus:border-blue-500 outline-none transition-all text-sm"
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {proyecciones.map((p) => (
+      {filteredProyecciones.length === 0 ? (
+        <div className="text-center py-12 bg-slate-900/50 border border-slate-800 rounded-2xl lg:rounded-3xl text-slate-500 italic text-sm">
+          No hay resultados para la búsqueda.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {currentItems.map((p) => (
           <div 
             key={p.id} 
             className={`bg-slate-900/80 border rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden transition-all hover:-translate-y-1 ${
@@ -157,7 +196,42 @@ const ProyeccionesMantenimiento = () => {
             </button>
           </div>
         ))}
-      </div>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-8 gap-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+            <button
+              key={number}
+              onClick={() => setCurrentPage(number)}
+              className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                currentPage === number 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/20 scale-110' 
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {number}
+            </button>
+          ))}
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-xl bg-slate-800 text-white disabled:opacity-50 hover:bg-slate-700 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
