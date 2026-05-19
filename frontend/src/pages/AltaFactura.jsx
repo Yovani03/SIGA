@@ -87,7 +87,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         fecha: factura.fecha,
         monto: factura.monto,
         folio: factura.folio,
-        unidad: factura.unidad || '',
+        unidad: factura.unidad || (factura.unidades && factura.unidades.length > 0 ? '' : 'sin_unidad'),
         producto: factura.producto || '',
         ticket: factura.ticket || '',
         taller: factura.taller || '',
@@ -178,14 +178,25 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
 
     if (name === 'unidad' && value) {
+      if (value === 'sin_unidad') {
+        setFormData(prev => ({
+          ...prev,
+          unidad: 'sin_unidad',
+          unidades: [],
+          detalles_unidades: []
+        }));
+        return;
+      }
       const uId = parseInt(value);
       setFormData(prev => {
-        if (!prev.unidades.includes(uId)) {
+        const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
+        const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
+        if (!prevUnidades.includes(uId)) {
           return { 
             ...prev, 
             unidad: value, 
-            unidades: [...prev.unidades, uId],
-            detalles_unidades: [...prev.detalles_unidades, { unidad: uId, monto: '' }]
+            unidades: [...prevUnidades, uId],
+            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
           };
         }
         return { ...prev, unidad: value };
@@ -308,8 +319,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     const data = new FormData();
     
     // Validaciones
-    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!formData.unidad && formData.unidades.length === 0)) {
-      setError("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad.");
+    const isSinUnidad = formData.unidad === 'sin_unidad';
+    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!isSinUnidad && !formData.unidad && formData.unidades.length === 0)) {
+      notify.error("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad.");
       setLoading(false);
       return;
     }
@@ -329,8 +341,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     data.append('descripcion', formData.descripcion || '');
     if (formData.taller) data.append('taller', formData.taller);
     if (formData.proveedor) data.append('proveedor', formData.proveedor);
-    if (formData.unidad) data.append('unidad', formData.unidad);
-    formData.unidades.forEach(uId => data.append('unidades', uId));
+    if (formData.unidad && formData.unidad !== 'sin_unidad') data.append('unidad', formData.unidad);
+    formData.unidades.forEach(uId => {
+      if (uId !== 'sin_unidad') data.append('unidades', uId);
+    });
     if (formData.categoria) data.append('categoria', formData.categoria);
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
@@ -612,6 +626,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer text-sm"
                 >
                   <option value="" className="bg-white dark:bg-slate-900">Seleccionar...</option>
+                  <option value="sin_unidad" className="bg-white dark:bg-slate-900">Sin unidad asignada</option>
                   {vehiculosFiltrados.map(v => (
                     <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico}</option>
                   ))}

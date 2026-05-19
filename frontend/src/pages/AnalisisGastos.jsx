@@ -44,6 +44,10 @@ const categoryChartConfig = {
   "Sin Categoría": {
     label: "Sin Categoría",
     color: "#64748b",
+  },
+  "Gastos sin unidad asignada": {
+    label: "Gastos sin unidad asignada",
+    color: "#ef4444",
   }
 };
 
@@ -68,6 +72,9 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
 
   const facturasFiltradas = useMemo(() => {
     if (unidadSeleccionada === 'todas') return facturas;
+    if (unidadSeleccionada === 'sin_asignar') {
+      return facturas.filter(f => !f.unidad && (!f.unidades || f.unidades.length === 0));
+    }
     const uId = parseInt(unidadSeleccionada);
     
     return facturas.reduce((acc, f) => {
@@ -91,18 +98,22 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     const categorias = {};
     facturasFiltradas.forEach(f => {
       let cat = f.categoria;
-      if (!cat || cat === 'Otro') {
-        cat = f.producto_categoria || 'Otro';
-      }
-      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
-        cat = 'Mantenimiento y Refacciones';
+      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0)) {
+        cat = 'Gastos sin unidad asignada';
+      } else {
+        if (!cat || cat === 'Otro') {
+          cat = f.producto_categoria || 'Otro';
+        }
+        if (cat === 'Mantenimiento' || cat === 'Refacciones') {
+          cat = 'Mantenimiento y Refacciones';
+        }
       }
       const monto = parseFloat(f.monto);
       if (!categorias[cat]) categorias[cat] = 0;
       categorias[cat] += monto;
     });
     return Object.entries(categorias).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
-  }, [facturasFiltradas]);
+  }, [facturasFiltradas, unidadSeleccionada]);
 
   const dataPorCategoriaConFills = useMemo(() => {
     return dataPorCategoria.map((item, index) => ({
@@ -119,11 +130,15 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
       if (!meses[mesAnio]) meses[mesAnio] = { name: mesAnio, total: 0 };
       
       let cat = f.categoria;
-      if (!cat || cat === 'Otro') {
-        cat = f.producto_categoria || 'Otro';
-      }
-      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
-        cat = 'Mantenimiento y Refacciones';
+      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0)) {
+        cat = 'Gastos sin unidad asignada';
+      } else {
+        if (!cat || cat === 'Otro') {
+          cat = f.producto_categoria || 'Otro';
+        }
+        if (cat === 'Mantenimiento' || cat === 'Refacciones') {
+          cat = 'Mantenimiento y Refacciones';
+        }
       }
 
       if (!meses[mesAnio][cat]) meses[mesAnio][cat] = 0;
@@ -132,7 +147,7 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
       meses[mesAnio].total += parseFloat(f.monto);
     });
     return Object.values(meses).sort((a, b) => a.name.localeCompare(b.name));
-  }, [facturasFiltradas]);
+  }, [facturasFiltradas, unidadSeleccionada]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -170,6 +185,9 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
             >
               <option value="todas">
                 {busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Todas las Unidades (Global)'}
+              </option>
+              <option value="sin_asignar">
+                Gastos sin unidad asignada
               </option>
               {vehiculosFiltrados.map(v => (
                 <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>

@@ -436,7 +436,7 @@ const Facturacion = () => {
                       <p className={`text-sm font-bold truncate ${f.unidades_info?.length > 1 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-900 dark:text-white'}`}>
                         {f.unidades_info?.length > 1 
                           ? `${f.unidades_info.length} Unidades: ${f.unidades_info.join(', ')}` 
-                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
+                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Sin unidad asignada')}
                       </p>
                     </div>
                   </div>
@@ -618,7 +618,7 @@ const Facturacion = () => {
                           <p className="text-slate-900 dark:text-white font-bold">
                             {getUnidadInfo(selectedFactura.unidad) 
                               ? `${getUnidadInfo(selectedFactura.unidad).numero_economico} (${getUnidadInfo(selectedFactura.unidad).placas})` 
-                              : 'Gasto General'}
+                              : 'Sin unidad asignada'}
                           </p>
                         )}
                       </div>
