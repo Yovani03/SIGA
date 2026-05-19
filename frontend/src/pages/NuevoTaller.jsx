@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import { Wrench, X, Loader2, Save, Search, ExternalLink, MapPin, Clipboard } from 'lucide-react';
 
-const NuevoTaller = ({ onSuccess, onClose }) => {
+const NuevoTaller = ({ onSuccess, onClose, tallerToEdit }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    especialidad: '',
-    telefono: '',
-    direccion: '',
-    url_mapa: '',
-    rfc: '',
-    razon_social: ''
+    nombre: tallerToEdit?.nombre || '',
+    especialidad: tallerToEdit?.especialidad || '',
+    telefono: tallerToEdit?.telefono || '',
+    direccion: tallerToEdit?.direccion || '',
+    url_mapa: tallerToEdit?.url_mapa || '',
+    rfc: tallerToEdit?.rfc || '',
+    razon_social: tallerToEdit?.razon_social || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -103,7 +103,11 @@ const NuevoTaller = ({ onSuccess, onClose }) => {
     setLoading(true);
     setError(null);
     try {
-      await api.post('talleres/', formData);
+      if (tallerToEdit) {
+        await api.put(`talleres/${tallerToEdit.id}/`, formData);
+      } else {
+        await api.post('talleres/', formData);
+      }
       onSuccess();
     } catch (err) {
       console.error(err);
@@ -119,9 +123,11 @@ const NuevoTaller = ({ onSuccess, onClose }) => {
         <div>
           <h2 className="text-2xl font-black text-white flex items-center gap-3">
             <Wrench className="text-blue-500" size={28} />
-            Registrar Taller / Mecánico
+            {tallerToEdit ? 'Editar Taller / Mecánico' : 'Registrar Taller / Mecánico'}
           </h2>
-          <p className="text-slate-400 mt-1">Añade un nuevo taller para asignarlo a las reparaciones.</p>
+          <p className="text-slate-400 mt-1">
+            {tallerToEdit ? 'Modifica los datos del taller seleccionado.' : 'Añade un nuevo taller para asignarlo a las reparaciones.'}
+          </p>
         </div>
         <button 
           onClick={onClose}
@@ -305,7 +311,7 @@ const NuevoTaller = ({ onSuccess, onClose }) => {
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-            {loading ? 'Guardando...' : 'Guardar Taller'}
+            {loading ? 'Guardando...' : (tallerToEdit ? 'Guardar Cambios' : 'Guardar Taller')}
           </button>
         </div>
       </form>

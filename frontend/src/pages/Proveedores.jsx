@@ -10,7 +10,8 @@ import {
   Globe,
   Loader2,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Edit3
 } from 'lucide-react';
 import NuevoProveedor from './NuevoProveedor';
 
@@ -21,6 +22,7 @@ const Proveedores = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [selectedProveedor, setSelectedProveedor] = useState(null);
 
   const categorias = [
     'Refacciones',
@@ -82,7 +84,10 @@ const Proveedores = () => {
         </div>
         
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setSelectedProveedor(null);
+            setShowModal(true);
+          }}
           className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-purple-900/20 active:scale-95 self-start md:self-center"
         >
           <Plus size={20} />
@@ -145,14 +150,24 @@ const Proveedores = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProveedores.map((p) => (
             <div key={p.id} className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group shadow-xl flex flex-col h-full">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
+              <div className="flex justify-between items-start mb-4 bg-transparent w-full">
+                <div className="flex-1 min-w-0">
                   <h3 className="text-white font-bold text-xl truncate pr-2">{p.nombre}</h3>
                   <div className="inline-flex items-center gap-1.5 bg-purple-600/20 text-purple-400 text-xs font-bold px-2.5 py-1 rounded-md mt-2 border border-purple-500/20">
                     <Briefcase size={12} />
                     {p.categoria}
                   </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setSelectedProveedor(p);
+                    setShowModal(true);
+                  }}
+                  className="p-2 bg-slate-800 hover:bg-purple-600/20 text-slate-400 hover:text-purple-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
+                  title="Editar Proveedor"
+                >
+                  <Edit3 size={16} />
+                </button>
               </div>
 
               <div className="space-y-3 mt-4 flex-1">
@@ -207,7 +222,11 @@ const Proveedores = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[95vh] custom-scrollbar">
             <NuevoProveedor 
               onSuccess={handleSuccess} 
-              onClose={() => setShowModal(false)} 
+              onClose={() => {
+                setShowModal(false);
+                setSelectedProveedor(null);
+              }} 
+              proveedorToEdit={selectedProveedor}
             />
           </div>
         </div>

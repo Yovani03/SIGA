@@ -8,7 +8,8 @@ import {
   MapPin, 
   Loader2,
   AlertCircle,
-  Settings2
+  Settings2,
+  Edit3
 } from 'lucide-react';
 import NuevoTaller from './NuevoTaller';
 
@@ -19,6 +20,7 @@ const Talleres = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [selectedTaller, setSelectedTaller] = useState(null);
 
   const especialidadesList = [
     'Todas',
@@ -80,7 +82,10 @@ const Talleres = () => {
         </div>
         
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setSelectedTaller(null);
+            setShowModal(true);
+          }}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 self-start md:self-center"
         >
           <Plus size={20} />
@@ -161,6 +166,16 @@ const Talleres = () => {
                     </div>
                   )}
                 </div>
+                <button
+                  onClick={() => {
+                    setSelectedTaller(t);
+                    setShowModal(true);
+                  }}
+                  className="p-2 bg-slate-800 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
+                  title="Editar Taller"
+                >
+                  <Edit3 size={16} />
+                </button>
               </div>
 
               <div className="space-y-4 mt-4 flex-1">
@@ -204,7 +219,11 @@ const Talleres = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[95vh] custom-scrollbar">
             <NuevoTaller 
               onSuccess={handleSuccess} 
-              onClose={() => setShowModal(false)} 
+              onClose={() => {
+                setShowModal(false);
+                setSelectedTaller(null);
+              }} 
+              tallerToEdit={selectedTaller}
             />
           </div>
         </div>

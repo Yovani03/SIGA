@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import { Users, X, Loader2, Save } from 'lucide-react';
 
-const NuevoProveedor = ({ onSuccess, onClose }) => {
+const NuevoProveedor = ({ onSuccess, onClose, proveedorToEdit }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    categoria: '',
-    telefono: '',
-    email: '',
-    direccion: '',
-    sitio_web: '',
-    rfc: '',
-    razon_social: ''
+    nombre: proveedorToEdit?.nombre || '',
+    categoria: proveedorToEdit?.categoria || '',
+    telefono: proveedorToEdit?.telefono || '',
+    email: proveedorToEdit?.email || '',
+    direccion: proveedorToEdit?.direccion || '',
+    sitio_web: proveedorToEdit?.sitio_web || '',
+    rfc: proveedorToEdit?.rfc || '',
+    razon_social: proveedorToEdit?.razon_social || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,7 +38,11 @@ const NuevoProveedor = ({ onSuccess, onClose }) => {
     setLoading(true);
     setError(null);
     try {
-      await api.post('proveedores/', formData);
+      if (proveedorToEdit) {
+        await api.put(`proveedores/${proveedorToEdit.id}/`, formData);
+      } else {
+        await api.post('proveedores/', formData);
+      }
       onSuccess();
     } catch (err) {
       console.error(err);
@@ -54,9 +58,11 @@ const NuevoProveedor = ({ onSuccess, onClose }) => {
         <div>
           <h2 className="text-2xl font-black text-white flex items-center gap-3">
             <Users className="text-purple-500" size={28} />
-            Registrar Proveedor
+            {proveedorToEdit ? 'Editar Proveedor' : 'Registrar Proveedor'}
           </h2>
-          <p className="text-slate-400 mt-1">Añade un nuevo proveedor al directorio.</p>
+          <p className="text-slate-400 mt-1">
+            {proveedorToEdit ? 'Modifica los datos del proveedor seleccionado.' : 'Añade un nuevo proveedor al directorio.'}
+          </p>
         </div>
         <button 
           onClick={onClose}
@@ -190,7 +196,7 @@ const NuevoProveedor = ({ onSuccess, onClose }) => {
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-purple-900/20 active:scale-95"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-            {loading ? 'Guardando...' : 'Guardar Proveedor'}
+            {loading ? 'Guardando...' : (proveedorToEdit ? 'Guardar Cambios' : 'Guardar Proveedor')}
           </button>
         </div>
       </form>
