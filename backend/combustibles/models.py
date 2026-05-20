@@ -33,6 +33,8 @@ class CargaCombustible(models.Model):
     kilometraje = models.IntegerField(null=True, blank=True, verbose_name="Kilometraje")
     ignorar_kilometraje = models.BooleanField(default=False, verbose_name="Ignorar Kilometraje")
     rendimiento = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Rendimiento (km/l)")
+    es_especial = models.BooleanField(default=False, verbose_name="¿Es Carga Especial?")
+    km_equivocado = models.BooleanField(default=False, verbose_name="¿Kilometraje Equivocado?")
     
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
@@ -42,6 +44,9 @@ class CargaCombustible(models.Model):
         ordering = ['-fecha', '-fecha_registro']
 
     def save(self, *args, **kwargs):
+        if self.km_equivocado:
+            self.kilometraje = self.unidad.ultimo_kilometraje
+
         # Calculate monto_total if not provided
         if not self.monto_total and self.litros and self.precio_unitario:
             self.monto_total = self.litros * self.precio_unitario

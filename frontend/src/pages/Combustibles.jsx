@@ -16,9 +16,12 @@ import {
   History,
   Clock,
   ChevronRight,
-  Filter
+  Filter,
+  Download
 } from 'lucide-react';
 import notify from '../utils/notifications';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Combustibles = () => {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -45,7 +48,9 @@ const Combustibles = () => {
     precio_unitario: '',
     litros: '',
     kilometraje: '',
-    ignorar_kilometraje: false
+    ignorar_kilometraje: false,
+    km_equivocado: false,
+    ultimo_kilometraje: 0
   });
   const [cargasEspecialesList, setCargasEspecialesList] = useState([]);
 
@@ -71,6 +76,100 @@ const Combustibles = () => {
     } finally {
       setLoadingHistorial(false);
     }
+  };
+
+  const exportHistorialToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.setFont('helvetica', 'bold');
+    doc.text("REPORTE DE CARGA DE COMBUSTIBLES", pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text("SIGA - Sistema de Gestión de Autotransporte", pageWidth / 2, 27, { align: 'center' });
+    doc.text(`Fecha del Reporte: ${fechaHistorial}`, pageWidth / 2, 33, { align: 'center' });
+    
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.line(15, 38, pageWidth - 15, 38);
+
+    // Summary Stats
+    const totalLitros = historial.reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const totalMonto = historial.reduce((acc, curr) => acc + parseFloat(curr.monto_total), 0);
+    const totalCargas = historial.length;
+    
+    const dieselL = historial.filter(c => c.tipo_combustible === 'diesel').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const magnaL = historial.filter(c => c.tipo_combustible === 'magna').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const premiumL = historial.filter(c => c.tipo_combustible === 'premium').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const electricoKwh = historial.filter(c => c.tipo_combustible === 'electrico').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+
+    // Render Stats
+    doc.setFontSize(10);
+    doc.setTextColor(51, 65, 85); // Slate-700
+    doc.setFont('helvetica', 'bold');
+    doc.text("Resumen de Cargas:", 15, 45);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total de Cargas: ${totalCargas}`, 15, 51);
+    doc.text(`Total Litros/Equiv: ${totalLitros.toFixed(2)} L`, 15, 56);
+    doc.text(`Importe Total: $${totalMonto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`, 15, 61);
+
+    doc.text(`Diésel: ${dieselL.toFixed(2)} L`, 110, 51);
+    doc.text(`Magna: ${magnaL.toFixed(2)} L`, 110, 56);
+    doc.text(`Premium: ${premiumL.toFixed(2)} L`, 110, 61);
+    if (electricoKwh > 0) {
+      doc.text(`Eléctrico: ${electricoKwh.toFixed(2)} kWh`, 110, 66);
+    }
+    
+    let currentY = electricoKwh > 0 ? 73 : 68;
+
+    // Table Data
+    const tableData = historial.map((carga) => [
+      carga.unidad_detalle,
+      carga.es_especial ? 'Especial' : 'Normal',
+      carga.tipo_combustible.toUpperCase(),
+      `${carga.litros} L`,
+      `$${parseFloat(carga.precio_unitario).toFixed(2)}`,
+      `$${parseFloat(carga.monto_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      carga.ignorar_kilometraje 
+        ? 'No reg.' 
+        : (carga.km_equivocado 
+            ? `[KM Equiv.] ${parseInt(carga.kilometraje).toLocaleString()} KM` 
+            : `${parseInt(carga.kilometraje).toLocaleString()} KM`),
+      carga.fecha
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Unidad', 'Tipo', 'Combustible', 'Litros/Cant', 'Precio Unit.', 'Monto Total', 'Kilometraje', 'Fecha/Hora']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' }
+      },
+      foot: [[
+        'TOTALES',
+        '',
+        '',
+        `${totalLitros.toFixed(2)} L`,
+        '',
+        `$${totalMonto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        '',
+        ''
+      ]],
+      footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+      margin: { left: 15, right: 15 }
+    });
+
+    doc.save(`Reporte_Combustibles_${fechaHistorial}.pdf`);
   };
 
   const fetchUnidades = async () => {
@@ -109,7 +208,9 @@ const Combustibles = () => {
       tipo_combustible: unidad.tipo_combustible || 'diesel',
       litros: '',
       kilometraje: unidad.ultimo_kilometraje || '',
+      ultimo_kilometraje: unidad.ultimo_kilometraje || 0,
       ignorar_kilometraje: unidad.ignorar_kilometraje || false,
+      km_equivocado: false
     }]);
     setBusqueda('');
   };
@@ -156,7 +257,8 @@ const Combustibles = () => {
           tipo_combustible: c.tipo_combustible,
           litros: parseFloat(c.litros),
           kilometraje: c.ignorar_kilometraje ? null : parseInt(c.kilometraje),
-          ignorar_kilometraje: c.ignorar_kilometraje
+          ignorar_kilometraje: c.ignorar_kilometraje,
+          km_equivocado: c.km_equivocado || false
         }))
       };
 
@@ -194,7 +296,9 @@ const Combustibles = () => {
       unidad: '',
       litros: '',
       kilometraje: '',
-      ignorar_kilometraje: false
+      ignorar_kilometraje: false,
+      km_equivocado: false,
+      ultimo_kilometraje: 0
     }));
   };
 
@@ -220,7 +324,9 @@ const Combustibles = () => {
           precio_unitario: parseFloat(carga.precio_unitario),
           litros: parseFloat(carga.litros),
           kilometraje: carga.ignorar_kilometraje ? null : parseInt(carga.kilometraje),
-          ignorar_kilometraje: carga.ignorar_kilometraje
+          ignorar_kilometraje: carga.ignorar_kilometraje,
+          es_especial: true,
+          km_equivocado: carga.km_equivocado || false
         })
       );
       
@@ -426,28 +532,50 @@ const Combustibles = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <input 
-                                type="number" 
-                                step="1"
-                                disabled={carga.ignorar_kilometraje}
-                                value={carga.kilometraje}
-                                onChange={(e) => updateCarga(idx, 'kilometraje', e.target.value ? parseInt(e.target.value) : '')}
-                                className={`w-32 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 ${carga.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                placeholder="Km actual"
-                              />
-                              {!carga.ignorar_kilometraje && <Activity className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <input 
+                                  type="number" 
+                                  step="1"
+                                  disabled={carga.ignorar_kilometraje || carga.km_equivocado}
+                                  value={carga.kilometraje}
+                                  onChange={(e) => updateCarga(idx, 'kilometraje', e.target.value ? parseInt(e.target.value) : '')}
+                                  className={`w-32 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 ${carga.ignorar_kilometraje || carga.km_equivocado ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                  placeholder="Km actual"
+                                />
+                                {!carga.ignorar_kilometraje && !carga.km_equivocado && <Activity className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />}
+                              </div>
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input 
+                                  type="checkbox"
+                                  checked={carga.ignorar_kilometraje}
+                                  disabled={carga.km_equivocado}
+                                  onChange={(e) => updateCarga(idx, 'ignorar_kilometraje', e.target.checked)}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-offset-slate-900 disabled:opacity-30"
+                                />
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Odm. Dañado</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input 
+                                  type="checkbox"
+                                  checked={carga.km_equivocado}
+                                  disabled={carga.ignorar_kilometraje}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    updateCarga(idx, 'km_equivocado', checked);
+                                    if (checked) {
+                                      updateCarga(idx, 'kilometraje', carga.ultimo_kilometraje || 0);
+                                    }
+                                  }}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 disabled:opacity-30"
+                                />
+                                <span className="text-[10px] text-amber-500 uppercase font-bold tracking-tighter">KM Equivocado</span>
+                              </label>
                             </div>
-                            <label className="flex items-center gap-2 cursor-pointer select-none">
-                              <input 
-                                type="checkbox"
-                                checked={carga.ignorar_kilometraje}
-                                onChange={(e) => updateCarga(idx, 'ignorar_kilometraje', e.target.checked)}
-                                className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-offset-slate-900"
-                              />
-                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Odm. Dañado</span>
-                            </label>
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              Km anterior: <strong className="text-slate-700 dark:text-slate-300">{(carga.ultimo_kilometraje || 0).toLocaleString()} KM</strong>
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -521,7 +649,17 @@ const Combustibles = () => {
                 <select 
                   required
                   value={cargaEspecial.unidad}
-                  onChange={(e) => setCargaEspecial({...cargaEspecial, unidad: e.target.value})}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const unit = unidades.find(u => u.id === parseInt(val));
+                    setCargaEspecial({
+                      ...cargaEspecial,
+                      unidad: val,
+                      ultimo_kilometraje: unit ? (unit.ultimo_kilometraje || 0) : 0,
+                      kilometraje: unit ? (unit.ultimo_kilometraje || '') : '',
+                      km_equivocado: false
+                    });
+                  }}
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                 >
                   <option value="">Seleccionar Unidad...</option>
@@ -589,16 +727,21 @@ const Combustibles = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Kilometraje (Opcional)</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Kilometraje (Opcional)</label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Km anterior: <strong className="text-slate-700 dark:text-slate-300">{(cargaEspecial.ultimo_kilometraje || 0).toLocaleString()} KM</strong>
+                  </span>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
                     <input 
                       type="number" 
                       step="1"
-                      disabled={cargaEspecial.ignorar_kilometraje}
+                      disabled={cargaEspecial.ignorar_kilometraje || cargaEspecial.km_equivocado}
                       value={cargaEspecial.kilometraje}
                       onChange={(e) => setCargaEspecial({...cargaEspecial, kilometraje: e.target.value})}
-                      className={`w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      className={`w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje || cargaEspecial.km_equivocado ? 'opacity-30 cursor-not-allowed' : ''}`}
                       placeholder="Km actual"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">KM</span>
@@ -607,10 +750,28 @@ const Combustibles = () => {
                     <input 
                       type="checkbox"
                       checked={cargaEspecial.ignorar_kilometraje}
+                      disabled={cargaEspecial.km_equivocado}
                       onChange={(e) => setCargaEspecial({...cargaEspecial, ignorar_kilometraje: e.target.checked})}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 focus:ring-amber-500"
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 focus:ring-amber-500 disabled:opacity-30"
                     />
                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Odm. Dañado</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap bg-white dark:bg-slate-950 px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <input 
+                      type="checkbox"
+                      checked={cargaEspecial.km_equivocado}
+                      disabled={cargaEspecial.ignorar_kilometraje}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setCargaEspecial({
+                          ...cargaEspecial,
+                          km_equivocado: checked,
+                          kilometraje: checked ? (cargaEspecial.ultimo_kilometraje || 0) : ''
+                        });
+                      }}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 focus:ring-amber-500 disabled:opacity-30"
+                    />
+                    <span className="text-[10px] text-amber-500 uppercase font-bold tracking-tighter">KM Equivocado</span>
                   </label>
                 </div>
               </div>
@@ -708,13 +869,22 @@ const Combustibles = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              {historial.length > 0 && (
+                <button 
+                  onClick={exportHistorialToPDF}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-5 py-3 rounded-2xl transition-all shadow-md text-sm font-bold active:scale-95"
+                >
+                  <Download size={18} />
+                  Descargar PDF
+                </button>
+              )}
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <Filter className="text-blue-500 dark:text-blue-400 ml-2" size={20} />
                 <input 
                   type="date" 
                   value={fechaHistorial}
                   onChange={(e) => setFechaHistorial(e.target.value)}
-                  className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium"
+                  className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium outline-none"
                 />
               </div>
             </div>
@@ -732,6 +902,7 @@ const Combustibles = () => {
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">
                       <th className="px-8 py-5">Unidad</th>
+                      <th className="px-8 py-5">Tipo</th>
                       <th className="px-8 py-5">Combustible</th>
                       <th className="px-8 py-5 text-right">Litros</th>
                       <th className="px-8 py-5 text-right">Precio U.</th>
@@ -756,6 +927,13 @@ const Combustibles = () => {
                         </td>
                         <td className="px-8 py-5">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            carga.es_especial ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'
+                          }`}>
+                            {carga.es_especial ? 'Especial' : 'Normal'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             carga.tipo_combustible === 'diesel' ? 'bg-slate-800 text-slate-300' :
                             carga.tipo_combustible === 'magna' ? 'bg-green-500/10 text-green-400' :
                             'bg-red-500/10 text-red-400'
@@ -776,9 +954,14 @@ const Combustibles = () => {
                           {carga.ignorar_kilometraje ? (
                             <span className="text-slate-500 italic text-xs">No registrado</span>
                           ) : (
-                            <div className="flex items-center gap-2 text-white font-medium">
-                              <Activity size={14} className="text-blue-500" />
-                              {carga.kilometraje?.toLocaleString()} <span className="text-[10px] text-slate-500">KM</span>
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-2 text-white font-medium">
+                                <Activity size={14} className={carga.km_equivocado ? "text-amber-500" : "text-blue-500"} />
+                                {carga.kilometraje?.toLocaleString()} <span className="text-[10px] text-slate-500">KM</span>
+                              </div>
+                              {carga.km_equivocado && (
+                                <span className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">KM Equivocado</span>
+                              )}
                             </div>
                           )}
                         </td>
@@ -793,7 +976,7 @@ const Combustibles = () => {
                   </tbody>
                   <tfoot>
                     <tr className="bg-slate-950/30 border-t border-slate-800">
-                      <td colSpan="2" className="px-8 py-6 text-slate-500 font-bold text-sm uppercase">Totales del día</td>
+                      <td colSpan="3" className="px-8 py-6 text-slate-500 font-bold text-sm uppercase">Totales del día</td>
                       <td className="px-8 py-6 text-right font-black text-white text-lg">
                         {historial.reduce((acc, curr) => acc + parseFloat(curr.litros), 0).toFixed(2)} <span className="text-slate-500 text-xs">L</span>
                       </td>

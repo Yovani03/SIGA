@@ -54,6 +54,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [ivaIncluido, setIvaIncluido] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
+  const [mostrarDropdownUnidad, setMostrarDropdownUnidad] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scannedFiles, setScannedFiles] = useState([]);
@@ -229,6 +230,36 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const seleccionarUnidad = (value) => {
+    if (value === 'sin_unidad') {
+      setFormData(prev => ({
+        ...prev,
+        unidad: 'sin_unidad',
+        unidades: [],
+        detalles_unidades: []
+      }));
+      setBusquedaUnidad('');
+      setMostrarDropdownUnidad(false);
+      return;
+    }
+    const uId = parseInt(value);
+    setFormData(prev => {
+      const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
+      const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
+      if (!prevUnidades.includes(uId)) {
+        return { 
+          ...prev, 
+          unidad: value.toString(), 
+          unidades: [...prevUnidades, uId],
+          detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
+        };
+      }
+      return { ...prev, unidad: value.toString() };
+    });
+    setBusquedaUnidad('');
+    setMostrarDropdownUnidad(false);
   };
 
   const handleFileChange = (e) => {
@@ -603,42 +634,98 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Truck size={14} /> Unidad(es)
                 </label>
-                <div className="relative mb-2">
+                <div className="relative">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                     <Search className="text-slate-500/40" size={12} />
                   </div>
                   <input
                     type="text"
-                    placeholder="Eco o placas..."
+                    placeholder="Buscar eco o placas..."
                     value={busquedaUnidad}
                     onChange={(e) => setBusquedaUnidad(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500/50 outline-none transition-all"
+                    onFocus={() => setMostrarDropdownUnidad(true)}
+                    onBlur={() => setTimeout(() => setMostrarDropdownUnidad(false), 200)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500 outline-none transition-all shadow-sm"
                   />
+                  
+                  {mostrarDropdownUnidad && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                      {(!busquedaUnidad || 'sin unidad asignada'.includes(busquedaUnidad.toLowerCase())) && (
+                        <button
+                          type="button"
+                          onClick={() => seleccionarUnidad('sin_unidad')}
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                        >
+                          <span className="text-slate-900 dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 italic">
+                            Sin unidad asignada
+                          </span>
+                        </button>
+                      )}
+                      
+                      {vehiculosFiltrados.length > 0 ? (
+                        vehiculosFiltrados.map(v => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => seleccionarUnidad(v.id)}
+                            className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                          >
+                            <div>
+                              <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                {v.numero_economico}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {v.placas ? `${v.placas} - ` : ''}{v.marca}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        (!busquedaUnidad || !'sin unidad asignada'.includes(busquedaUnidad.toLowerCase())) && (
+                          <div className="p-4 text-slate-500 text-center text-xs">No se encontraron unidades</div>
+                        )
+                      )}
+                    </div>
+                  )}
                 </div>
-                <select
-                  name="unidad"
-                  value={formData.unidad}
-                  onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer text-sm"
-                >
-                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar...</option>
-                  <option value="sin_unidad" className="bg-white dark:bg-slate-900">Sin unidad asignada</option>
-                  {vehiculosFiltrados.map(v => (
-                    <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico}</option>
-                  ))}
-                </select>
-                {formData.unidades.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                
+                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad') && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {formData.unidad === 'sin_unidad' && (
+                      <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full text-[10px] font-black">
+                        <span>Sin unidad asignada</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setFormData(prev => ({ ...prev, unidad: '', unidades: [], detalles_unidades: [] }))}
+                          className="hover:text-rose-500 transition-colors ml-1 font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                     {formData.unidades.map(uId => {
                       const v = vehiculos.find(veh => veh.id === uId);
                       return v ? (
-                        <div key={uId} className="flex items-center gap-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full text-[9px] font-black">
-                          {v.numero_economico}
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId), detalles_unidades: prev.detalles_unidades.filter(d => d.unidad !== uId) }))}>✕</button>
+                        <div key={uId} className="flex items-center gap-1.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                          <span>{v.numero_economico}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ 
+                              ...prev, 
+                              unidades: prev.unidades.filter(id => id !== uId), 
+                              detalles_unidades: prev.detalles_unidades.filter(d => d.unidad !== uId),
+                              unidad: prev.unidades.filter(id => id !== uId).length > 0 
+                                ? prev.unidades.filter(id => id !== uId)[0].toString() 
+                                : ''
+                            }))}
+                            className="hover:text-rose-500 transition-colors ml-1 font-bold"
+                          >
+                            ✕
+                          </button>
                         </div>
                       ) : null;
                     })}
