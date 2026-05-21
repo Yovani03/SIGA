@@ -28,6 +28,8 @@ const Tickets = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -165,7 +167,11 @@ const Tickets = () => {
           {currentTickets.map((t) => {
             const unidad = getUnidadInfo(t.unidad);
             return (
-              <div key={t.id} className={`bg-white dark:bg-slate-900/40 backdrop-blur-sm border ${t.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : (t.convertido_en_factura ? 'border-slate-200 dark:border-slate-800 opacity-75 grayscale-[0.3]' : 'border-amber-500/30')} rounded-3xl p-6 hover:border-amber-500 transition-all group shadow-lg dark:shadow-2xl relative overflow-hidden flex flex-col`}>
+              <div 
+                key={t.id} 
+                onClick={() => { setSelectedTicket(t); setShowDetailModal(true); }}
+                className={`bg-white dark:bg-slate-900/40 backdrop-blur-sm border ${t.unidades_info?.length > 1 ? 'border-purple-500/50 shadow-purple-900/10' : (t.convertido_en_factura ? 'border-slate-200 dark:border-slate-800 opacity-75 grayscale-[0.3]' : 'border-amber-500/30')} rounded-3xl p-6 hover:border-amber-500 hover:scale-[1.01] transition-all group shadow-lg dark:shadow-2xl relative overflow-hidden flex flex-col cursor-pointer`}
+              >
                 {t.unidades_info?.length > 1 && (
                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest shadow-lg z-20">
                      Gasto Compartido
@@ -177,11 +183,18 @@ const Tickets = () => {
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Folio Interno</p>
                     <p className="text-amber-400 font-mono text-2xl font-black tracking-tight truncate">{t.folio_interno}</p>
                     <p className="text-slate-400 text-xs mt-1">Físico: <span className="text-slate-200 font-bold">{t.folio_emision}</span></p>
-                    {t.categoria && (
-                      <div className="inline-block bg-amber-600/20 text-amber-500 text-[10px] font-bold px-2 py-1 rounded-md mt-1 border border-amber-500/20 truncate max-w-full">
-                        {t.categoria}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {t.categoria && (
+                        <div className="inline-block bg-amber-600/20 text-amber-500 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-500/20 truncate max-w-full">
+                          {t.categoria}
+                        </div>
+                      )}
+                      {t.archivo_escaneado && (
+                        <div className="inline-flex items-center gap-1 bg-emerald-600/20 text-emerald-500 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-500/20">
+                          <CheckCircle2 size={10} /> Remisión
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Monto</p>
@@ -242,20 +255,21 @@ const Tickets = () => {
                     )}
                     
                     {t.archivo_escaneado && (
-                    <a 
-                      href={t.archivo_escaneado} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="text-amber-400 hover:text-amber-300 p-2 bg-amber-500/10 rounded-xl transition-colors shadow-lg"
-                    >
-                      <ExternalLink size={18} />
-                    </a>
-                  )}
+                      <a 
+                        href={t.archivo_escaneado} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-amber-400 hover:text-amber-300 p-2 bg-amber-500/10 rounded-xl transition-colors shadow-lg"
+                      >
+                        <ExternalLink size={18} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       )}
 
@@ -295,11 +309,137 @@ const Tickets = () => {
 
       {showAltaModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-amber-500/5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-5xl p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar shadow-amber-500/5">
             <AltaTicket 
               onSuccess={handleAltaSuccess} 
               onClose={() => setShowAltaModal(false)} 
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalle de Ticket */}
+      {showDetailModal && selectedTicket && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] shadow-amber-500/5">
+            {/* Cabecera */}
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/20">
+              <div className="flex items-center gap-4">
+                <div className="bg-amber-600/10 p-3.5 rounded-2xl">
+                  <TicketIcon className="text-amber-500" size={28} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Detalles de Ticket</h3>
+                  <p className="text-slate-400 text-xs font-mono mt-0.5">Folio Interno: <span className="text-amber-500 font-bold">{selectedTicket.folio_interno}</span></p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setShowDetailModal(false); setSelectedTicket(null); }}
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2.5 rounded-full transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-grow text-slate-700 dark:text-slate-300">
+              {/* Resumen Superior */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl flex flex-col">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Monto del Gasto</span>
+                  <span className="text-2xl font-black text-emerald-500">${parseFloat(selectedTicket.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl flex flex-col">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Estatus del Ticket</span>
+                  <span className="mt-1">
+                    {selectedTicket.convertido_en_factura ? (
+                      <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-xl border border-emerald-500/20 uppercase tracking-widest inline-flex items-center gap-1.5 shadow-sm">
+                        <CheckCircle2 size={12} /> Facturado
+                      </span>
+                    ) : (
+                      <span className="bg-amber-500/10 text-amber-500 text-[10px] font-black px-3 py-1.5 rounded-xl border border-amber-500/20 uppercase tracking-widest inline-flex items-center gap-1.5 shadow-sm">
+                        <Clock size={12} /> Pendiente
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Información General */}
+              <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Calendar size={14} /> Fecha de Registro</span>
+                    <span className="font-semibold">{new Date(selectedTicket.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Hash size={14} /> Folio Físico (Emisión)</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">{selectedTicket.folio_emision || 'N/A'}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                  <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Store size={14} /> Taller / Proveedor (Origen)</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{selectedTicket.taller_nombre || selectedTicket.proveedor_nombre || 'No especificado'}</span>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                  <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Truck size={14} /> Unidad(es) Asignada(s)</span>
+                  {selectedTicket.unidades_info?.length > 1 ? (
+                    <div className="space-y-2 mt-1">
+                      <p className="text-purple-600 dark:text-purple-400 font-bold text-xs">Gasto compartido entre {selectedTicket.unidades_info.length} unidades:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedTicket.unidades_info.map((num, i) => (
+                          <span key={i} className="bg-purple-600/10 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-500/20">
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {selectedTicket.unidad_nombre 
+                        ? `Unidad ${selectedTicket.unidad_nombre}` 
+                        : (selectedTicket.unidad ? `Unidad ID: ${selectedTicket.unidad}` : 'Gasto General / Sin Unidad')}
+                    </span>
+                  )}
+                </div>
+
+                {selectedTicket.categoria && (
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Tag size={14} /> Categoría</span>
+                    <span className="bg-amber-600/10 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-500/20 inline-block">
+                      {selectedTicket.categoria}
+                    </span>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                  <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Info size={14} /> Descripción del Gasto</span>
+                  <span className="text-slate-600 dark:text-slate-300 italic text-sm">{selectedTicket.descripcion || 'Sin descripción detallada.'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
+              {selectedTicket.archivo_escaneado ? (
+                <a 
+                  href={selectedTicket.archivo_escaneado} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex-grow bg-amber-600 hover:bg-amber-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+                >
+                  <ExternalLink size={20} />
+                  VISUALIZAR REMISIÓN DIGITALIZADA
+                </a>
+              ) : (
+                <div className="w-full text-center text-slate-400 text-xs py-4 italic border border-slate-200 dark:border-slate-800/80 rounded-2xl flex items-center justify-center gap-2">
+                  <AlertCircle size={16} />
+                  Sin documento adjunto o remisión escaneada.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

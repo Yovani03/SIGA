@@ -13,9 +13,11 @@ import {
   FileText,
   Store,
   Info,
-  Search
+  Search,
+  FilePlus
 } from 'lucide-react';
 import notify from '../utils/notifications';
+import { PDFDocument } from 'pdf-lib';
 
 const Spinner = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -46,6 +48,9 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [generatedFolio, setGeneratedFolio] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scannedFiles, setScannedFiles] = useState([]);
+  const [escanearRemision, setEscanearRemision] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -94,13 +99,105 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setScannedFiles(prev => [...prev, file]);
+    }
+  };
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/scan');
+      if (!response.ok) throw new Error('Fallo al conectar con el escáner');
+      const blob = await response.blob();
+      const file = new File([blob], `escaneo_${Date.now()}.pdf`, { type: "application/pdf" });
+      setScannedFiles(prev => [...prev, file]);
+      notify.success('Página escaneada correctamente');
+    } catch (err) {
+      notify.error('Fallo al conectar con el escáner. Verifica NAPS2.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const mergePDFs = async (files) => {
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        if (file.type === 'application/pdf') {
+          const pdf = await PDFDocument.load(arrayBuffer);
+          const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        } else if (file.type.startsWith('image/')) {
+          let image;
+          if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+            image = await mergedPdf.embedJpg(arrayBuffer);
+          } else if (file.type === 'image/png') {
+            image = await mergedPdf.embedPng(arrayBuffer);
+          } else {
+            continue; // Ignorar otros tipos de imagen
+          }
+          
+          // Crear una página con las dimensiones de la imagen
+          const page = mergedPdf.addPage([image.width, image.height]);
+          page.drawImage(image, {
+            x: 0,
+            y: 0,
+            width: image.width,
+            height: image.height,
+          });
+        }
+      }
+      const mergedPdfBytes = await mergedPdf.save();
+      return new File([mergedPdfBytes], `remision_${Date.now()}.pdf`, { type: "application/pdf" });
+    } catch (err) {
+      console.error("Error al unir documentos:", err);
+      throw new Error("No se pudieron unir los documentos. Asegúrate de que sean PDFs o imágenes válidas.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setGeneratedFolio('');
 
+    const data = new FormData();
+    data.append('fecha', formData.fecha);
+    data.append('monto', formData.monto);
+    if (formData.unidad) data.append('unidad', formData.unidad);
+    if (formData.producto) data.append('producto', formData.producto);
+    if (formData.taller) data.append('taller', formData.taller);
+    if (formData.proveedor) data.append('proveedor', formData.proveedor);
+    data.append('descripcion', formData.descripcion || '');
+    data.append('categoria', formData.categoria);
+    
+    formData.unidades.forEach(uId => {
+      data.append('unidades', uId);
+    });
+
+    // Procesar archivos escaneados
+    if (scannedFiles.length > 0) {
+      if (scannedFiles.length === 1) {
+        data.append('archivo_escaneado', scannedFiles[0]);
+      } else {
+        try {
+          const mergedFile = await mergePDFs(scannedFiles);
+          data.append('archivo_escaneado', mergedFile);
+        } catch (err) {
+          notify.error(err.message);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
     try {
-      const res = await api.post('tickets/', formData);
+      const res = await api.post('tickets/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       notify.success(`Ticket registrado: ${res.data.folio_interno}`);
       setGeneratedFolio(res.data.folio_interno);
       
@@ -108,6 +205,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
         onSuccess(res.data);
       }
       setFormData({ fecha: '', monto: '', unidad: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
+      setScannedFiles([]);
       setBusquedaUnidad('');
     } catch (err) {
       console.error("Error al guardar ticket:", err);
@@ -144,8 +242,8 @@ const AltaTicket = ({ onSuccess, onClose }) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+      <form onSubmit={handleSubmit} className={escanearRemision ? "grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full" : "max-w-2xl mx-auto space-y-6 w-full"}>
+        <div className={escanearRemision ? "lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl w-full" : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl w-full"}>
           <div className="space-y-4">
             <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 dark:border-amber-500/20 p-4 rounded-xl mb-4 shadow-sm">
               <p className="text-amber-600 dark:text-amber-500 text-xs font-bold uppercase tracking-wider mb-1">Folio del Sistema</p>
@@ -301,20 +399,132 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 </select>
               </div>
             </div>
+
+            <div className="flex items-center gap-3 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl mt-4">
+              <input
+                type="checkbox"
+                id="escanearRemision"
+                checked={escanearRemision}
+                onChange={(e) => {
+                  setEscanearRemision(e.target.checked);
+                  if (!e.target.checked) {
+                    setScannedFiles([]);
+                  }
+                }}
+                className="w-5 h-5 accent-amber-500 rounded border-slate-350 dark:border-slate-750 text-amber-600 focus:ring-amber-500 cursor-pointer"
+              />
+              <label htmlFor="escanearRemision" className="text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                ¿Desea escanear o adjuntar una remisión a este ticket?
+              </label>
+            </div>
+
+            {!escanearRemision && (
+              <button
+                disabled={loading}
+                type="submit"
+                className="w-full mt-6 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl shadow-amber-900/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {loading ? <Spinner /> : <TicketIcon size={24} />}
+                <span className="text-lg">REGISTRAR Y GENERAR FOLIO</span>
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="space-y-6">
+        {escanearRemision && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-center group hover:border-amber-500 transition-colors relative min-h-[250px] shadow-sm">
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-1/2 opacity-0 cursor-pointer z-10"
+                accept="image/*,.pdf"
+              />
+              
+              <div className="bg-amber-600/10 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                <Upload className="text-amber-500" size={24} />
+              </div>
+              
+              {scannedFiles.length > 0 ? (
+                <div className="w-full space-y-3 relative z-20">
+                  <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                    <CheckCircle size={12} /> {scannedFiles.length} {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
+                  </p>
+                  
+                  <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {scannedFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-2 rounded-xl group/item hover:border-amber-500/50 transition-all">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <div className="bg-amber-600/10 p-1.5 rounded-lg">
+                            <FilePlus size={12} className="text-amber-500" />
+                          </div>
+                          <p className="text-[10px] text-slate-600 dark:text-slate-300 truncate font-mono">
+                            {file.name}
+                          </p>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-slate-600 hover:text-rose-500 p-1 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
 
-          <button
-            disabled={loading}
-            type="submit"
-            className="w-full py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl shadow-amber-900/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {loading ? <Spinner /> : <TicketIcon size={24} />}
-            <span className="text-lg">REGISTRAR Y GENERAR FOLIO</span>
-          </button>
-        </div>
+                  <div className="pt-2 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={handleScan}
+                      disabled={scanning}
+                      className="w-full py-2 bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 text-[10px] font-black rounded-lg border border-amber-500/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      {scanning ? <Spinner /> : <FilePlus size={14} />}
+                      <span>ESCANEAR OTRA HOJA</span>
+                    </button>
+                    
+                    <button 
+                      type="button" 
+                      onClick={() => setScannedFiles([])}
+                      className="text-rose-400 text-[9px] font-bold hover:underline uppercase tracking-tighter"
+                    >
+                      Limpiar todo
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 relative z-20 w-full px-4">
+                  <p className="text-slate-900 dark:text-white font-semibold text-base">Adjuntar Remisión</p>
+                  <div className="relative flex items-center py-1">
+                      <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                      <span className="flex-shrink-0 mx-3 text-slate-400 dark:text-slate-600 text-[10px] font-bold">O</span>
+                      <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleScan}
+                    disabled={scanning}
+                    className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-600 dark:hover:bg-amber-600 disabled:opacity-50 text-slate-600 dark:text-white hover:text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                  >
+                    {scanning ? <Spinner /> : <FilePlus size={16} />}
+                    <span>{scanning ? 'Escaneando...' : 'Escanear Ahora'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              disabled={loading}
+              type="submit"
+              className="w-full py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl shadow-amber-900/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {loading ? <Spinner /> : <TicketIcon size={24} />}
+              <span className="text-lg">REGISTRAR Y GENERAR FOLIO</span>
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );
