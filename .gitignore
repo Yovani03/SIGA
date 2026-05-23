@@ -19,7 +19,3 @@ local_scanner_agent/temp_scan.pdf
 # Vercel
 .vercel
 
-# Database backups
-init-db/*.sql
-*.sql
-
