@@ -19,8 +19,7 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUser = async (token) => {
         try {
-            const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.');
-            const apiUrl = import.meta.env.VITE_API_URL || (isLocal ? `http://${window.location.hostname}:8000` : '');
+            const apiUrl = import.meta.env.VITE_API_URL || '';
             const response = await fetch(`${apiUrl}/api/auth/me/`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -41,8 +40,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (username, password) => {
-        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.');
-        const apiUrl = import.meta.env.VITE_API_URL || (isLocal ? `http://${window.location.hostname}:8000` : '');
+        const apiUrl = import.meta.env.VITE_API_URL || '';
         const response = await fetch(`${apiUrl}/api/auth/login/`, {
             method: 'POST',
             headers: {

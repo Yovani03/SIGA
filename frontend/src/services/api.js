@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.');
 const api = axios.create({
-    baseURL: isLocal ? `http://${window.location.hostname}:8000/api/` : '/api/',
+    baseURL: '/api/',
     headers: {
         'Content-Type': 'application/json',
     },

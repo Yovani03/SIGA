@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: autotran-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin_secure_password
+      POSTGRES_DB: autotran_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: autotran-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:admin_secure_password@db:5432/autotran_db
+      - DATABASE_SSL_REQUIRE=False
+      - SECRET_KEY=django-insecure-2w%r$*7kc+!yjhxf%=x#)v1w7p+3s9m4^dal3_3d^%3p26$kvd
+      - DEBUG=False
+    volumes:
+      - ./backend/media:/app/media
+      - ./backend/staticfiles:/app/staticfiles
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: autotran-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./backend/media:/app/media:ro
+      - ./backend/staticfiles:/app/staticfiles:ro
+
+volumes:
+  db_data:
