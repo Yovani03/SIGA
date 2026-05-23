@@ -1,0 +1,2 @@
+# Carpeta para colocar respaldos SQL de inicialización (.sql)
+# Cualquier script SQL puesto aquí se importará automáticamente al iniciar el contenedor por primera vez.
