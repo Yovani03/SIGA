@@ -92,13 +92,23 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       return;
     }
     if (name === 'unidad' && value) {
-      const uId = parseInt(value);
-      setFormData(prev => {
-        if (!prev.unidades.includes(uId)) {
-          return { ...prev, unidad: value, unidades: [...prev.unidades, uId] };
-        }
-        return { ...prev, unidad: value };
-      });
+      if (value.startsWith('caja_')) {
+        const cajaId = value.split('_')[1];
+        setFormData(prev => ({
+          ...prev,
+          caja: cajaId,
+          unidad: prev.unidad === 'sin_unidad' ? '' : prev.unidad
+        }));
+      } else {
+        const vId = parseInt(value.split('_')[1] || value);
+        setFormData(prev => {
+          const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
+          if (!prevUnidades.includes(vId)) {
+            return { ...prev, unidad: vId.toString(), unidades: [...prevUnidades, vId] };
+          }
+          return { ...prev, unidad: vId.toString() };
+        });
+      }
       return;
     }
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -226,6 +236,11 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
   );
 
+  const cajasFiltradas = cajas.filter(c => 
+    c.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    c.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+  );
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between gap-4 mb-8">
@@ -306,9 +321,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 placeholder="Ej. Cambio de balatas delanteras"
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
               />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <DollarSign size={14} /> Monto
@@ -330,7 +343,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Truck size={14} /> Unidad Relacionada
+                  <Truck size={14} /> Unidad o Caja Relacionada
                 </label>
                 <div className="relative mb-2">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -346,26 +359,50 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 </div>
                 <select
                   name="unidad"
-                  value={formData.unidad}
+                  value={formData.caja ? `caja_${formData.caja}` : formData.unidad ? `vehiculo_${formData.unidad}` : ''}
                   onChange={handleChange}
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm font-bold"
                 >
-                  <option value="" className="bg-white dark:bg-slate-900">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
-                  {vehiculosFiltrados.map(v => (
-                    <option key={v.id} value={v.id} className="bg-white dark:bg-slate-900">{v.numero_economico}</option>
-                  ))}
+                  <option value="" className="bg-white dark:bg-slate-900">
+                    {busquedaUnidad 
+                      ? `Resultados (${vehiculosFiltrados.length + cajasFiltradas.length})` 
+                      : 'Seleccionar...'}
+                  </option>
+                  
+                  {vehiculosFiltrados.length > 0 && (
+                    <optgroup label="Tractores" className="bg-white dark:bg-slate-900 text-slate-400 font-bold text-xs">
+                      {vehiculosFiltrados.map(v => (
+                        <option key={`vehiculo_${v.id}`} value={`vehiculo_${v.id}`} className="bg-white dark:bg-slate-900 text-slate-950 dark:text-white font-normal">{v.numero_economico}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  
+                  {cajasFiltradas.length > 0 && (
+                    <optgroup label="Remolques / Cajas" className="bg-white dark:bg-slate-900 text-indigo-400 font-bold text-xs">
+                      {cajasFiltradas.map(c => (
+                        <option key={`caja_${c.id}`} value={`caja_${c.id}`} className="bg-white dark:bg-slate-900 text-slate-950 dark:text-white font-normal">{c.numero_economico} (Caja)</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
 
-                {formData.unidades.length > 0 && (
+                {(formData.unidades.length > 0 || formData.caja) && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {formData.unidades.map(uId => {
                       const v = vehiculos.find(veh => veh.id === uId);
                       return v ? (
-                        <div key={uId} className="flex items-center gap-2 bg-amber-600/20 text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-bold">
-                          {v.numero_economico}
+                        <div key={`vehiculo-${uId}`} className="flex items-center gap-2 bg-amber-600/20 text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-bold animate-in fade-in zoom-in-95 duration-200">
+                          <span>Tractor: {v.numero_economico}</span>
                           <button 
                             type="button" 
-                            onClick={() => setFormData(prev => ({ ...prev, unidades: prev.unidades.filter(id => id !== uId) }))}
+                            onClick={() => setFormData(prev => {
+                              const newUnidades = prev.unidades.filter(id => id !== uId);
+                              return {
+                                ...prev,
+                                unidades: newUnidades,
+                                unidad: newUnidades.length > 0 ? newUnidades[0].toString() : ''
+                              };
+                            })}
                             className="hover:text-white transition-colors"
                           >
                             ✕
@@ -373,6 +410,21 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                         </div>
                       ) : null;
                     })}
+                    {formData.caja && (() => {
+                      const c = cajas.find(caj => caj.id === parseInt(formData.caja));
+                      return c ? (
+                        <div key={`caja-${c.id}`} className="flex items-center gap-2 bg-indigo-600/20 text-indigo-500 border border-indigo-500/30 px-3 py-1 rounded-full text-[10px] font-bold animate-in fade-in zoom-in-95 duration-200">
+                          <span>Remolque: {c.numero_economico}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, caja: '' }))}
+                            className="hover:text-white transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 )}
                 {formData.unidades.length > 1 && (
@@ -381,35 +433,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   </p>
                 )}
               </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Archive size={14} /> Caja / Remolque (Opcional)
-                </label>
-                <div className="relative mb-2">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <Archive className="text-slate-500/40" size={12} />
-                  </div>
-                  <input
-                    type="text"
-                    readOnly
-                    value="Buscar cajas de remolque..."
-                    className="w-full bg-slate-100 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-400 placeholder:text-slate-500 focus:border-amber-500/50 outline-none transition-all shadow-sm select-none"
-                  />
-                </div>
-                <select
-                  name="caja"
-                  value={formData.caja}
-                  onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm font-bold"
-                >
-                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar caja...</option>
-                  {cajas.map(c => (
-                    <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900">{c.numero_economico} - {c.tipo || 'Caja'}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            </div>          </div>
 
             <div className="grid grid-cols-1 gap-4">
               <div>

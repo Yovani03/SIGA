@@ -239,7 +239,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const seleccionarUnidad = (value) => {
+  const seleccionarUnidad = (value, tipo) => {
     if (value === 'sin_unidad') {
       setFormData(prev => ({
         ...prev,
@@ -251,20 +251,28 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setMostrarDropdownUnidad(false);
       return;
     }
-    const uId = parseInt(value);
-    setFormData(prev => {
-      const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
-      const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
-      if (!prevUnidades.includes(uId)) {
-        return { 
-          ...prev, 
-          unidad: value.toString(), 
-          unidades: [...prevUnidades, uId],
-          detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
-        };
-      }
-      return { ...prev, unidad: value.toString() };
-    });
+    
+    if (tipo === 'caja') {
+      setFormData(prev => ({
+        ...prev,
+        caja: value.toString()
+      }));
+    } else {
+      const uId = parseInt(value);
+      setFormData(prev => {
+        const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
+        const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
+        if (!prevUnidades.includes(uId)) {
+          return { 
+            ...prev, 
+            unidad: value.toString(), 
+            unidades: [...prevUnidades, uId],
+            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
+          };
+        }
+        return { ...prev, unidad: value.toString() };
+      });
+    }
     setBusquedaUnidad('');
     setMostrarDropdownUnidad(false);
   };
@@ -459,6 +467,11 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const vehiculosFiltrados = vehiculos.filter(v => 
     v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
     v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+  );
+
+  const cajasFiltradas = cajas.filter(c => 
+    c.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    c.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
   );
 
   return (
@@ -674,34 +687,62 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                         </button>
                       )}
                       
-                      {vehiculosFiltrados.length > 0 ? (
-                        vehiculosFiltrados.map(v => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => seleccionarUnidad(v.id)}
-                            className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
-                          >
-                            <div>
-                              <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                                {v.numero_economico}
-                              </div>
-                              <div className="text-xs text-slate-500">
-                                {v.placas ? `${v.placas} - ` : ''}{v.marca}
-                              </div>
+                      {vehiculosFiltrados.length > 0 && (
+                        <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                          Tractores
+                        </div>
+                      )}
+                      {vehiculosFiltrados.map(v => (
+                        <button
+                          key={`vehiculo-${v.id}`}
+                          type="button"
+                          onClick={() => seleccionarUnidad(v.id, 'vehiculo')}
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                        >
+                          <div>
+                            <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                              {v.numero_economico}
                             </div>
-                          </button>
-                        ))
-                      ) : (
+                            <div className="text-xs text-slate-500">
+                              {v.placas ? `${v.placas} - ` : ''}{v.marca}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {cajasFiltradas.length > 0 && (
+                        <div className="px-4 py-2 text-[10px] font-bold text-indigo-400 uppercase border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                          Remolques / Cajas
+                        </div>
+                      )}
+                      {cajasFiltradas.map(c => (
+                        <button
+                          key={`caja-${c.id}`}
+                          type="button"
+                          onClick={() => seleccionarUnidad(c.id, 'caja')}
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-indigo-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                        >
+                          <div>
+                            <div className="text-slate-900 dark:text-white font-bold group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                              {c.numero_economico} (Caja)
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {c.placas ? `${c.placas} - ` : ''}{c.tipo || 'Remolque'}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {vehiculosFiltrados.length === 0 && cajasFiltradas.length === 0 && (
                         (!busquedaUnidad || !'sin unidad asignada'.includes(busquedaUnidad.toLowerCase())) && (
-                          <div className="p-4 text-slate-500 text-center text-xs">No se encontraron unidades</div>
+                          <div className="p-4 text-slate-500 text-center text-xs">No se encontraron unidades o cajas</div>
                         )
                       )}
                     </div>
                   )}
                 </div>
                 
-                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad') && (
+                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad' || formData.caja) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {formData.unidad === 'sin_unidad' && (
                       <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full text-[10px] font-black">
@@ -718,8 +759,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     {formData.unidades.map(uId => {
                       const v = vehiculos.find(veh => veh.id === uId);
                       return v ? (
-                        <div key={uId} className="flex items-center gap-1.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-black">
-                          <span>{v.numero_economico}</span>
+                        <div key={`vehiculo-${uId}`} className="flex items-center gap-1.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                          <span>Tractor: {v.numero_economico}</span>
                           <button 
                             type="button" 
                             onClick={() => setFormData(prev => ({ 
@@ -737,6 +778,21 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                         </div>
                       ) : null;
                     })}
+                    {formData.caja && (() => {
+                      const c = cajas.find(caj => caj.id === parseInt(formData.caja));
+                      return c ? (
+                        <div key={`caja-${c.id}`} className="flex items-center gap-1.5 bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                          <span>Remolque: {c.numero_economico}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, caja: '' }))}
+                            className="hover:text-rose-500 transition-colors ml-1 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 )}
               </div>
@@ -762,22 +818,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Archive size={14} /> Caja / Remolque (Opcional)
-                </label>
-                <select
-                  name="caja"
-                  value={formData.caja}
-                  onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer text-sm font-bold"
-                >
-                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar caja...</option>
-                  {cajas.map(c => (
-                    <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900">{c.numero_economico} - {c.tipo || 'Caja'}</option>
-                  ))}
-                </select>
-              </div>
+
             </div>
 
             {formData.unidades.length > 1 && (
