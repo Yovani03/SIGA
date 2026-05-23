@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict NMVBM2Dlcp7HYWIgjicARJVQn5hxSX8L2FHn66op3fFm92wA5MEqHcwJqBj5ChC
+\restrict 3mZLmwQFVKpNm3aY4GIi58ip20KPSkLdbXZfi5Ljl85C3ZvNSi0XE24b8sYG4Sm
 
 -- Dumped from database version 17.10 (322a063)
 -- Dumped by pg_dump version 18.1
 
--- Started on 2026-05-23 13:03:40
+-- Started on 2026-05-23 13:18:09
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1502,19 +1502,6 @@ COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 --
 
 COPY public.facturacion_factura (id, fecha, monto, folio, archivo_escaneado, fecha_registro, unidad_id, producto_id, ticket_id, descripcion, taller_id, razon_social_emisor, rfc_emisor, proveedor_id, categoria, iva_aplicado, caja_id, variado_id, cancelado, factura_reemplazo_id, motivo_cancelacion) FROM stdin;
-18	2026-04-29	848.00	51E287	media/facturas/2026/05/factura_escaneada_1778862296271_artzmf	2026-05-15 16:26:05.434266+00	20	\N	9	compra de tapones	\N	Autozone De Mexico	AME970109GW0	2	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-31	2026-05-05	1216.97	B57BCC	media/facturas/2026/05/escaneo_1779223371806_dd4j5t	2026-05-19 20:42:56.122858+00	48	\N	22	refacciones varias unidades	\N	MAYCO APIZACO SA DE CV	MAP030708326	7	Otro	f	\N	\N	f	\N	\N
-19	2026-05-12	18908.00	a7fd5d	media/facturas/2026/05/factura_escaneada_1778870488058_ecqfbr	2026-05-15 18:42:07.987502+00	37	\N	10	verificacion	\N	SERVICIOS INTEGRALES DE INSPECCION TOH	SII230922Q49	3	Administrativo	f	\N	\N	f	\N	\N
-20	2026-05-05	1978.00	3FDC6C	media/facturas/2026/05/factura_escaneada_1778873621544_joh6kf	2026-05-15 19:34:07.546773+00	43	\N	11	direccional	\N	NIEVES SANCHES RODRIGUEZ	SARN570601SM2	4	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-21	2026-05-05	120.00	F15181	media/facturas/2026/05/factura_escaneada_1778873732906_tnoq5o	2026-05-15 19:35:39.375172+00	46	\N	12	junta de bomba	\N	NIEVES SANCHES RODRIGUEZ	SARN570601SM2	4	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-22	2026-05-05	390.00	3016B4	media/facturas/2026/05/factura_escaneada_1778873859412_x25myd	2026-05-15 19:37:44.025927+00	48	\N	13	limpiador carburadores	\N	NIEVES SANCHES RODRIGUEZ	SARN570601SM2	4	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-23	2026-05-05	6895.83	3CDACB	media/facturas/2026/05/factura_escaneada_1778874022902_wserl0	2026-05-15 19:40:47.390152+00	42	\N	14	refaciones variadas	\N	NIEVES SANCHES RODRIGUEZ	SARN570601SM2	4	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-25	2026-05-16	3749.63	18EB5E	media/facturas/2026/05/escaneo_1779219972080_ibgbtv	2026-05-19 19:43:10.869371+00	\N	\N	16	servicio de manejo de palgas	\N	MISHEL LOPEZ GUEVARA	LOG800216P49	5	Operativo	f	\N	\N	f	\N	\N
-26	2026-05-05	21081.99	b4cac8	media/facturas/2026/05/escaneo_1779220886170_zbjckq	2026-05-19 20:02:07.301599+00	47	\N	17	compra de bomba y aceite	\N	MAURO HERNANDEZ SANCHEZ	HESM8307294F1	6	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-27	2026-05-05	9371.00	837c36	media/facturas/2026/05/escaneo_1779221057205_lxpr6u	2026-05-19 20:04:21.400513+00	48	\N	18	compra de refcacciones	\N	MAURO HERNANDEZ SANCHEZ	HESM8307294F1	6	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-28	2026-05-05	7181.99	8cbd09	media/facturas/2026/05/escaneo_1779221162992_c8ov1b	2026-05-19 20:06:32.726342+00	\N	\N	19	compra de aceite	\N	MAURO HERNANDEZ SANCHEZ	HESM8307294F1	6	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-29	2026-04-27	1190.00	bdf43d	media/facturas/2026/05/escaneo_1779221285110_xkyysm	2026-05-19 20:08:15.919746+00	42	\N	20	compra lodera	\N	MAURO HERNANDEZ SANCHEZ	HESM8307294F1	6	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
-30	2026-04-27	28182.55	1DE8FE	media/facturas/2026/05/factura_1DE8FE_elagwu	2026-05-19 20:32:37.498371+00	71	\N	21	mantenimiento mayor	7	RUBEN RAMIRO ROJAS FERNANDEZ	FEOR9610266Y1	\N	Mantenimiento y Refacciones	f	\N	\N	f	\N	\N
 \.
 
 
@@ -1525,31 +1512,6 @@ COPY public.facturacion_factura (id, fecha, monto, folio, archivo_escaneado, fec
 --
 
 COPY public.facturacion_factura_unidades (id, factura_id, unidadtractocamion_id) FROM stdin;
-2	18	20
-3	19	101
-4	19	38
-5	19	39
-6	19	40
-7	19	41
-8	19	42
-9	19	43
-10	19	102
-11	19	45
-12	19	46
-13	19	47
-14	19	48
-15	19	37
-16	20	43
-17	21	46
-18	22	48
-19	23	42
-20	26	47
-21	27	48
-22	29	42
-23	30	71
-24	31	48
-25	31	91
-26	31	61
 \.
 
 
@@ -1560,22 +1522,6 @@ COPY public.facturacion_factura_unidades (id, factura_id, unidadtractocamion_id)
 --
 
 COPY public.facturacion_facturadetalleunidad (id, monto, factura_id, unidad_id) FROM stdin;
-40	1334.00	19	39
-41	1334.00	19	38
-42	1334.00	19	40
-43	1334.00	19	41
-44	1334.00	19	42
-45	1334.00	19	43
-46	1334.00	19	45
-47	1334.00	19	46
-48	1334.00	19	47
-49	1334.00	19	48
-50	1334.00	19	101
-51	1334.00	19	102
-52	2900.00	19	37
-53	547.66	31	61
-54	296.82	31	91
-55	372.49	31	48
 \.
 
 
@@ -1597,19 +1543,6 @@ COPY public.facturacion_producto (id, nombre, categoria, descripcion) FROM stdin
 --
 
 COPY public.facturacion_ticket (id, folio_interno, folio_emision, fecha, monto, archivo_escaneado, fecha_registro, convertido_en_factura, producto_id, unidad_id, descripcion, taller_id, proveedor_id, categoria, caja_id, variado_id) FROM stdin;
-16	TK-00007	TK-00007	2026-05-16	3749.63		2026-05-19 19:43:10.099939+00	t	\N	\N	Auto-generado por Factura 18EB5E. servicio de manejo de palgas	\N	5	Operativo	\N	\N
-9	TK-00001	TK-00001	2026-04-29	848.00		2026-05-15 16:26:04.731171+00	t	\N	20	Auto-generado por Factura 51E287. compra de tapones	\N	2	Mantenimiento y Refacciones	\N	\N
-17	TK-00008	TK-00008	2026-05-05	21081.99		2026-05-19 20:02:06.250635+00	t	\N	47	Auto-generado por Factura b4cac8. compra de bomba y aceite	\N	6	Mantenimiento y Refacciones	\N	\N
-18	TK-00009	TK-00009	2026-05-05	9371.00		2026-05-19 20:04:20.283172+00	t	\N	48	Auto-generado por Factura 837c36. compra de refcacciones	\N	6	Mantenimiento y Refacciones	\N	\N
-10	TK-00002	TK-00002	2026-05-12	18908.00		2026-05-15 18:42:07.359456+00	t	\N	37	Auto-generado por Factura a7fd5d. verificacion	\N	3	Otro	\N	\N
-11	TK-00003	TK-00003	2026-05-05	1978.00		2026-05-15 19:34:06.803081+00	t	\N	43	Auto-generado por Factura 3FDC6C. direccional	\N	4	Mantenimiento y Refacciones	\N	\N
-19	TK-00010	TK-00010	2026-05-05	7181.99		2026-05-19 20:06:31.946438+00	t	\N	\N	Auto-generado por Factura 8cbd09. compra de aceite	\N	6	Mantenimiento y Refacciones	\N	\N
-12	TK-00004	TK-00004	2026-05-05	120.00		2026-05-15 19:35:38.611063+00	t	\N	46	Auto-generado por Factura F15181. junta de bomba	\N	4	Mantenimiento y Refacciones	\N	\N
-13	TK-00005	TK-00005	2026-05-05	390.00		2026-05-15 19:37:42.429714+00	t	\N	48	Auto-generado por Factura 3016B4. limpiador carburadores	\N	4	Mantenimiento y Refacciones	\N	\N
-14	TK-00006	TK-00006	2026-05-05	6895.83		2026-05-15 19:40:46.285432+00	t	\N	42	Auto-generado por Factura 3CDACB. refaciones variadas	\N	4	Mantenimiento y Refacciones	\N	\N
-20	TK-00011	TK-00011	2026-04-27	1190.00		2026-05-19 20:08:14.89923+00	t	\N	42	Auto-generado por Factura bdf43d. compra lodera	\N	6	Mantenimiento y Refacciones	\N	\N
-21	TK-00012	TK-00012	2026-04-27	28182.55		2026-05-19 20:32:36.406917+00	t	\N	71	Auto-generado por Factura 1DE8FE. mantenimiento mayor	7	\N	Mantenimiento y Refacciones	\N	\N
-22	TK-00013	TK-00013	2026-05-05	1216.97		2026-05-19 20:42:55.465856+00	t	\N	48	Auto-generado por Factura B57BCC. refacciones varias unidades	\N	7	Otro	\N	\N
 \.
 
 
@@ -1620,31 +1553,6 @@ COPY public.facturacion_ticket (id, folio_interno, folio_emision, fecha, monto, 
 --
 
 COPY public.facturacion_ticket_unidades (id, ticket_id, unidadtractocamion_id) FROM stdin;
-2	9	20
-3	10	101
-4	10	38
-5	10	39
-6	10	40
-7	10	41
-8	10	42
-9	10	43
-10	10	102
-11	10	45
-12	10	46
-13	10	47
-14	10	48
-15	10	37
-16	11	43
-17	12	46
-18	13	48
-19	14	42
-20	17	47
-21	18	48
-22	20	42
-23	21	71
-24	22	48
-25	22	91
-26	22	61
 \.
 
 
@@ -1655,22 +1563,6 @@ COPY public.facturacion_ticket_unidades (id, ticket_id, unidadtractocamion_id) F
 --
 
 COPY public.facturacion_ticketdetalleunidad (id, monto, ticket_id, unidad_id) FROM stdin;
-1	1334.00	10	39
-2	1334.00	10	38
-3	1334.00	10	40
-4	1334.00	10	41
-5	1334.00	10	42
-6	1334.00	10	43
-7	1334.00	10	45
-8	1334.00	10	46
-9	1334.00	10	47
-10	1334.00	10	48
-11	1334.00	10	101
-12	1334.00	10	102
-13	2900.00	10	37
-14	547.66	22	61
-15	296.82	22	91
-16	372.49	22	48
 \.
 
 
@@ -3785,11 +3677,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQU
 ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION;
 
 
--- Completed on 2026-05-23 13:03:56
+-- Completed on 2026-05-23 13:18:25
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NMVBM2Dlcp7HYWIgjicARJVQn5hxSX8L2FHn66op3fFm92wA5MEqHcwJqBj5ChC
+\unrestrict 3mZLmwQFVKpNm3aY4GIi58ip20KPSkLdbXZfi5Ljl85C3ZvNSi0XE24b8sYG4Sm
 
