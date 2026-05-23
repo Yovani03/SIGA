@@ -64,6 +64,14 @@ class Ticket(models.Model):
         related_name='tickets',
         verbose_name="Unidad Principal"
     )
+    caja = models.ForeignKey(
+        'vehiculos.RemolqueCaja',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name="Caja/Remolque"
+    )
     unidades = models.ManyToManyField(
         UnidadTractocamion,
         blank=True,
@@ -143,6 +151,14 @@ class Factura(models.Model):
         related_name='facturas',
         verbose_name="Unidad Principal"
     )
+    caja = models.ForeignKey(
+        'vehiculos.RemolqueCaja',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='facturas',
+        verbose_name="Caja/Remolque"
+    )
     unidades = models.ManyToManyField(
         UnidadTractocamion,
         blank=True,
@@ -188,6 +204,7 @@ class Factura(models.Model):
                 taller=self.taller,
                 proveedor=self.proveedor,
                 unidad=self.unidad,
+                caja=self.caja,
                 producto=self.producto,
                 convertido_en_factura=True
             )

@@ -13,7 +13,8 @@ import {
   Ticket as TicketIcon,
   Store,
   Info,
-  Search
+  Search,
+  Archive
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { PDFDocument } from 'pdf-lib';
@@ -31,6 +32,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [ticketsPendientes, setTicketsPendientes] = useState([]);
   const [talleres, setTalleres] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [cajas, setCajas] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -39,6 +41,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     monto: '',
     folio: '',
     unidad: '',
+    caja: '',
     producto: '',
     ticket: '',
     taller: '',
@@ -66,14 +69,16 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       api.get('productos/'),
       api.get('tickets/pendientes/'),
       api.get('talleres/'),
-      api.get('proveedores/')
+      api.get('proveedores/'),
+      api.get('cajas/')
     ])
-    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes]) => {
+    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes, cajasRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTicketsPendientes(ticketsRes.data);
       setTalleres(talleresRes.data);
       setProveedores(proveedoresRes.data);
+      setCajas(cajasRes.data);
       setEntidades([
         ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
         ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
@@ -89,6 +94,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         monto: factura.monto,
         folio: factura.folio,
         unidad: factura.unidad || (factura.unidades && factura.unidades.length > 0 ? '' : 'sin_unidad'),
+        caja: factura.caja || '',
         producto: factura.producto || '',
         ticket: factura.ticket || '',
         taller: factura.taller || '',
@@ -139,6 +145,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
             ticket: value,
             monto: ticket.monto,
             unidad: ticket.unidad || '',
+            caja: ticket.caja || '',
             unidades: ticket.unidades || [],
             detalles_unidades: ticket.detalles_unidades || (ticket.unidades || []).map(uId => ({ unidad: uId, monto: '' })),
             producto: ticket.producto || '',
@@ -377,6 +384,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       if (uId !== 'sin_unidad') data.append('unidades', uId);
     });
     if (formData.categoria) data.append('categoria', formData.categoria);
+    if (formData.caja) data.append('caja', formData.caja);
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
@@ -426,7 +434,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -751,6 +759,23 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   <option value="Operativo" className="bg-white dark:bg-slate-900">Operativo</option>
                   <option value="Combustible" className="bg-white dark:bg-slate-900">Combustible</option>
                   <option value="Otro" className="bg-white dark:bg-slate-900">Otro</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <Archive size={14} /> Caja / Remolque (Opcional)
+                </label>
+                <select
+                  name="caja"
+                  value={formData.caja}
+                  onChange={handleChange}
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer text-sm font-bold"
+                >
+                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar caja...</option>
+                  {cajas.map(c => (
+                    <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900">{c.numero_economico} - {c.tipo || 'Caja'}</option>
+                  ))}
                 </select>
               </div>
             </div>

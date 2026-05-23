@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import UnidadTractocamion
+from .models import UnidadTractocamion, RemolqueCaja
+
+class RemolqueCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RemolqueCaja
+        fields = '__all__'
 
 class UnidadSerializer(serializers.ModelSerializer):
     orden_activa = serializers.SerializerMethodField()

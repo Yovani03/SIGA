@@ -3,8 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
-from .models import UnidadTractocamion
-from .serializers import UnidadSerializer
+from .models import UnidadTractocamion, RemolqueCaja
+from .serializers import UnidadSerializer, RemolqueCajaSerializer
+
+class RemolqueCajaViewSet(viewsets.ModelViewSet):
+    queryset = RemolqueCaja.objects.all()
+    serializer_class = RemolqueCajaSerializer
 
 class UnidadViewSet(viewsets.ModelViewSet):
     queryset = UnidadTractocamion.objects.all()

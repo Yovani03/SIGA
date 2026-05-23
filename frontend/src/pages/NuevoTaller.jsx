@@ -221,7 +221,7 @@ const NuevoTaller = ({ onSuccess, onClose, tallerToEdit }) => {
 
         <div className="relative">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider">Dirección Física *</label>
+            <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider">Dirección Física</label>
             <div className="flex gap-3">
               <button 
                 type="button"
@@ -244,12 +244,11 @@ const NuevoTaller = ({ onSuccess, onClose, tallerToEdit }) => {
           </div>
           <textarea
             name="direccion"
-            required
             rows="2"
             value={formData.direccion}
             onChange={handleChange}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all resize-none text-sm"
-            placeholder="Calle, Número, Colonia, Ciudad..."
+            placeholder="Calle, Número, Colonia, Ciudad... (Opcional)"
           ></textarea>
           
           {suggestions.length > 0 && (

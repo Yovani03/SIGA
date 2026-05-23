@@ -21,7 +21,8 @@ import {
   Ticket as TicketIcon,
   TrendingUp,
   Tag,
-  Pencil
+  Pencil,
+  Archive
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import {
@@ -71,6 +72,7 @@ const categoryChartConfig = {
 const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
+  const [cajas, setCajas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
@@ -92,12 +94,14 @@ const Facturacion = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [facturasRes, vehiculosRes] = await Promise.all([
+      const [facturasRes, vehiculosRes, cajasRes] = await Promise.all([
         api.get('facturas/'),
-        api.get('vehiculos/')
+        api.get('vehiculos/'),
+        api.get('cajas/')
       ]);
       setFacturas(facturasRes.data);
       setVehiculos(vehiculosRes.data);
+      setCajas(cajasRes.data);
     } catch (err) {
       console.error("Error cargando facturación", err);
       notify.error("No se pudieron cargar los datos de facturación.");
@@ -120,6 +124,10 @@ const Facturacion = () => {
 
   const getUnidadInfo = (unidadId) => {
     return vehiculos.find(v => v.id === unidadId);
+  };
+
+  const getCajaInfo = (cajaId) => {
+    return cajas.find(c => c.id === cajaId);
   };
 
   const filteredFacturas = facturas.filter(f => {
@@ -151,6 +159,7 @@ const Facturacion = () => {
     if (end && new Date(f.fecha) > end) return false;
 
     const unidad = getUnidadInfo(f.unidad);
+    const caja = getCajaInfo(f.caja);
     const searchLower = searchTerm.toLowerCase();
     return (
       f.folio.includes(searchTerm) ||
@@ -160,7 +169,9 @@ const Facturacion = () => {
       (f.rfc_emisor && f.rfc_emisor.toLowerCase().includes(searchLower)) ||
       (f.razon_social_emisor && f.razon_social_emisor.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.placas.toLowerCase().includes(searchLower))
+      (unidad && unidad.placas.toLowerCase().includes(searchLower)) ||
+      (caja && caja.numero_economico.toLowerCase().includes(searchLower)) ||
+      (caja && caja.placas.toLowerCase().includes(searchLower))
     );
   }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -431,13 +442,19 @@ const Facturacion = () => {
                     <div className="bg-blue-600/10 p-2 rounded-lg shrink-0">
                       <Truck className="text-blue-500" size={18} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Asignación</p>
                       <p className={`text-sm font-bold truncate ${f.unidades_info?.length > 1 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-900 dark:text-white'}`}>
                         {f.unidades_info?.length > 1 
                           ? `${f.unidades_info.length} Unidades: ${f.unidades_info.join(', ')}` 
-                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Sin unidad asignada')}
+                          : (unidad ? `Tractor: ${unidad.numero_economico}` : 'Sin tractor asignado')}
                       </p>
+                      {f.caja_numero_economico && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 font-semibold">
+                          <Archive size={12} className="text-indigo-400 shrink-0" />
+                          Remolque: {f.caja_numero_economico}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -643,6 +660,37 @@ const Facturacion = () => {
                     </div>
                   </div>
                 </div>
+
+                {selectedFactura.caja && (
+                  <div className="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-3 col-span-1 md:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-indigo-600/10 p-2 rounded-xl">
+                        <Archive className="text-indigo-500" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-[9px] font-bold uppercase">Caja / Remolque Relacionado</p>
+                        <p className="text-slate-900 dark:text-white font-bold">
+                          {(() => {
+                            const cajaObj = getCajaInfo(selectedFactura.caja);
+                            return cajaObj 
+                              ? `${cajaObj.numero_economico} - Placas: ${cajaObj.placas} ${cajaObj.tipo ? `(${cajaObj.tipo})` : ''}` 
+                              : selectedFactura.caja_numero_economico || 'Caja asignada';
+                          })()}
+                        </p>
+                        {(() => {
+                          const cajaObj = getCajaInfo(selectedFactura.caja);
+                          return cajaObj && (cajaObj.modelo || cajaObj.numero_serie) ? (
+                            <p className="text-slate-500 text-xs mt-1">
+                              {cajaObj.modelo ? `Modelo: ${cajaObj.modelo}` : ''}
+                              {cajaObj.modelo && cajaObj.numero_serie ? ' | ' : ''}
+                              {cajaObj.numero_serie ? `N/S: ${cajaObj.numero_serie}` : ''}
+                            </p>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">

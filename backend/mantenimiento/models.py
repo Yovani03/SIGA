@@ -13,7 +13,7 @@ class Taller(models.Model):
         ('Hidráulico', 'Hidráulico'),
     ]
     nombre = models.CharField(max_length=200)
-    direccion = models.TextField()
+    direccion = models.TextField(blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     especialidad = models.CharField(max_length=255, blank=True, null=True)
     latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

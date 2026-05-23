@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Clock,
   Store,
-  Info
+  Info,
+  Archive
 } from 'lucide-react';
 import AltaTicket from './AltaTicket';
 import notify from '../utils/notifications';
@@ -24,6 +25,7 @@ import notify from '../utils/notifications';
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
+  const [cajas, setCajas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
@@ -39,12 +41,14 @@ const Tickets = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ticketsRes, vehiculosRes] = await Promise.all([
+      const [ticketsRes, vehiculosRes, cajasRes] = await Promise.all([
         api.get('tickets/'),
-        api.get('vehiculos/')
+        api.get('vehiculos/'),
+        api.get('cajas/')
       ]);
       setTickets(ticketsRes.data);
       setVehiculos(vehiculosRes.data);
+      setCajas(cajasRes.data);
     } catch (err) {
       console.error("Error cargando tickets", err);
       notify.error("No se pudieron cargar los datos de tickets.");
@@ -62,8 +66,13 @@ const Tickets = () => {
     return vehiculos.find(v => v.id === unidadId);
   };
 
+  const getCajaInfo = (cajaId) => {
+    return cajas.find(c => c.id === cajaId);
+  };
+
   const filteredTickets = tickets.filter(t => {
     const unidad = getUnidadInfo(t.unidad);
+    const caja = getCajaInfo(t.caja);
     const searchLower = searchTerm.toLowerCase();
     return (
       t.folio_interno.toLowerCase().includes(searchLower) ||
@@ -72,7 +81,9 @@ const Tickets = () => {
       (t.taller_nombre && t.taller_nombre.toLowerCase().includes(searchLower)) ||
       (t.proveedor_nombre && t.proveedor_nombre.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.placas.toLowerCase().includes(searchLower))
+      (unidad && unidad.placas.toLowerCase().includes(searchLower)) ||
+      (caja && caja.numero_economico.toLowerCase().includes(searchLower)) ||
+      (caja && caja.placas.toLowerCase().includes(searchLower))
     );
   }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -207,13 +218,19 @@ const Tickets = () => {
                     <div className="bg-amber-600/10 p-2 rounded-lg shrink-0">
                       <Truck className="text-amber-500" size={18} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">Unidad(es)</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">Asignación</p>
                       <p className={`text-sm font-bold truncate ${t.unidades_info?.length > 1 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-900 dark:text-white'}`}>
                         {t.unidades_info?.length > 1 
                           ? `${t.unidades_info.length} Unidades: ${t.unidades_info.join(', ')}` 
-                          : (unidad ? `${unidad.numero_economico} (${unidad.placas})` : 'Gasto General')}
+                          : (unidad ? `Tractor: ${unidad.numero_economico}` : 'Gasto General')}
                       </p>
+                      {t.caja_numero_economico && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 font-semibold">
+                          <Archive size={12} className="text-amber-500/80 shrink-0" />
+                          Remolque: {t.caja_numero_economico}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -404,6 +421,35 @@ const Tickets = () => {
                     </span>
                   )}
                 </div>
+
+                {selectedTicket.caja && (
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex gap-3 items-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-indigo-600/10 p-2 rounded-xl mt-1">
+                      <Archive className="text-indigo-500" size={18} />
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">Caja / Remolque Relacionado</span>
+                      <span className="font-semibold text-slate-900 dark:text-white block">
+                        {(() => {
+                          const cajaObj = getCajaInfo(selectedTicket.caja);
+                          return cajaObj 
+                            ? `${cajaObj.numero_economico} - Placas: ${cajaObj.placas} ${cajaObj.tipo ? `(${cajaObj.tipo})` : ''}` 
+                            : selectedTicket.caja_numero_economico || 'Caja asignada';
+                        })()}
+                      </span>
+                      {(() => {
+                        const cajaObj = getCajaInfo(selectedTicket.caja);
+                        return cajaObj && (cajaObj.modelo || cajaObj.numero_serie) ? (
+                          <span className="text-slate-500 text-xs mt-1 block">
+                            {cajaObj.modelo ? `Modelo: ${cajaObj.modelo}` : ''}
+                            {cajaObj.modelo && cajaObj.numero_serie ? ' | ' : ''}
+                            {cajaObj.numero_serie ? `N/S: ${cajaObj.numero_serie}` : ''}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 {selectedTicket.categoria && (
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-4">

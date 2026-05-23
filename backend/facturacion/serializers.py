@@ -22,6 +22,7 @@ class FacturaDetalleUnidadSerializer(serializers.ModelSerializer):
 
 class TicketSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
+    caja_numero_economico = serializers.ReadOnlyField(source='caja.numero_economico')
     unidades_info = serializers.SerializerMethodField()
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
     taller_nombre = serializers.ReadOnlyField(source='taller.nombre')
@@ -96,6 +97,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
 class FacturaSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
+    caja_numero_economico = serializers.ReadOnlyField(source='caja.numero_economico')
     unidades_info = serializers.SerializerMethodField()
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
     producto_categoria = serializers.ReadOnlyField(source='producto.categoria')

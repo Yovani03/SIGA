@@ -14,7 +14,8 @@ import {
   Store,
   Info,
   Search,
-  FilePlus
+  FilePlus,
+  Archive
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { PDFDocument } from 'pdf-lib';
@@ -31,6 +32,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const [productos, setProductos] = useState([]);
   const [talleres, setTalleres] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [cajas, setCajas] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -38,6 +40,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     fecha: '',
     monto: '',
     unidad: '',
+    caja: '',
     producto: '',
     taller: '',
     proveedor: '',
@@ -57,13 +60,15 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       api.get('vehiculos/'),
       api.get('productos/'),
       api.get('talleres/'),
-      api.get('proveedores/')
+      api.get('proveedores/'),
+      api.get('cajas/')
     ])
-    .then(([vehiculosRes, productosRes, talleresRes, proveedoresRes]) => {
+    .then(([vehiculosRes, productosRes, talleresRes, proveedoresRes, cajasRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTalleres(talleresRes.data);
       setProveedores(proveedoresRes.data);
+      setCajas(cajasRes.data);
       setEntidades([
         ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
         ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
@@ -168,6 +173,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     data.append('fecha', formData.fecha);
     data.append('monto', formData.monto);
     if (formData.unidad) data.append('unidad', formData.unidad);
+    if (formData.caja) data.append('caja', formData.caja);
     if (formData.producto) data.append('producto', formData.producto);
     if (formData.taller) data.append('taller', formData.taller);
     if (formData.proveedor) data.append('proveedor', formData.proveedor);
@@ -204,7 +210,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         onSuccess(res.data);
       }
-      setFormData({ fecha: '', monto: '', unidad: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
+      setFormData({ fecha: '', monto: '', unidad: '', caja: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
       setScannedFiles([]);
       setBusquedaUnidad('');
     } catch (err) {
@@ -302,7 +308,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <DollarSign size={14} /> Monto
@@ -324,7 +330,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
-                  <Truck size={14} /> Unidad
+                  <Truck size={14} /> Unidad Relacionada
                 </label>
                 <div className="relative mb-2">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -342,7 +348,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   name="unidad"
                   value={formData.unidad}
                   onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm font-bold"
                 >
                   <option value="" className="bg-white dark:bg-slate-900">{busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Seleccionar unidad...'}</option>
                   {vehiculosFiltrados.map(v => (
@@ -374,6 +380,34 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                     <Info size={10} /> Nota compartida entre {formData.unidades.length} unidades.
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
+                  <Archive size={14} /> Caja / Remolque (Opcional)
+                </label>
+                <div className="relative mb-2">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <Archive className="text-slate-500/40" size={12} />
+                  </div>
+                  <input
+                    type="text"
+                    readOnly
+                    value="Buscar cajas de remolque..."
+                    className="w-full bg-slate-100 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-400 placeholder:text-slate-500 focus:border-amber-500/50 outline-none transition-all shadow-sm select-none"
+                  />
+                </div>
+                <select
+                  name="caja"
+                  value={formData.caja}
+                  onChange={handleChange}
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm font-bold"
+                >
+                  <option value="" className="bg-white dark:bg-slate-900">Seleccionar caja...</option>
+                  {cajas.map(c => (
+                    <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900">{c.numero_economico} - {c.tipo || 'Caja'}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

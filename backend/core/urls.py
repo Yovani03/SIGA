@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
 from facturacion.views import FacturaViewSet, ProductoViewSet, TicketViewSet
-from vehiculos.views import UnidadViewSet
+from vehiculos.views import UnidadViewSet, RemolqueCajaViewSet
 from mantenimiento.views import (
     InventarioRefaccionesViewSet, 
     OrdenTrabajoViewSet, 
@@ -22,6 +22,7 @@ router.register(r'facturas', FacturaViewSet)
 router.register(r'tickets', TicketViewSet)
 router.register(r'productos', ProductoViewSet)
 router.register(r'vehiculos', UnidadViewSet)
+router.register(r'cajas', RemolqueCajaViewSet)
 router.register(r'refacciones', InventarioRefaccionesViewSet)
 router.register(r'ordenes-trabajo', OrdenTrabajoViewSet)
 router.register(r'preventivos', MantenimientoPreventivoViewSet)
