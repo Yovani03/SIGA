@@ -72,6 +72,14 @@ class Ticket(models.Model):
         related_name='tickets',
         verbose_name="Caja/Remolque"
     )
+    variado = models.ForeignKey(
+        'vehiculos.VehiculoVariado',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name="Vehículo Variado"
+    )
     unidades = models.ManyToManyField(
         UnidadTractocamion,
         blank=True,
@@ -159,6 +167,14 @@ class Factura(models.Model):
         related_name='facturas',
         verbose_name="Caja/Remolque"
     )
+    variado = models.ForeignKey(
+        'vehiculos.VehiculoVariado',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='facturas',
+        verbose_name="Vehículo Variado"
+    )
     unidades = models.ManyToManyField(
         UnidadTractocamion,
         blank=True,
@@ -205,6 +221,7 @@ class Factura(models.Model):
                 proveedor=self.proveedor,
                 unidad=self.unidad,
                 caja=self.caja,
+                variado=self.variado,
                 producto=self.producto,
                 convertido_en_factura=True
             )

@@ -1,9 +1,14 @@
 from rest_framework import serializers
-from .models import UnidadTractocamion, RemolqueCaja
+from .models import UnidadTractocamion, RemolqueCaja, VehiculoVariado
 
 class RemolqueCajaSerializer(serializers.ModelSerializer):
     class Meta:
         model = RemolqueCaja
+        fields = '__all__'
+
+class VehiculoVariadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehiculoVariado
         fields = '__all__'
 
 class UnidadSerializer(serializers.ModelSerializer):

@@ -29,12 +29,14 @@ import {
   AlertTriangle,
   Tag,
   Info,
-  Archive
+  Archive,
+  Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AltaVehiculo from './AltaVehiculo';
 import AltaCaja from './AltaCaja';
+import AltaVariado from './AltaVariado';
 import AnalisisGastos from './AnalisisGastos';
 import notify from '../utils/notifications';
 
@@ -79,6 +81,17 @@ const ListaVehiculos = () => {
   const [cajaFacturas, setCajaFacturas] = useState([]);
   const [loadingCajaFacturas, setLoadingCajaFacturas] = useState(false);
 
+  // Variados States
+  const [variados, setVariados] = useState([]);
+  const [loadingVariados, setLoadingVariados] = useState(false);
+  const [showAltaVariadoModal, setShowAltaVariadoModal] = useState(false);
+  const [editingVariado, setEditingVariado] = useState(null);
+  const [currentPageVariados, setCurrentPageVariados] = useState(1);
+  const [selectedVariado, setSelectedVariado] = useState(null);
+  const [showVariadoFacturasModal, setShowVariadoFacturasModal] = useState(false);
+  const [variadoFacturas, setVariadoFacturas] = useState([]);
+  const [loadingVariadoFacturas, setLoadingVariadoFacturas] = useState(false);
+
   const fetchFuelHistory = async (unit) => {
     try {
       setLoadingHistory(true);
@@ -105,6 +118,19 @@ const ListaVehiculos = () => {
     }
   };
 
+  const fetchVariados = async () => {
+    try {
+      setLoadingVariados(true);
+      const res = await api.get('variados/');
+      setVariados(res.data);
+    } catch (err) {
+      console.error("Error cargando vehículos variados", err);
+      notify.error("No se pudieron cargar los vehículos variados.");
+    } finally {
+      setLoadingVariados(false);
+    }
+  };
+
   const openCajaFacturasModal = async (cajaObj) => {
     setSelectedCaja(cajaObj);
     setLoadingCajaFacturas(true);
@@ -120,12 +146,28 @@ const ListaVehiculos = () => {
     }
   };
 
+  const openVariadoFacturasModal = async (variadoObj) => {
+    setSelectedVariado(variadoObj);
+    setLoadingVariadoFacturas(true);
+    setShowVariadoFacturasModal(true);
+    try {
+      const res = await api.get('facturas/');
+      const filtered = res.data.filter(f => f.variado === variadoObj.id);
+      setVariadoFacturas(filtered);
+    } catch (err) {
+      console.error("Error cargando facturas del vehículo variado", err);
+    } finally {
+      setLoadingVariadoFacturas(false);
+    }
+  };
+
   useEffect(() => {
     fetchVehiculos();
     fetchTalleres();
     fetchAllFacturas();
     fetchOrdenes();
     fetchCajas();
+    fetchVariados();
   }, []);
 
   const fetchOrdenes = async () => {
@@ -220,6 +262,32 @@ const ListaVehiculos = () => {
     }
   };
 
+  const handleAltaVariadoSuccess = () => {
+    setShowAltaVariadoModal(false);
+    setEditingVariado(null);
+    fetchVariados();
+  };
+
+  const handleEditVariadoClick = (e, v) => {
+    e.stopPropagation();
+    setEditingVariado(v);
+    setShowAltaVariadoModal(true);
+  };
+
+  const handleDeleteVariadoClick = async (e, v) => {
+    e.stopPropagation();
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el vehículo variado ${v.numero_economico}? Esta acción no se puede deshacer.`)) {
+      try {
+        await api.delete(`variados/${v.id}/`);
+        notify.success("Vehículo variado eliminado correctamente");
+        fetchVariados();
+      } catch (err) {
+        console.error("Error eliminando vehículo variado", err);
+        notify.error("No se pudo eliminar el vehículo variado.");
+      }
+    }
+  };
+
   const filteredVehiculos = vehiculos.filter(v => 
     v.numero_economico.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.placas.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -233,10 +301,18 @@ const ListaVehiculos = () => {
     (c.tipo && c.tipo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const filteredVariados = variados.filter(v => 
+    v.numero_economico.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (v.placas && v.placas.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (v.tipo && v.tipo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (v.modelo && v.modelo.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   // Reset to first page on search
   useEffect(() => {
     setCurrentPage(1);
     setCurrentPageCajas(1);
+    setCurrentPageVariados(1);
   }, [searchTerm, activeTab]);
 
   const totalPages = Math.ceil(filteredVehiculos.length / itemsPerPage);
@@ -249,6 +325,12 @@ const ListaVehiculos = () => {
   const currentCajas = filteredCajas.slice(
     (currentPageCajas - 1) * itemsPerPage,
     currentPageCajas * itemsPerPage
+  );
+
+  const totalPagesVariados = Math.ceil(filteredVariados.length / itemsPerPage);
+  const currentVariados = filteredVariados.slice(
+    (currentPageVariados - 1) * itemsPerPage,
+    currentPageVariados * itemsPerPage
   );
 
   const fetchVehiculoFacturas = async (vehiculoId) => {
@@ -367,6 +449,11 @@ const ListaVehiculos = () => {
                 <Archive className="text-blue-500 shrink-0" size={32} />
                 Catálogo de Cajas / Remolques
               </>
+            ) : activeTab === 'variados' ? (
+              <>
+                <Settings className="text-blue-500 shrink-0" size={32} />
+                Catálogo de Vehículos Variados
+              </>
             ) : (
               <>
                 <Truck className="text-blue-500 shrink-0" size={32} />
@@ -377,17 +464,23 @@ const ListaVehiculos = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-1 lg:mt-2 text-sm lg:text-lg">
             {activeTab === 'cajas' 
               ? 'Administra y visualiza toda la flota de remolques y cajas.' 
-              : 'Administra y visualiza toda la flota de tractocamiones.'}
+              : activeTab === 'variados'
+                ? 'Administra y visualiza la flota de vehículos variados y maquinaria.'
+                : 'Administra y visualiza toda la flota de tractocamiones.'}
           </p>
         </div>
         
         {user?.rol !== 'jefe_logistica' && activeTab !== 'analisis' && (
           <button 
-            onClick={() => activeTab === 'cajas' ? setShowAltaCajaModal(true) : setShowAltaModal(true)}
+            onClick={() => {
+              if (activeTab === 'cajas') setShowAltaCajaModal(true);
+              else if (activeTab === 'variados') setShowAltaVariadoModal(true);
+              else setShowAltaModal(true);
+            }}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 lg:px-6 py-3 rounded-xl lg:rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 w-full md:w-auto"
           >
             <Plus size={20} />
-            {activeTab === 'cajas' ? 'Nueva Caja' : 'Nueva Unidad'}
+            {activeTab === 'cajas' ? 'Nueva Caja' : activeTab === 'variados' ? 'Nuevo Vehículo Variado' : 'Nueva Unidad'}
           </button>
         )}
       </div>
@@ -422,6 +515,21 @@ const ListaVehiculos = () => {
           )}
           <span className="relative z-10 flex items-center gap-2">
             <Archive size={18} /> Cajas / Remolques
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('variados')}
+          className={`relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 lg:px-8 py-2.5 rounded-full text-sm lg:text-base font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'variados' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50'
+          }`}
+        >
+          {activeTab === 'variados' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Settings size={18} /> Vehículos Variados
           </span>
         </button>
         <button
@@ -799,6 +907,154 @@ const ListaVehiculos = () => {
                   <button
                     onClick={() => setCurrentPageCajas(prev => Math.min(prev + 1, totalPagesCajas))}
                     disabled={currentPageCajas === totalPagesCajas}
+                    className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-blue-500 disabled:opacity-30 disabled:hover:border-slate-800 transition-all"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'variados' && (
+        <>
+          {/* Search Bar */}
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-4 lg:left-5 flex items-center pointer-events-none">
+              <Search className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar vehículo variado por eco, placas, tipo o modelo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl lg:rounded-2xl pl-12 lg:pl-14 pr-4 lg:pr-6 py-3 lg:py-4 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all text-base lg:text-lg placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-xl"
+            />
+          </div>
+
+          {loadingVariados ? (
+            <div className="flex flex-col items-center justify-center py-16 lg:py-20 space-y-4">
+              <Loader2 className="text-blue-500 animate-spin" size={40} />
+              <p className="text-slate-400 font-medium">Cargando vehículos variados...</p>
+            </div>
+          ) : filteredVariados.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-[2.5rem] p-12 lg:p-20 text-center space-y-6 shadow-sm">
+              <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <Settings className="text-slate-400 dark:text-slate-600" size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">No se encontraron vehículos variados</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm lg:text-base max-w-md mx-auto">
+                  {searchTerm ? `No hay resultados para "${searchTerm}". Intenta con otros términos.` : "Aún no has registrado ningún vehículo variado en el sistema."}
+                </p>
+              </div>
+              {!searchTerm && user?.rol !== 'jefe_logistica' && (
+                <button 
+                  onClick={() => setShowAltaVariadoModal(true)}
+                  className="inline-flex items-center gap-2 text-blue-500 font-bold hover:text-blue-400 transition-colors"
+                >
+                  Registrar mi primer vehículo variado <Plus size={18} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-8">
+                {currentVariados.map((v) => (
+                  <div 
+                    key={v.id} 
+                    className="bg-white dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-[2rem] overflow-hidden group hover:border-blue-500/50 transition-all hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-1 shadow-lg dark:shadow-none p-6 space-y-4"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] lg:text-xs font-black tracking-widest uppercase shadow-lg">
+                        {v.numero_economico}
+                      </div>
+                      {v.modelo && (
+                        <div className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 px-3 py-1 rounded-full text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                          Modelo {v.modelo}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors truncate">
+                        {v.tipo || 'Vehículo Variado'}
+                      </h3>
+                      <p className="text-slate-400 text-xs font-mono truncate">Serie: {v.numero_serie || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50 shadow-inner">
+                      <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mb-1">Placas</p>
+                      <p className="text-slate-900 dark:text-white font-mono font-bold text-base flex items-center gap-2">
+                        <CreditCard size={14} className="text-blue-500 shrink-0" />
+                        <span>{v.placas || 'N/A'}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                      <button 
+                        type="button"
+                        onClick={() => openVariadoFacturasModal(v)}
+                        className="flex items-center gap-2 text-xs text-blue-500 hover:text-blue-400 font-bold transition-colors bg-blue-500/10 px-3 py-2 rounded-xl"
+                      >
+                        Gastos / Facturas <ExternalLink size={14} />
+                      </button>
+
+                      {user?.rol !== 'jefe_logistica' && (
+                        <div className="flex items-center gap-2">
+                          <button 
+                            type="button"
+                            onClick={(e) => handleEditVariadoClick(e, v)}
+                            className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-400/10 rounded-lg transition-all"
+                            title="Editar Vehículo"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => handleDeleteVariadoClick(e, v)}
+                            className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Eliminar Vehículo"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPagesVariados > 1 && (
+                <div className="flex items-center justify-center gap-4 pt-8">
+                  <button
+                    onClick={() => setCurrentPageVariados(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPageVariados === 1}
+                    className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-blue-500 disabled:opacity-30 disabled:hover:border-slate-800 transition-all"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {[...Array(totalPagesVariados)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPageVariados(i + 1)}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                          currentPageVariados === i + 1
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                            : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPageVariados(prev => Math.min(prev + 1, totalPagesVariados))}
+                    disabled={currentPageVariados === totalPagesVariados}
                     className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-blue-500 disabled:opacity-30 disabled:hover:border-slate-800 transition-all"
                   >
                     <ChevronRight size={24} />
@@ -1329,6 +1585,105 @@ const ListaVehiculos = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                   {cajaFacturas.map(f => (
+                    <div key={f.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl lg:rounded-2xl p-4 lg:p-5 hover:border-blue-500/50 transition-colors shadow-sm">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="min-w-0">
+                          <p className="text-slate-400 dark:text-slate-400 text-[10px] font-bold uppercase mb-1">Folio</p>
+                          <p className="text-slate-900 dark:text-white font-mono text-base lg:text-lg font-bold truncate">{f.folio}</p>
+                        </div>
+                        <div className="text-right shrink-0 ml-4">
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto</p>
+                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">
+                            ${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 lg:mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50 gap-3">
+                        <p className="text-slate-500 dark:text-slate-400 text-xs flex items-center gap-2">
+                          <Calendar size={14} /> {f.fecha}
+                        </p>
+                        
+                        {f.archivo_escaneado ? (
+                          <a 
+                            href={f.archivo_escaneado} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+                          >
+                            Ver Documento
+                          </a>
+                        ) : (
+                          <span className="text-rose-400 text-[10px] lg:text-xs font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg">Sin Imagen</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Alta/Edición de Vehículo Variado */}
+      {showAltaVariadoModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-[2.5rem] w-full max-w-xl p-5 sm:p-8 lg:p-10 shadow-2xl relative overflow-y-auto max-h-[95vh] custom-scrollbar">
+            <AltaVariado 
+              onSuccess={handleAltaVariadoSuccess} 
+              onClose={() => {
+                setShowAltaVariadoModal(false);
+                setEditingVariado(null);
+              }} 
+              variado={editingVariado}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Facturas de Vehículo Variado */}
+      {showVariadoFacturasModal && selectedVariado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl lg:rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+            {/* Header del Modal */}
+            <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/50">
+              <div className="min-w-0">
+                <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                  <FilePlus className="text-blue-500 shrink-0" size={24} />
+                  <span className="truncate">Facturas Vehículo {selectedVariado.numero_economico}</span>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs lg:text-sm mt-1 truncate">{selectedVariado.tipo || 'Vehículo Variado'} - {selectedVariado.placas}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowVariadoFacturasModal(false);
+                  setSelectedVariado(null);
+                }}
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-full transition-colors shrink-0 shadow-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900/50 custom-scrollbar">
+              {loadingVariadoFacturas ? (
+                <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-500" size={40} /></div>
+              ) : variadoFacturas.length === 0 ? (
+                <div className="text-center py-12 space-y-4">
+                  <Hash size={48} className="text-slate-200 dark:text-slate-700 mx-auto" />
+                  <p className="text-slate-500 dark:text-slate-400 text-base lg:text-lg">Este vehículo aún no tiene facturas registradas.</p>
+                  <Link 
+                    to="/facturacion" 
+                    className="inline-block mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-bold underline"
+                  >
+                    Registrar una ahora
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+                  {variadoFacturas.map(f => (
                     <div key={f.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl lg:rounded-2xl p-4 lg:p-5 hover:border-blue-500/50 transition-colors shadow-sm">
                       <div className="flex justify-between items-start mb-4">
                         <div className="min-w-0">

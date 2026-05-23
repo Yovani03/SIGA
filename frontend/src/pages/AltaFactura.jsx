@@ -33,6 +33,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [talleres, setTalleres] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [cajas, setCajas] = useState([]);
+  const [variados, setVariados] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -42,6 +43,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     folio: '',
     unidad: '',
     caja: '',
+    variado: '',
     producto: '',
     ticket: '',
     taller: '',
@@ -70,15 +72,17 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       api.get('tickets/pendientes/'),
       api.get('talleres/'),
       api.get('proveedores/'),
-      api.get('cajas/')
+      api.get('cajas/'),
+      api.get('variados/')
     ])
-    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes, cajasRes]) => {
+    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes, cajasRes, variadosRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTicketsPendientes(ticketsRes.data);
       setTalleres(talleresRes.data);
       setProveedores(proveedoresRes.data);
       setCajas(cajasRes.data);
+      setVariados(variadosRes.data);
       setEntidades([
         ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
         ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
@@ -95,6 +99,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         folio: factura.folio,
         unidad: factura.unidad || (factura.unidades && factura.unidades.length > 0 ? '' : 'sin_unidad'),
         caja: factura.caja || '',
+        variado: factura.variado || '',
         producto: factura.producto || '',
         ticket: factura.ticket || '',
         taller: factura.taller || '',
@@ -244,6 +249,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setFormData(prev => ({
         ...prev,
         unidad: 'sin_unidad',
+        caja: '',
+        variado: '',
         unidades: [],
         detalles_unidades: []
       }));
@@ -255,7 +262,20 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     if (tipo === 'caja') {
       setFormData(prev => ({
         ...prev,
-        caja: value.toString()
+        caja: value.toString(),
+        variado: '',
+        unidad: '',
+        unidades: [],
+        detalles_unidades: []
+      }));
+    } else if (tipo === 'variado') {
+      setFormData(prev => ({
+        ...prev,
+        variado: value.toString(),
+        caja: '',
+        unidad: '',
+        unidades: [],
+        detalles_unidades: []
       }));
     } else {
       const uId = parseInt(value);
@@ -267,10 +287,12 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
             ...prev, 
             unidad: value.toString(), 
             unidades: [...prevUnidades, uId],
-            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
+            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }],
+            caja: '',
+            variado: ''
           };
         }
-        return { ...prev, unidad: value.toString() };
+        return { ...prev, unidad: value.toString(), caja: '', variado: '' };
       });
     }
     setBusquedaUnidad('');
@@ -366,7 +388,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     
     // Validaciones
     const isSinUnidad = formData.unidad === 'sin_unidad';
-    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!isSinUnidad && !formData.unidad && formData.unidades.length === 0)) {
+    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!isSinUnidad && !formData.unidad && formData.unidades.length === 0 && !formData.caja && !formData.variado)) {
       notify.error("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad.");
       setLoading(false);
       return;
@@ -393,6 +415,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     });
     if (formData.categoria) data.append('categoria', formData.categoria);
     if (formData.caja) data.append('caja', formData.caja);
+    if (formData.variado) data.append('variado', formData.variado);
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
@@ -442,7 +465,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', variado: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -472,6 +495,12 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const cajasFiltradas = cajas.filter(c => 
     c.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
     c.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+  );
+
+  const variadosFiltrados = variados.filter(v => 
+    v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    v.tipo?.toLowerCase().includes(busquedaUnidad.toLowerCase())
   );
 
   return (
@@ -733,16 +762,39 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                         </button>
                       ))}
 
-                      {vehiculosFiltrados.length === 0 && cajasFiltradas.length === 0 && (
+                      {variadosFiltrados.length > 0 && (
+                        <div className="px-4 py-2 text-[10px] font-bold text-emerald-400 uppercase border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                          Vehículos Variados / Maquinaria
+                        </div>
+                      )}
+                      {variadosFiltrados.map(v => (
+                        <button
+                          key={`variado-${v.id}`}
+                          type="button"
+                          onClick={() => seleccionarUnidad(v.id, 'variado')}
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-emerald-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                        >
+                          <div>
+                            <div className="text-slate-900 dark:text-white font-bold group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                              {v.numero_economico} ({v.tipo || 'Variado'})
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {v.placas ? `${v.placas} - ` : ''}{v.modelo || 'Maquinaria'}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {vehiculosFiltrados.length === 0 && cajasFiltradas.length === 0 && variadosFiltrados.length === 0 && (
                         (!busquedaUnidad || !'sin unidad asignada'.includes(busquedaUnidad.toLowerCase())) && (
-                          <div className="p-4 text-slate-500 text-center text-xs">No se encontraron unidades o cajas</div>
+                          <div className="p-4 text-slate-500 text-center text-xs">No se encontraron unidades, cajas o maquinaria</div>
                         )
                       )}
                     </div>
                   )}
                 </div>
                 
-                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad' || formData.caja) && (
+                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad' || formData.caja || formData.variado) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {formData.unidad === 'sin_unidad' && (
                       <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full text-[10px] font-black">
@@ -786,6 +838,21 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                           <button 
                             type="button" 
                             onClick={() => setFormData(prev => ({ ...prev, caja: '' }))}
+                            className="hover:text-rose-500 transition-colors ml-1 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })()}
+                    {formData.variado && (() => {
+                      const v = variados.find(varObj => varObj.id === parseInt(formData.variado));
+                      return v ? (
+                        <div key={`variado-${v.id}`} className="flex items-center gap-1.5 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                          <span>Variado: {v.numero_economico}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, variado: '' }))}
                             className="hover:text-rose-500 transition-colors ml-1 font-bold"
                           >
                             ✕

@@ -73,6 +73,7 @@ const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [cajas, setCajas] = useState([]);
+  const [variados, setVariados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
@@ -94,14 +95,16 @@ const Facturacion = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [facturasRes, vehiculosRes, cajasRes] = await Promise.all([
+      const [facturasRes, vehiculosRes, cajasRes, variadosRes] = await Promise.all([
         api.get('facturas/'),
         api.get('vehiculos/'),
-        api.get('cajas/')
+        api.get('cajas/'),
+        api.get('variados/')
       ]);
       setFacturas(facturasRes.data);
       setVehiculos(vehiculosRes.data);
       setCajas(cajasRes.data);
+      setVariados(variadosRes.data);
     } catch (err) {
       console.error("Error cargando facturación", err);
       notify.error("No se pudieron cargar los datos de facturación.");
@@ -128,6 +131,10 @@ const Facturacion = () => {
 
   const getCajaInfo = (cajaId) => {
     return cajas.find(c => c.id === cajaId);
+  };
+
+  const getVariadoInfo = (variadoId) => {
+    return variados.find(v => v.id === variadoId);
   };
 
   const filteredFacturas = facturas.filter(f => {
@@ -160,6 +167,7 @@ const Facturacion = () => {
 
     const unidad = getUnidadInfo(f.unidad);
     const caja = getCajaInfo(f.caja);
+    const variado = getVariadoInfo(f.variado);
     const searchLower = searchTerm.toLowerCase();
     return (
       f.folio.includes(searchTerm) ||
@@ -171,7 +179,9 @@ const Facturacion = () => {
       (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
       (unidad && unidad.placas.toLowerCase().includes(searchLower)) ||
       (caja && caja.numero_economico.toLowerCase().includes(searchLower)) ||
-      (caja && caja.placas.toLowerCase().includes(searchLower))
+      (caja && caja.placas.toLowerCase().includes(searchLower)) ||
+      (variado && variado.numero_economico.toLowerCase().includes(searchLower)) ||
+      (variado && variado.placas && variado.placas.toLowerCase().includes(searchLower))
     );
   }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -455,6 +465,12 @@ const Facturacion = () => {
                           Remolque: {f.caja_numero_economico}
                         </p>
                       )}
+                      {f.variado_numero_economico && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 font-semibold">
+                          <Settings size={12} className="text-emerald-400 shrink-0" strokeWidth={2.5} />
+                          Variado: {f.variado_numero_economico}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -684,6 +700,37 @@ const Facturacion = () => {
                               {cajaObj.modelo ? `Modelo: ${cajaObj.modelo}` : ''}
                               {cajaObj.modelo && cajaObj.numero_serie ? ' | ' : ''}
                               {cajaObj.numero_serie ? `N/S: ${cajaObj.numero_serie}` : ''}
+                            </p>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedFactura.variado && (
+                  <div className="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-3 col-span-1 md:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-emerald-600/10 p-2 rounded-xl">
+                        <Settings className="text-emerald-500" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-[9px] font-bold uppercase">Vehículo Variado / Maquinaria Relacionado</p>
+                        <p className="text-slate-900 dark:text-white font-bold">
+                          {(() => {
+                            const varObj = getVariadoInfo(selectedFactura.variado);
+                            return varObj 
+                              ? `${varObj.numero_economico} - Placas: ${varObj.placas || 'N/A'} ${varObj.tipo ? `(${varObj.tipo})` : ''}` 
+                              : selectedFactura.variado_numero_economico || 'Vehículo asignado';
+                          })()}
+                        </p>
+                        {(() => {
+                          const varObj = getVariadoInfo(selectedFactura.variado);
+                          return varObj && (varObj.modelo || varObj.numero_serie) ? (
+                            <p className="text-slate-500 text-xs mt-1">
+                              {varObj.modelo ? `Modelo: ${varObj.modelo}` : ''}
+                              {varObj.modelo && varObj.numero_serie ? ' | ' : ''}
+                              {varObj.numero_serie ? `N/S: ${varObj.numero_serie}` : ''}
                             </p>
                           ) : null;
                         })()}

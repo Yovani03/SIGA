@@ -50,3 +50,13 @@ class RemolqueCaja(models.Model):
 
     def __str__(self):
         return self.numero_economico
+
+class VehiculoVariado(models.Model):
+    placas = models.CharField(max_length=50, blank=True, null=True)
+    numero_economico = models.CharField(max_length=50, unique=True)
+    tipo = models.CharField(max_length=100, blank=True, null=True)
+    modelo = models.CharField(max_length=100, blank=True, null=True)
+    numero_serie = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.numero_economico

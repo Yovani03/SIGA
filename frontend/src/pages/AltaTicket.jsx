@@ -33,6 +33,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const [talleres, setTalleres] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [cajas, setCajas] = useState([]);
+  const [variados, setVariados] = useState([]);
   const [entidades, setEntidades] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -41,6 +42,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     monto: '',
     unidad: '',
     caja: '',
+    variado: '',
     producto: '',
     taller: '',
     proveedor: '',
@@ -61,14 +63,16 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       api.get('productos/'),
       api.get('talleres/'),
       api.get('proveedores/'),
-      api.get('cajas/')
+      api.get('cajas/'),
+      api.get('variados/')
     ])
-    .then(([vehiculosRes, productosRes, talleresRes, proveedoresRes, cajasRes]) => {
+    .then(([vehiculosRes, productosRes, talleresRes, proveedoresRes, cajasRes, variadosRes]) => {
       setVehiculos(vehiculosRes.data);
       setProductos(productosRes.data);
       setTalleres(talleresRes.data);
       setProveedores(proveedoresRes.data);
       setCajas(cajasRes.data);
+      setVariados(variadosRes.data);
       setEntidades([
         ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
         ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
@@ -97,17 +101,28 @@ const AltaTicket = ({ onSuccess, onClose }) => {
         setFormData(prev => ({
           ...prev,
           caja: cajaId,
-          unidad: prev.unidad === 'sin_unidad' ? '' : prev.unidad
+          variado: '',
+          unidad: '',
+          unidades: []
+        }));
+      } else if (value.startsWith('variado_')) {
+        const variadoId = value.split('_')[1];
+        setFormData(prev => ({
+          ...prev,
+          variado: variadoId,
+          caja: '',
+          unidad: '',
+          unidades: []
         }));
       } else {
         const vId = parseInt(value.split('_')[1] || value);
-        setFormData(prev => {
-          const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
-          if (!prevUnidades.includes(vId)) {
-            return { ...prev, unidad: vId.toString(), unidades: [...prevUnidades, vId] };
-          }
-          return { ...prev, unidad: vId.toString() };
-        });
+        setFormData(prev => ({
+          ...prev,
+          unidad: vId.toString(),
+          unidades: [vId],
+          caja: '',
+          variado: ''
+        }));
       }
       return;
     }
@@ -184,6 +199,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     data.append('monto', formData.monto);
     if (formData.unidad) data.append('unidad', formData.unidad);
     if (formData.caja) data.append('caja', formData.caja);
+    if (formData.variado) data.append('variado', formData.variado);
     if (formData.producto) data.append('producto', formData.producto);
     if (formData.taller) data.append('taller', formData.taller);
     if (formData.proveedor) data.append('proveedor', formData.proveedor);
@@ -220,7 +236,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
       if (onSuccess) {
         onSuccess(res.data);
       }
-      setFormData({ fecha: '', monto: '', unidad: '', caja: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
+      setFormData({ fecha: '', monto: '', unidad: '', caja: '', variado: '', producto: '', taller: '', proveedor: '', descripcion: '', categoria: 'Otro', unidades: [] });
       setScannedFiles([]);
       setBusquedaUnidad('');
     } catch (err) {
@@ -239,6 +255,12 @@ const AltaTicket = ({ onSuccess, onClose }) => {
   const cajasFiltradas = cajas.filter(c => 
     c.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
     c.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+  );
+
+  const variadosFiltrados = variados.filter(v => 
+    v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+    v.tipo?.toLowerCase().includes(busquedaUnidad.toLowerCase())
   );
 
   return (
@@ -359,13 +381,13 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                 </div>
                 <select
                   name="unidad"
-                  value={formData.caja ? `caja_${formData.caja}` : formData.unidad ? `vehiculo_${formData.unidad}` : ''}
+                  value={formData.caja ? `caja_${formData.caja}` : formData.variado ? `variado_${formData.variado}` : formData.unidad ? `vehiculo_${formData.unidad}` : ''}
                   onChange={handleChange}
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer text-sm font-bold"
                 >
                   <option value="" className="bg-white dark:bg-slate-900">
                     {busquedaUnidad 
-                      ? `Resultados (${vehiculosFiltrados.length + cajasFiltradas.length})` 
+                      ? `Resultados (${vehiculosFiltrados.length + cajasFiltradas.length + variadosFiltrados.length})` 
                       : 'Seleccionar...'}
                   </option>
                   
@@ -384,9 +406,17 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                       ))}
                     </optgroup>
                   )}
+
+                  {variadosFiltrados.length > 0 && (
+                    <optgroup label="Vehículos Variados / Maquinaria" className="bg-white dark:bg-slate-900 text-emerald-400 font-bold text-xs">
+                      {variadosFiltrados.map(v => (
+                        <option key={`variado_${v.id}`} value={`variado_${v.id}`} className="bg-white dark:bg-slate-900 text-slate-950 dark:text-white font-normal">{v.numero_economico} ({v.tipo || 'Variado'})</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
 
-                {(formData.unidades.length > 0 || formData.caja) && (
+                {(formData.unidades.length > 0 || formData.caja || formData.variado) && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {formData.unidades.map(uId => {
                       const v = vehiculos.find(veh => veh.id === uId);
@@ -418,6 +448,21 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                           <button 
                             type="button" 
                             onClick={() => setFormData(prev => ({ ...prev, caja: '' }))}
+                            className="hover:text-white transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null;
+                    })()}
+                    {formData.variado && (() => {
+                      const v = variados.find(varObj => varObj.id === parseInt(formData.variado));
+                      return v ? (
+                        <div key={`variado-${v.id}`} className="flex items-center gap-2 bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-bold animate-in fade-in zoom-in-95 duration-200">
+                          <span>Variado: {v.numero_economico}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setFormData(prev => ({ ...prev, variado: '' }))}
                             className="hover:text-white transition-colors"
                           >
                             ✕
