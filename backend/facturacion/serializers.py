@@ -111,6 +111,8 @@ class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
         fields = '__all__'
+        read_only_fields = []
+
 
     def get_unidades_info(self, obj):
         detalles = obj.detalles_unidades.all()

@@ -10,7 +10,7 @@ import {
   Truck,
   ExternalLink,
   Loader2,
-  AlertCircle,
+  AlertTriangle,
   Filter,
   BarChart3,
   ChevronLeft,
@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Tag,
   Pencil,
-  Archive
+  Archive,
+  Trash2
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import {
@@ -82,6 +83,12 @@ const Facturacion = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showChartsModal, setShowChartsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  // Cancel invoice UI state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [facturaToCancel, setFacturaToCancel] = useState(null);
+  const [cancelMotivo, setCancelMotivo] = useState('');
+  const [candidatos, setCandidatos] = useState([]);
+  const [selectedReemplazo, setSelectedReemplazo] = useState(null);
   const [dateRange, setDateRange] = useState('all'); // 'week', 'month', 'year', 'all'
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -123,6 +130,35 @@ const Facturacion = () => {
     e.stopPropagation();
     setEditingFactura(factura);
     setShowAltaModal(true);
+  };
+
+  // Fetch replacement candidates when a factura is selected for cancellation
+  useEffect(() => {
+    if (facturaToCancel) {
+      api.get(`facturas/${facturaToCancel.id}/candidatos/`)
+        .then(res => setCandidatos(res.data))
+        .catch(err => console.error('Error fetching candidatos', err));
+    } else {
+      setCandidatos([]);
+    }
+  }, [facturaToCancel]);
+
+  const handleCancelFactura = async (id) => {
+    try {
+      await api.post(`facturas/${id}/cancelar/`, {
+        motivo: cancelMotivo,
+        factura_reemplazo_id: selectedReemplazo?.id || null,
+      });
+      notify.success('Factura cancelada exitosamente');
+      setShowCancelModal(false);
+      setFacturaToCancel(null);
+      setCancelMotivo('');
+      setSelectedReemplazo(null);
+      fetchData();
+    } catch (err) {
+      console.error('Error cancelando factura', err);
+      notify.error('No se pudo cancelar la factura');
+    }
   };
 
   const getUnidadInfo = (unidadId) => {
@@ -511,6 +547,15 @@ const Facturacion = () => {
                     >
                       <Pencil size={16} />
                     </button>
+                    {!f.cancelado && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setFacturaToCancel(f); setShowCancelModal(true); }}
+                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                          title="Cancelar Factura"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                    )}
                   </div>
                   
                   {f.archivo_escaneado ? (
@@ -564,6 +609,81 @@ const Facturacion = () => {
           >
             <ChevronRight size={20} />
           </button>
+        </div>
+      )}
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
+            <div className="bg-rose-100 dark:bg-rose-900/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="text-rose-500" size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white text-center mb-2">¿Cancelar factura?</h3>
+            <p className="text-slate-500 text-center mb-4">Esta acción marcará la factura <strong>{facturaToCancel?.folio}</strong> como cancelada. Esta acción no se puede deshacer.</p>
+            {/* Motivo input */}
+            <div className="mb-4">
+              <label className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1.5 block">
+                Motivo de cancelación <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                placeholder="Describe el motivo de la cancelación..."
+                value={cancelMotivo}
+                onChange={(e) => setCancelMotivo(e.target.value)}
+                className={`w-full h-24 p-3 border rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors ${!cancelMotivo.trim() ? 'border-rose-300 dark:border-rose-800' : 'border-slate-200 dark:border-slate-700'}`}
+              />
+            </div>
+            {/* Replacement selection - OBLIGATORIO */}
+            <div className="mb-6">
+              <label className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1.5 block">
+                Factura de reemplazo <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={selectedReemplazo?.id || ''}
+                onChange={(e) => {
+                  const sel = candidatos.find(c => c.id === parseInt(e.target.value));
+                  setSelectedReemplazo(sel || null);
+                }}
+                className={`w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors ${!selectedReemplazo ? 'border-2 border-rose-400 dark:border-rose-700' : 'border border-emerald-400 dark:border-emerald-700'}`}
+              >
+                <option value="">— Selecciona una factura de reemplazo —</option>
+                {candidatos.map(c => {
+                  const vehiculo = c.unidad_nombre 
+                    || (c.caja_numero_economico ? `Caja: ${c.caja_numero_economico}` : null)
+                    || (c.variado_numero_economico ? `Variado: ${c.variado_numero_economico}` : null)
+                    || (c.unidades_info?.length > 0 ? c.unidades_info.join(', ') : null)
+                    || 'Sin asignación';
+                  return (
+                    <option key={c.id} value={c.id}>{c.folio} - ${parseFloat(c.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })} - {vehiculo}</option>
+                  );
+                })}
+              </select>
+              {!selectedReemplazo && (
+                <p className="text-rose-400 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                  <AlertTriangle size={12} /> Es obligatorio seleccionar una factura de reemplazo
+                </p>
+              )}
+              {candidatos.length === 0 && (
+                <p className="text-amber-400 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                  <AlertTriangle size={12} /> No hay facturas candidatas para reemplazo de esta unidad
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowCancelModal(false); setFacturaToCancel(null); setCancelMotivo(''); setSelectedReemplazo(null); }}
+                className="flex-1 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Volver
+              </button>
+              <button
+                onClick={() => handleCancelFactura(facturaToCancel.id)}
+                disabled={!cancelMotivo.trim() || !selectedReemplazo}
+                className={`flex-1 py-3 rounded-xl font-bold text-white transition-colors ${!cancelMotivo.trim() || !selectedReemplazo ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60' : 'bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-900/20'}`}
+              >
+                Confirmar Cancelación
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

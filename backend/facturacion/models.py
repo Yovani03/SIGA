@@ -133,6 +133,9 @@ class Factura(models.Model):
     folio = models.CharField(max_length=50, unique=True, verbose_name="Folio de Factura")
     descripcion = models.CharField(max_length=255, blank=True, null=True, verbose_name="Descripción Breve")
     categoria = models.CharField(max_length=50, choices=Ticket.CATEGORIAS, default='Otro', verbose_name="Categoría")
+    cancelado = models.BooleanField(default=False, verbose_name="¿Cancelada?")
+    motivo_cancelacion = models.TextField(blank=True, null=True, verbose_name="Motivo de Cancelación")
+    factura_reemplazo = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='facturas_reemplazadas', verbose_name="Factura de Reemplazo")
     taller = models.ForeignKey(
         Taller,
         on_delete=models.SET_NULL,
@@ -235,6 +238,21 @@ class Factura(models.Model):
             self.ticket.convertido_en_factura = True
             self.ticket.save()
         super().save(*args, **kwargs)
+
+    def cancel(self, motivo, reemplazo=None, usuario=None):
+        """Mark the invoice as cancelled, store reason and optional replacement.
+        Adjust unit expense totals accordingly by removing related detail records.
+        """
+        self.cancelado = True
+        self.motivo_cancelacion = motivo
+        if reemplazo:
+            self.factura_reemplazo = reemplazo
+        # Remove expense detail rows linked to this factura
+        self.detalles_unidades.all().delete()
+        # If the factura has an associated ticket, also remove its unit detail rows
+        if self.ticket:
+            self.ticket.detalles_unidades.all().delete()
+        self.save()
 
     def __str__(self):
         return f"{self.folio} - {self.unidad}"
