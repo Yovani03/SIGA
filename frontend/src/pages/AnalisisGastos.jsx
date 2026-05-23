@@ -58,7 +58,7 @@ const trendChartConfig = {
   }
 };
 
-const AnalisisGastos = ({ facturas, vehiculos }) => {
+const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState('todas');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
 
@@ -70,12 +70,39 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     );
   }, [vehiculos, busquedaUnidad]);
 
+  const cajasFiltradas = useMemo(() => {
+    if (!cajas) return [];
+    return cajas.filter(c => 
+      c.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+      c.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+    );
+  }, [cajas, busquedaUnidad]);
+
+  const variadosFiltradas = useMemo(() => {
+    if (!variados) return [];
+    return variados.filter(v => 
+      v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
+      v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase())
+    );
+  }, [variados, busquedaUnidad]);
+
   const facturasFiltradas = useMemo(() => {
     if (unidadSeleccionada === 'todas') return facturas;
     if (unidadSeleccionada === 'sin_asignar') {
-      return facturas.filter(f => !f.unidad && (!f.unidades || f.unidades.length === 0));
+      return facturas.filter(f => !f.unidad && (!f.unidades || f.unidades.length === 0) && !f.caja && !f.variado);
     }
-    const uId = parseInt(unidadSeleccionada);
+    
+    if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('caja_')) {
+      const cajaId = parseInt(unidadSeleccionada.replace('caja_', ''), 10);
+      return facturas.filter(f => f.caja === cajaId);
+    }
+
+    if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('variado_')) {
+      const variadoId = parseInt(unidadSeleccionada.replace('variado_', ''), 10);
+      return facturas.filter(f => f.variado === variadoId);
+    }
+
+    const uId = parseInt(unidadSeleccionada, 10);
     
     return facturas.reduce((acc, f) => {
       const detalle = f.detalles_unidades?.find(d => d.unidad === uId);
@@ -98,7 +125,7 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
     const categorias = {};
     facturasFiltradas.forEach(f => {
       let cat = f.categoria;
-      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0)) {
+      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0) && !f.caja && !f.variado) {
         cat = 'Gastos sin unidad asignada';
       } else {
         if (!cat || cat === 'Otro') {
@@ -130,7 +157,7 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
       if (!meses[mesAnio]) meses[mesAnio] = { name: mesAnio, total: 0 };
       
       let cat = f.categoria;
-      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0)) {
+      if (unidadSeleccionada === 'todas' && !f.unidad && (!f.unidades || f.unidades.length === 0) && !f.caja && !f.variado) {
         cat = 'Gastos sin unidad asignada';
       } else {
         if (!cat || cat === 'Otro') {
@@ -184,14 +211,43 @@ const AnalisisGastos = ({ facturas, vehiculos }) => {
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none font-medium cursor-pointer"
             >
               <option value="todas">
-                {busquedaUnidad ? `Resultados (${vehiculosFiltrados.length})` : 'Todas las Unidades (Global)'}
+                {busquedaUnidad 
+                  ? `Resultados (${vehiculosFiltrados.length + cajasFiltradas.length + variadosFiltradas.length})` 
+                  : 'Todas las Unidades (Global)'}
               </option>
               <option value="sin_asignar">
                 Gastos sin unidad asignada
               </option>
-              {vehiculosFiltrados.map(v => (
-                <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>
-              ))}
+              
+              {vehiculosFiltrados.length > 0 && (
+                <optgroup label="Tractores / Unidades" className="bg-slate-955 text-blue-400 font-bold">
+                  {vehiculosFiltrados.map(v => (
+                    <option key={`tractor_${v.id}`} value={v.id} className="text-white font-normal bg-slate-950">
+                      {v.numero_economico} {v.placas ? `- ${v.placas}` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {cajasFiltradas.length > 0 && (
+                <optgroup label="Remolques / Cajas" className="bg-slate-955 text-blue-400 font-bold">
+                  {cajasFiltradas.map(c => (
+                    <option key={`caja_${c.id}`} value={`caja_${c.id}`} className="text-white font-normal bg-slate-950">
+                      {c.numero_economico} {c.placas ? `- ${c.placas}` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {variadosFiltradas.length > 0 && (
+                <optgroup label="Vehículos Variados / Maquinaria" className="bg-slate-955 text-blue-400 font-bold">
+                  {variadosFiltradas.map(varItem => (
+                    <option key={`variado_${varItem.id}`} value={`variado_${varItem.id}`} className="text-white font-normal bg-slate-950">
+                      {varItem.numero_economico} {varItem.placas ? `- ${varItem.placas}` : ''} {varItem.tipo ? `(${varItem.tipo})` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
         </div>

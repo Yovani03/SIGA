@@ -1067,7 +1067,12 @@ const ListaVehiculos = () => {
       )}
 
       {activeTab === 'analisis' && (
-        <AnalisisGastos facturas={allFacturas} vehiculos={vehiculos} />
+        <AnalisisGastos 
+          facturas={allFacturas} 
+          vehiculos={vehiculos} 
+          cajas={cajas}
+          variados={variados}
+        />
       )}
 
       {/* Modal de Nueva Unidad */}
