@@ -39,7 +39,7 @@ services:
     container_name: autotran-frontend
     restart: always
     ports:
-      - "8080:80"
+      - "8090:80"
     depends_on:
       - backend
     volumes:
