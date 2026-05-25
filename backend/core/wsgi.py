@@ -10,8 +10,10 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 import os
 import sys
 
-# Añadimos la carpeta backend al path para que Vercel encuentre 'core'
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Añadimos la carpeta backend al path para que Vercel encuentre 'core', evitando duplicados
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if backend_dir not in sys.path:
+    sys.path.append(backend_dir)
 
 from django.core.wsgi import get_wsgi_application
 
