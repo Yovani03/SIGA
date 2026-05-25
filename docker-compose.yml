@@ -26,7 +26,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:admin_secure_password@db:5432/autotran_db
       - DATABASE_SSL_REQUIRE=False
-      - SECRET_KEY=django-insecure-2w%r$*7kc+!yjhxf%=x#)v1w7p+3s9m4^dal3_3d^%3p26$kvd
+      - SECRET_KEY=django-insecure-autotran-production-secret-key-2026
       - DEBUG=False
     volumes:
       - ./backend/media:/app/media

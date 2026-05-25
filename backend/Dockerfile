@@ -22,9 +22,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copiar el resto del código del backend
 COPY . .
 
-# Dar permisos de ejecución al script de entrada
+# Dar permisos de ejecución al script de entrada y normalizar saltos de línea (CRLF a LF)
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Exponer el puerto de Django/Gunicorn
 EXPOSE 8000

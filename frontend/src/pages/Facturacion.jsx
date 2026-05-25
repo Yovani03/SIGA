@@ -23,7 +23,7 @@ import {
   Tag,
   Pencil,
   Archive,
-  Trash2
+  XCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import {
@@ -553,7 +553,7 @@ const Facturacion = () => {
                           className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
                           title="Cancelar Factura"
                         >
-                          <Trash2 size={16} />
+                          <XCircle size={16} />
                         </button>
                     )}
                   </div>
