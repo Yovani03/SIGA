@@ -20,7 +20,8 @@ import {
   Ticket,
   LayoutGrid,
   Sun,
-  Moon
+  Moon,
+  Shield
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -37,15 +38,16 @@ const DashboardLayout = () => {
   };
 
   const allMenuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['admin', 'capturista', 'jefe_logistica'] },
-    { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin', 'capturista'] },
-    { icon: <Ticket size={20} />, label: 'Tickets', path: '/tickets', roles: ['admin', 'capturista'] },
-    { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin', 'capturista'] },
-    { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin', 'capturista', 'jefe_logistica'] },
-    { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin', 'capturista'] },
-    { icon: <Users size={20} />, label: 'Operadores', path: '/operadores', roles: ['admin', 'jefe_logistica'] },
-    { icon: <MapPin size={20} />, label: 'Logística', path: '/logistica', roles: ['admin', 'jefe_logistica'] },
-    { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin', 'capturista', 'jefe_logistica'] },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <Ticket size={20} />, label: 'Tickets', path: '/tickets', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <Users size={20} />, label: 'Operadores', path: '/operadores', roles: ['admin_general', 'admin', 'jefe_logistica'] },
+    { icon: <MapPin size={20} />, label: 'Logística', path: '/logistica', roles: ['admin_general', 'admin', 'jefe_logistica'] },
+    { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { icon: <Shield size={20} />, label: 'Usuarios', path: '/usuarios', roles: ['admin_general'] },
   ];
 
   const menuItems = allMenuItems.filter(item => !item.roles || item.roles.includes(user?.rol || 'admin'));

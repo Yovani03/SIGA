@@ -12,6 +12,7 @@ import Combustibles from './pages/Combustibles';
 import Catalogos from './pages/Catalogos';
 import Tickets from './pages/Tickets';
 import Login from './pages/Login';
+import Usuarios from './pages/Usuarios';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -25,7 +26,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route element={<ProtectedRoute allowedRoles={['capturista', 'admin', 'jefe_logistica']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo']} />}>
               <Route path="/" element={<DashboardLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="facturacion" element={<Facturacion />} />
@@ -37,6 +38,7 @@ function App() {
 
                 <Route path="combustible" element={<Combustibles />} />
                 <Route path="tickets" element={<Tickets />} />
+                <Route path="usuarios" element={<Usuarios />} />
               </Route>
             </Route>
           </Routes>

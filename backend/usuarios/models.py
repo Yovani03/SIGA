@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 class Perfil(models.Model):
     ROLES_CHOICES = (
+        ('admin_general', 'Administrador General'),
         ('admin', 'Administrador'),
         ('capturista', 'Capturista'),
         ('jefe_logistica', 'Jefe de Logística'),
