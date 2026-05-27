@@ -756,7 +756,9 @@ const Facturacion = () => {
                           <div className="space-y-2 mt-1 w-full">
                             {selectedFactura.detalles_unidades.map(detalle => (
                               <div key={detalle.id} className="flex justify-between items-center bg-purple-600/10 border border-purple-500/20 px-3 py-1.5 rounded-xl">
-                                <span className="text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase">{detalle.unidad_nombre}</span>
+                                <span className="text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase">
+                                  {detalle.unidad_nombre || (detalle.caja_nombre ? `Caja: ${detalle.caja_nombre}` : `Variado: ${detalle.variado_nombre}`)}
+                                </span>
                                 <span className="text-slate-900 dark:text-white text-xs font-bold">${parseFloat(detalle.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                               </div>
                             ))}

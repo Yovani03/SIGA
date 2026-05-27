@@ -54,6 +54,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     razon_social_emisor: '',
     categoria: 'Otro',
     unidades: [],
+    cajas: [],
+    variados: [],
     detalles_unidades: []
   });
   const [ivaIncluido, setIvaIncluido] = useState(false);
@@ -110,7 +112,14 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         razon_social_emisor: factura.razon_social_emisor || '',
         categoria: factura.categoria || 'Otro',
         unidades: factura.unidades || [],
-        detalles_unidades: factura.detalles_unidades?.map(d => ({ unidad: d.unidad, monto: d.monto })) || []
+        cajas: factura.cajas || [],
+        variados: factura.variados || [],
+        detalles_unidades: factura.detalles_unidades?.map(d => ({ 
+          unidad: d.unidad, 
+          caja: d.caja, 
+          variado: d.variado, 
+          monto: d.monto 
+        })) || []
       });
       setIvaIncluido(factura.iva_aplicado || false);
     }
@@ -145,14 +154,37 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
             }
           }
 
+          const ticketUnidades = ticket.unidades || [];
+          const ticketCajas = ticket.cajas || [];
+          const ticketVariados = ticket.variados || [];
+
+          let mappedDetails = [];
+          if (ticket.detalles_unidades && ticket.detalles_unidades.length > 0) {
+            mappedDetails = ticket.detalles_unidades.map(d => ({
+              unidad: d.unidad,
+              caja: d.caja,
+              variado: d.variado,
+              monto: d.monto
+            }));
+          } else {
+            mappedDetails = [
+              ...ticketUnidades.map(uId => ({ unidad: uId, monto: '' })),
+              ...ticketCajas.map(cId => ({ caja: cId, monto: '' })),
+              ...ticketVariados.map(vId => ({ variado: vId, monto: '' }))
+            ];
+          }
+
           return { 
             ...prev, 
             ticket: value,
             monto: ticket.monto,
             unidad: ticket.unidad || '',
             caja: ticket.caja || '',
-            unidades: ticket.unidades || [],
-            detalles_unidades: ticket.detalles_unidades || (ticket.unidades || []).map(uId => ({ unidad: uId, monto: '' })),
+            variado: ticket.variado || '',
+            unidades: ticketUnidades,
+            cajas: ticketCajas,
+            variados: ticketVariados,
+            detalles_unidades: mappedDetails,
             producto: ticket.producto || '',
             taller: ticket.taller || '',
             proveedor: ticket.proveedor || '',
@@ -190,47 +222,18 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       return;
     }
 
-    if (name === 'unidad' && value) {
-      if (value === 'sin_unidad') {
-        setFormData(prev => ({
-          ...prev,
-          unidad: 'sin_unidad',
-          unidades: [],
-          detalles_unidades: []
-        }));
-        return;
-      }
-      const uId = parseInt(value);
-      setFormData(prev => {
-        const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
-        const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
-        if (!prevUnidades.includes(uId)) {
-          return { 
-            ...prev, 
-            unidad: value, 
-            unidades: [...prevUnidades, uId],
-            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }]
-          };
-        }
-        return { ...prev, unidad: value };
-      });
-      return;
-    }
-
     if (name === 'folio') {
       const folioValue = value.trim();
       let error = '';
       let warning = '';
       
       if (folioValue) {
-        // Check for exact duplicate (case-sensitive as requested)
         const exactDuplicate = existingFacturas.find(f => f.folio === folioValue && f.id !== factura?.id);
         if (exactDuplicate) {
           error = 'Este folio ya existe exactamente igual.';
         } else {
-          // Check for similar last 6 characters
           const suffix = folioValue.slice(-6);
-          if (suffix.length >= 4) { // Only check if suffix is significant
+          if (suffix.length >= 4) {
             const suffixMatch = existingFacturas.find(f => f.folio.endsWith(suffix) && f.id !== factura?.id);
             if (suffixMatch) {
               warning = `Aviso: Existe la factura ${suffixMatch.folio} que termina igual (${suffix}).`;
@@ -252,6 +255,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         caja: '',
         variado: '',
         unidades: [],
+        cajas: [],
+        variados: [],
         detalles_unidades: []
       }));
       setBusquedaUnidad('');
@@ -260,39 +265,64 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
     
     if (tipo === 'caja') {
-      setFormData(prev => ({
-        ...prev,
-        caja: value.toString(),
-        variado: '',
-        unidad: '',
-        unidades: [],
-        detalles_unidades: []
-      }));
+      const cId = parseInt(value);
+      setFormData(prev => {
+        const prevCajas = prev.cajas.filter(id => id !== 'sin_unidad');
+        const prevDetalles = prev.detalles_unidades.filter(d => d.caja !== 'sin_unidad');
+        if (!prevCajas.includes(cId)) {
+          const newCajas = [...prevCajas, cId];
+          const newDetalles = [...prevDetalles, { caja: cId, monto: '' }];
+          const totalAssets = prev.unidades.length + newCajas.length + prev.variados.length;
+          return { 
+            ...prev, 
+            caja: totalAssets === 1 ? cId.toString() : '',
+            unidad: '',
+            variado: '',
+            cajas: newCajas,
+            detalles_unidades: newDetalles
+          };
+        }
+        return prev;
+      });
     } else if (tipo === 'variado') {
-      setFormData(prev => ({
-        ...prev,
-        variado: value.toString(),
-        caja: '',
-        unidad: '',
-        unidades: [],
-        detalles_unidades: []
-      }));
+      const vId = parseInt(value);
+      setFormData(prev => {
+        const prevVariados = prev.variados.filter(id => id !== 'sin_unidad');
+        const prevDetalles = prev.detalles_unidades.filter(d => d.variado !== 'sin_unidad');
+        if (!prevVariados.includes(vId)) {
+          const newVariados = [...prevVariados, vId];
+          const newDetalles = [...prevDetalles, { variado: vId, monto: '' }];
+          const totalAssets = prev.unidades.length + prev.cajas.length + newVariados.length;
+          return { 
+            ...prev, 
+            variado: totalAssets === 1 ? vId.toString() : '',
+            unidad: '',
+            caja: '',
+            variados: newVariados,
+            detalles_unidades: newDetalles
+          };
+        }
+        return prev;
+      });
     } else {
       const uId = parseInt(value);
       setFormData(prev => {
         const prevUnidades = prev.unidades.filter(id => id !== 'sin_unidad');
         const prevDetalles = prev.detalles_unidades.filter(d => d.unidad !== 'sin_unidad');
         if (!prevUnidades.includes(uId)) {
+          const newUnidades = [...prevUnidades, uId];
+          const newDetalles = [...prevDetalles, { unidad: uId, monto: '' }];
+          const totalAssets = newUnidades.length + prev.cajas.length + prev.variados.length;
           return { 
             ...prev, 
-            unidad: value.toString(), 
-            unidades: [...prevUnidades, uId],
-            detalles_unidades: [...prevDetalles, { unidad: uId, monto: '' }],
+            unidad: totalAssets === 1 ? uId.toString() : '',
             caja: '',
-            variado: ''
+            variado: '',
+            unidades: newUnidades,
+            detalles_unidades: newDetalles
           };
         }
-        return { ...prev, unidad: value.toString(), caja: '', variado: '' };
+        return prev;
       });
     }
     setBusquedaUnidad('');
@@ -338,10 +368,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
           } else if (file.type === 'image/png') {
             image = await mergedPdf.embedPng(arrayBuffer);
           } else {
-            continue; // Ignorar otros tipos de imagen
+            continue;
           }
           
-          // Crear una página con las dimensiones de la imagen
           const page = mergedPdf.addPage([image.width, image.height]);
           page.drawImage(image, {
             x: 0,
@@ -359,12 +388,21 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
   };
 
-  const handleDetalleChange = (unidadId, monto) => {
+  const handleDetalleChange = (targetDetalle, monto) => {
     setFormData(prev => ({
       ...prev,
-      detalles_unidades: prev.detalles_unidades.map(d => 
-        d.unidad === unidadId ? { ...d, monto } : d
-      )
+      detalles_unidades: prev.detalles_unidades.map(d => {
+        if (targetDetalle.unidad && d.unidad === targetDetalle.unidad) {
+          return { ...d, monto };
+        }
+        if (targetDetalle.caja && d.caja === targetDetalle.caja) {
+          return { ...d, monto };
+        }
+        if (targetDetalle.variado && d.variado === targetDetalle.variado) {
+          return { ...d, monto };
+        }
+        return d;
+      })
     }));
   };
 
@@ -386,15 +424,17 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
 
     const data = new FormData();
     
-    // Validaciones
     const isSinUnidad = formData.unidad === 'sin_unidad';
-    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || (!isSinUnidad && !formData.unidad && formData.unidades.length === 0 && !formData.caja && !formData.variado)) {
-      notify.error("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad.");
+    const totalAssets = formData.unidades.length + formData.cajas.length + formData.variados.length;
+    const hasAssets = totalAssets > 0 || (formData.unidad && formData.unidad !== 'sin_unidad') || formData.caja || formData.variado || isSinUnidad;
+    
+    if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || !hasAssets) {
+      notify.error("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad/Caja/Variado.");
       setLoading(false);
       return;
     }
 
-    if (formData.unidades.length > 1) {
+    if (totalAssets > 1) {
       const suma = formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0);
       if (Math.abs(suma - parseFloat(formData.monto)) > 0.01) {
         notify.error(`La suma del desglose ($${suma.toFixed(2)}) no coincide con el total ($${parseFloat(formData.monto).toFixed(2)})`);
@@ -409,18 +449,32 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     data.append('descripcion', formData.descripcion || '');
     if (formData.taller) data.append('taller', formData.taller);
     if (formData.proveedor) data.append('proveedor', formData.proveedor);
-    if (formData.unidad && formData.unidad !== 'sin_unidad') data.append('unidad', formData.unidad);
+    
+    if (totalAssets === 1) {
+      if (formData.unidades.length === 1) {
+        data.append('unidad', formData.unidades[0]);
+      } else if (formData.cajas.length === 1) {
+        data.append('caja', formData.cajas[0]);
+      } else if (formData.variados.length === 1) {
+        data.append('variado', formData.variados[0]);
+      }
+    }
+
     formData.unidades.forEach(uId => {
       if (uId !== 'sin_unidad') data.append('unidades', uId);
     });
+    formData.cajas.forEach(cId => {
+      data.append('cajas', cId);
+    });
+    formData.variados.forEach(vId => {
+      data.append('variados', vId);
+    });
+
     if (formData.categoria) data.append('categoria', formData.categoria);
-    if (formData.caja) data.append('caja', formData.caja);
-    if (formData.variado) data.append('variado', formData.variado);
     if (formData.ticket) data.append('ticket', formData.ticket);
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
     
-    // Procesar archivos escaneados
     if (scannedFiles.length > 0) {
       if (scannedFiles.length === 1) {
         data.append('archivo_escaneado', scannedFiles[0]);
@@ -439,15 +493,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
     
     data.append('iva_aplicado', ivaIncluido);
-
-    // Enviar detalles de unidades como JSON string si el backend lo soporta o desglosado
-    if (formData.unidades.length > 1) {
-      const totalDetalles = formData.detalles_unidades.reduce((acc, d) => acc + parseFloat(d.monto || 0), 0);
-      if (Math.abs(totalDetalles - parseFloat(formData.monto)) > 0.01) {
-        notify.error(`La suma de los montos por unidad ($${totalDetalles.toFixed(2)}) debe ser igual al monto total ($${parseFloat(formData.monto).toFixed(2)})`);
-        setLoading(false);
-        return;
-      }
+    
+    if (totalAssets > 1) {
       data.append('detalles_unidades', JSON.stringify(formData.detalles_unidades));
     }
 
@@ -465,7 +512,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
-      setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', variado: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], detalles_unidades: [] });
+      setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', variado: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], cajas: [], variados: [], detalles_unidades: [] });
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -502,6 +549,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     v.placas?.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
     v.tipo?.toLowerCase().includes(busquedaUnidad.toLowerCase())
   );
+
+  const totalSelectedAssets = formData.unidades.length + formData.cajas.length + formData.variados.length;
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -794,7 +843,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   )}
                 </div>
                 
-                {(formData.unidades.length > 0 || formData.unidad === 'sin_unidad' || formData.caja || formData.variado) && (
+                {(formData.unidades.length > 0 || formData.cajas.length > 0 || formData.variados.length > 0 || formData.unidad === 'sin_unidad') && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {formData.unidad === 'sin_unidad' && (
                       <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full text-[10px] font-black">
@@ -815,14 +864,19 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                           <span>Tractor: {v.numero_economico}</span>
                           <button 
                             type="button" 
-                            onClick={() => setFormData(prev => ({ 
-                              ...prev, 
-                              unidades: prev.unidades.filter(id => id !== uId), 
-                              detalles_unidades: prev.detalles_unidades.filter(d => d.unidad !== uId),
-                              unidad: prev.unidades.filter(id => id !== uId).length > 0 
-                                ? prev.unidades.filter(id => id !== uId)[0].toString() 
-                                : ''
-                            }))}
+                            onClick={() => setFormData(prev => {
+                              const newUnidades = prev.unidades.filter(id => id !== uId);
+                              const newDetalles = prev.detalles_unidades.filter(d => d.unidad !== uId);
+                              const totalAssets = newUnidades.length + prev.cajas.length + prev.variados.length;
+                              return { 
+                                ...prev, 
+                                unidades: newUnidades, 
+                                detalles_unidades: newDetalles,
+                                unidad: totalAssets === 1 && newUnidades.length === 1 ? newUnidades[0].toString() : '',
+                                caja: totalAssets === 1 && prev.cajas.length === 1 ? prev.cajas[0].toString() : '',
+                                variado: totalAssets === 1 && prev.variados.length === 1 ? prev.variados[0].toString() : ''
+                              };
+                            })}
                             className="hover:text-rose-500 transition-colors ml-1 font-bold"
                           >
                             ✕
@@ -830,36 +884,60 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                         </div>
                       ) : null;
                     })}
-                    {formData.caja && (() => {
-                      const c = cajas.find(caj => caj.id === parseInt(formData.caja));
+                    {formData.cajas.map(cId => {
+                      const c = cajas.find(caj => caj.id === cId);
                       return c ? (
-                        <div key={`caja-${c.id}`} className="flex items-center gap-1.5 bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                        <div key={`caja-${cId}`} className="flex items-center gap-1.5 bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-full text-[10px] font-black">
                           <span>Remolque: {c.numero_economico}</span>
                           <button 
                             type="button" 
-                            onClick={() => setFormData(prev => ({ ...prev, caja: '' }))}
+                            onClick={() => setFormData(prev => {
+                              const newCajas = prev.cajas.filter(id => id !== cId);
+                              const newDetalles = prev.detalles_unidades.filter(d => d.caja !== cId);
+                              const totalAssets = prev.unidades.length + newCajas.length + prev.variados.length;
+                              return { 
+                                ...prev, 
+                                cajas: newCajas, 
+                                detalles_unidades: newDetalles,
+                                unidad: totalAssets === 1 && prev.unidades.length === 1 ? prev.unidades[0].toString() : '',
+                                caja: totalAssets === 1 && newCajas.length === 1 ? newCajas[0].toString() : '',
+                                variado: totalAssets === 1 && prev.variados.length === 1 ? prev.variados[0].toString() : ''
+                              };
+                            })}
                             className="hover:text-rose-500 transition-colors ml-1 font-bold"
                           >
                             ✕
                           </button>
                         </div>
                       ) : null;
-                    })()}
-                    {formData.variado && (() => {
-                      const v = variados.find(varObj => varObj.id === parseInt(formData.variado));
+                    })}
+                    {formData.variados.map(vId => {
+                      const v = variados.find(vObj => vObj.id === vId);
                       return v ? (
-                        <div key={`variado-${v.id}`} className="flex items-center gap-1.5 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-black">
+                        <div key={`variado-${vId}`} className="flex items-center gap-1.5 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-black">
                           <span>Variado: {v.numero_economico}</span>
                           <button 
                             type="button" 
-                            onClick={() => setFormData(prev => ({ ...prev, variado: '' }))}
+                            onClick={() => setFormData(prev => {
+                              const newVariados = prev.variados.filter(id => id !== vId);
+                              const newDetalles = prev.detalles_unidades.filter(d => d.variado !== vId);
+                              const totalAssets = prev.unidades.length + prev.cajas.length + newVariados.length;
+                              return { 
+                                ...prev, 
+                                variados: newVariados, 
+                                detalles_unidades: newDetalles,
+                                unidad: totalAssets === 1 && prev.unidades.length === 1 ? prev.unidades[0].toString() : '',
+                                caja: totalAssets === 1 && prev.cajas.length === 1 ? prev.cajas[0].toString() : '',
+                                variado: totalAssets === 1 && newVariados.length === 1 ? newVariados[0].toString() : ''
+                              };
+                            })}
                             className="hover:text-rose-500 transition-colors ml-1 font-bold"
                           >
                             ✕
                           </button>
                         </div>
                       ) : null;
-                    })()}
+                    })}
                   </div>
                 )}
               </div>
@@ -888,7 +966,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
 
             </div>
 
-            {formData.unidades.length > 1 && (
+            {totalSelectedAssets > 1 && (
               <div className="mt-2 space-y-6 bg-slate-50 dark:bg-slate-950/50 p-6 rounded-3xl border border-amber-500/10 dark:border-amber-500/20 animate-in slide-in-from-top-2 duration-300 w-full shadow-inner">
                 <div className="flex flex-wrap items-center justify-between border-b border-amber-500/10 pb-4 gap-4">
                   <div className="flex items-center gap-4">
@@ -920,11 +998,26 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                 
                 <div className="flex flex-col gap-4">
                   {formData.detalles_unidades.map((detalle) => {
-                    const v = vehiculos.find(veh => veh.id === detalle.unidad);
-                    return v ? (
-                      <div key={detalle.unidad} className="flex items-center gap-4 bg-white dark:bg-slate-900/80 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/30 transition-all shadow-sm">
-                        <div className="bg-slate-50 dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 shrink-0 min-w-[80px] text-center">
-                          <span className="text-xs font-black text-slate-700 dark:text-white">{v.numero_economico}</span>
+                    let key, name;
+                    if (detalle.unidad) {
+                      const v = vehiculos.find(veh => veh.id === detalle.unidad);
+                      key = `unidad-${detalle.unidad}`;
+                      name = v ? `Tractor: ${v.numero_economico}` : `Tractor #${detalle.unidad}`;
+                    } else if (detalle.caja) {
+                      const c = cajas.find(caj => caj.id === detalle.caja);
+                      key = `caja-${detalle.caja}`;
+                      name = c ? `Remolque: ${c.numero_economico}` : `Remolque #${detalle.caja}`;
+                    } else if (detalle.variado) {
+                      const varObj = variados.find(vObj => vObj.id === detalle.variado);
+                      key = `variado-${detalle.variado}`;
+                      name = varObj ? `Variado: ${varObj.numero_economico}` : `Variado #${detalle.variado}`;
+                    }
+                    if (!key) return null;
+
+                    return (
+                      <div key={key} className="flex items-center gap-4 bg-white dark:bg-slate-900/80 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/30 transition-all shadow-sm">
+                        <div className="bg-slate-50 dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 shrink-0 min-w-[120px] text-center">
+                          <span className="text-xs font-black text-slate-700 dark:text-white">{name}</span>
                         </div>
                         <div className="relative flex-grow">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold text-sm">$</span>
@@ -932,13 +1025,13 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                             type="number"
                             step="0.01"
                             value={detalle.monto}
-                            onChange={(e) => handleDetalleChange(detalle.unidad, e.target.value)}
+                            onChange={(e) => handleDetalleChange(detalle, e.target.value)}
                             placeholder="0.00"
                             className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all font-mono"
                           />
                         </div>
                       </div>
-                    ) : null;
+                    );
                   })}
                 </div>
               </div>

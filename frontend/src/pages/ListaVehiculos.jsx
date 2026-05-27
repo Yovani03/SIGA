@@ -137,7 +137,15 @@ const ListaVehiculos = () => {
     setShowCajaFacturasModal(true);
     try {
       const res = await api.get('facturas/');
-      const filtered = res.data.filter(f => f.caja === cajaObj.id);
+      const filtered = res.data.reduce((acc, f) => {
+        const detalle = f.detalles_unidades?.find(d => d.caja === cajaObj.id);
+        if (detalle) {
+          acc.push({ ...f, monto_especifico: detalle.monto, es_compartida: true });
+        } else if (f.caja === cajaObj.id) {
+          acc.push({ ...f, monto_especifico: f.monto, es_compartida: (f.unidades_info?.length > 1) });
+        }
+        return acc;
+      }, []);
       setCajaFacturas(filtered);
     } catch (err) {
       console.error("Error cargando facturas de la caja", err);
@@ -152,7 +160,15 @@ const ListaVehiculos = () => {
     setShowVariadoFacturasModal(true);
     try {
       const res = await api.get('facturas/');
-      const filtered = res.data.filter(f => f.variado === variadoObj.id);
+      const filtered = res.data.reduce((acc, f) => {
+        const detalle = f.detalles_unidades?.find(d => d.variado === variadoObj.id);
+        if (detalle) {
+          acc.push({ ...f, monto_especifico: detalle.monto, es_compartida: true });
+        } else if (f.variado === variadoObj.id) {
+          acc.push({ ...f, monto_especifico: f.monto, es_compartida: (f.unidades_info?.length > 1) });
+        }
+        return acc;
+      }, []);
       setVariadoFacturas(filtered);
     } catch (err) {
       console.error("Error cargando facturas del vehículo variado", err);

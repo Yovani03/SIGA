@@ -86,6 +86,18 @@ class Ticket(models.Model):
         related_name='tickets_multiples',
         verbose_name="Unidades Relacionadas"
     )
+    cajas = models.ManyToManyField(
+        'vehiculos.RemolqueCaja',
+        blank=True,
+        related_name='tickets_multiples_cajas',
+        verbose_name="Cajas Relacionadas"
+    )
+    variados = models.ManyToManyField(
+        'vehiculos.VehiculoVariado',
+        blank=True,
+        related_name='tickets_multiples_variados',
+        verbose_name="Vehículos Variados Relacionados"
+    )
     producto = models.ForeignKey(
         Producto,
         on_delete=models.SET_NULL,
@@ -184,6 +196,18 @@ class Factura(models.Model):
         related_name='facturas_multiples',
         verbose_name="Unidades Relacionadas"
     )
+    cajas = models.ManyToManyField(
+        'vehiculos.RemolqueCaja',
+        blank=True,
+        related_name='facturas_multiples_cajas',
+        verbose_name="Cajas Relacionadas"
+    )
+    variados = models.ManyToManyField(
+        'vehiculos.VehiculoVariado',
+        blank=True,
+        related_name='facturas_multiples_variados',
+        verbose_name="Vehículos Variados Relacionados"
+    )
     producto = models.ForeignKey(
         Producto,
         on_delete=models.SET_NULL,
@@ -231,6 +255,8 @@ class Factura(models.Model):
             # Vincular unidades ManyToMany
             if self.pk:
                 nuevo_ticket.unidades.set(self.unidades.all())
+                nuevo_ticket.cajas.set(self.cajas.all())
+                nuevo_ticket.variados.set(self.variados.all())
             
             self.ticket = nuevo_ticket
 
@@ -255,24 +281,28 @@ class Factura(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.folio} - {self.unidad}"
+        return f"{self.folio} - {self.unidad or self.caja or self.variado or 'Múltiple'}"
 
 class TicketDetalleUnidad(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='detalles_unidades')
-    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE)
+    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, null=True, blank=True)
+    caja = models.ForeignKey('vehiculos.RemolqueCaja', on_delete=models.CASCADE, null=True, blank=True)
+    variado = models.ForeignKey('vehiculos.VehiculoVariado', on_delete=models.CASCADE, null=True, blank=True)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         verbose_name = "Detalle de Gasto por Unidad (Ticket)"
         verbose_name_plural = "Detalles de Gasto por Unidades (Tickets)"
-        unique_together = ('ticket', 'unidad')
+        unique_together = (('ticket', 'unidad'), ('ticket', 'caja'), ('ticket', 'variado'))
 
 class FacturaDetalleUnidad(models.Model):
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='detalles_unidades')
-    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE)
+    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, null=True, blank=True)
+    caja = models.ForeignKey('vehiculos.RemolqueCaja', on_delete=models.CASCADE, null=True, blank=True)
+    variado = models.ForeignKey('vehiculos.VehiculoVariado', on_delete=models.CASCADE, null=True, blank=True)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         verbose_name = "Detalle de Gasto por Unidad (Factura)"
         verbose_name_plural = "Detalles de Gasto por Unidades (Facturas)"
-        unique_together = ('factura', 'unidad')
+        unique_together = (('factura', 'unidad'), ('factura', 'caja'), ('factura', 'variado'))

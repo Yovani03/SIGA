@@ -94,12 +94,32 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
     
     if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('caja_')) {
       const cajaId = parseInt(unidadSeleccionada.replace('caja_', ''), 10);
-      return facturas.filter(f => f.caja === cajaId);
+      return facturas.reduce((acc, f) => {
+        const detalle = f.detalles_unidades?.find(d => d.caja === cajaId);
+        if (detalle) {
+          acc.push({ ...f, monto: detalle.monto });
+          return acc;
+        }
+        if (f.caja === cajaId) {
+          acc.push(f);
+        }
+        return acc;
+      }, []);
     }
 
     if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('variado_')) {
       const variadoId = parseInt(unidadSeleccionada.replace('variado_', ''), 10);
-      return facturas.filter(f => f.variado === variadoId);
+      return facturas.reduce((acc, f) => {
+        const detalle = f.detalles_unidades?.find(d => d.variado === variadoId);
+        if (detalle) {
+          acc.push({ ...f, monto: detalle.monto });
+          return acc;
+        }
+        if (f.variado === variadoId) {
+          acc.push(f);
+        }
+        return acc;
+      }, []);
     }
 
     const uId = parseInt(unidadSeleccionada, 10);

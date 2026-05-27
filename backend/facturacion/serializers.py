@@ -10,15 +10,19 @@ class ProductoSerializer(serializers.ModelSerializer):
 
 class TicketDetalleUnidadSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
+    caja_nombre = serializers.ReadOnlyField(source='caja.numero_economico')
+    variado_nombre = serializers.ReadOnlyField(source='variado.numero_economico')
     class Meta:
         model = TicketDetalleUnidad
-        fields = ['id', 'unidad', 'unidad_nombre', 'monto']
+        fields = ['id', 'unidad', 'unidad_nombre', 'caja', 'caja_nombre', 'variado', 'variado_nombre', 'monto']
 
 class FacturaDetalleUnidadSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
+    caja_nombre = serializers.ReadOnlyField(source='caja.numero_economico')
+    variado_nombre = serializers.ReadOnlyField(source='variado.numero_economico')
     class Meta:
         model = FacturaDetalleUnidad
-        fields = ['id', 'unidad', 'unidad_nombre', 'monto']
+        fields = ['id', 'unidad', 'unidad_nombre', 'caja', 'caja_nombre', 'variado', 'variado_nombre', 'monto']
 
 class TicketSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
@@ -36,6 +40,8 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         unidades_data = validated_data.pop('unidades', [])
+        cajas_data = validated_data.pop('cajas', [])
+        variados_data = validated_data.pop('variados', [])
         
         # Manejar detalles_unidades que puede venir como string JSON en MultipartFormData
         detalles_data = validated_data.pop('detalles_unidades', [])
@@ -51,18 +57,31 @@ class TicketSerializer(serializers.ModelSerializer):
         ticket = super().create(validated_data)
         if unidades_data:
             ticket.unidades.set(unidades_data)
+        if cajas_data:
+            ticket.cajas.set(cajas_data)
+        if variados_data:
+            ticket.variados.set(variados_data)
         
         for detalle in detalles_data:
-            # Asegurarse de que el ID de unidad sea entero si viene de JSON
             u_id = detalle.get('unidad')
+            c_id = detalle.get('caja')
+            v_id = detalle.get('variado')
             monto = detalle.get('monto')
-            if u_id and monto:
-                TicketDetalleUnidad.objects.create(ticket=ticket, unidad_id=u_id, monto=monto)
+            if (u_id or c_id or v_id) and monto:
+                TicketDetalleUnidad.objects.create(
+                    ticket=ticket, 
+                    unidad_id=u_id, 
+                    caja_id=c_id, 
+                    variado_id=v_id, 
+                    monto=monto
+                )
             
         return ticket
 
     def update(self, instance, validated_data):
         unidades_data = validated_data.pop('unidades', None)
+        cajas_data = validated_data.pop('cajas', None)
+        variados_data = validated_data.pop('variados', None)
         
         detalles_data = validated_data.pop('detalles_unidades', None)
         if detalles_data is None:
@@ -78,23 +97,46 @@ class TicketSerializer(serializers.ModelSerializer):
         
         if unidades_data is not None:
             ticket.unidades.set(unidades_data)
+        if cajas_data is not None:
+            ticket.cajas.set(cajas_data)
+        if variados_data is not None:
+            ticket.variados.set(variados_data)
             
         if detalles_data is not None:
             instance.detalles_unidades.all().delete()
             for detalle in detalles_data:
                 u_id = detalle.get('unidad')
+                c_id = detalle.get('caja')
+                v_id = detalle.get('variado')
                 monto = detalle.get('monto')
-                if u_id and monto:
-                    TicketDetalleUnidad.objects.create(ticket=ticket, unidad_id=u_id, monto=monto)
+                if (u_id or c_id or v_id) and monto:
+                    TicketDetalleUnidad.objects.create(
+                        ticket=ticket, 
+                        unidad_id=u_id, 
+                        caja_id=c_id, 
+                        variado_id=v_id, 
+                        monto=monto
+                    )
                 
         return ticket
     
     def get_unidades_info(self, obj):
-        # Prefer breakdown info if available
         detalles = obj.detalles_unidades.all()
         if detalles.exists():
-            return [f"{d.unidad.numero_economico} (${d.monto})" for d in detalles]
-        return [u.numero_economico for u in obj.unidades.all()]
+            info = []
+            for d in detalles:
+                if d.unidad:
+                    info.append(f"{d.unidad.numero_economico} (${d.monto})")
+                elif d.caja:
+                    info.append(f"{d.caja.numero_economico} (Caja) (${d.monto})")
+                elif d.variado:
+                    info.append(f"{d.variado.numero_economico} ({d.variado.tipo or 'Variado'}) (${d.monto})")
+            return info
+        
+        info = [u.numero_economico for u in obj.unidades.all()]
+        info += [f"{c.numero_economico} (Caja)" for c in obj.cajas.all()]
+        info += [f"{v.numero_economico} ({v.tipo or 'Variado'})" for v in obj.variados.all()]
+        return info
 
 class FacturaSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.ReadOnlyField(source='unidad.numero_economico')
@@ -117,11 +159,25 @@ class FacturaSerializer(serializers.ModelSerializer):
     def get_unidades_info(self, obj):
         detalles = obj.detalles_unidades.all()
         if detalles.exists():
-            return [f"{d.unidad.numero_economico} (${d.monto})" for d in detalles]
-        return [u.numero_economico for u in obj.unidades.all()]
+            info = []
+            for d in detalles:
+                if d.unidad:
+                    info.append(f"{d.unidad.numero_economico} (${d.monto})")
+                elif d.caja:
+                    info.append(f"{d.caja.numero_economico} (Caja) (${d.monto})")
+                elif d.variado:
+                    info.append(f"{d.variado.numero_economico} ({d.variado.tipo or 'Variado'}) (${d.monto})")
+            return info
+        
+        info = [u.numero_economico for u in obj.unidades.all()]
+        info += [f"{c.numero_economico} (Caja)" for c in obj.cajas.all()]
+        info += [f"{v.numero_economico} ({v.tipo or 'Variado'})" for v in obj.variados.all()]
+        return info
 
     def create(self, validated_data):
         unidades_data = validated_data.pop('unidades', [])
+        cajas_data = validated_data.pop('cajas', [])
+        variados_data = validated_data.pop('variados', [])
         
         detalles_data = validated_data.pop('detalles_unidades', [])
         if not detalles_data:
@@ -139,16 +195,34 @@ class FacturaSerializer(serializers.ModelSerializer):
             factura.unidades.set(unidades_data)
             if factura.ticket:
                 factura.ticket.unidades.set(unidades_data)
+        if cajas_data:
+            factura.cajas.set(cajas_data)
+            if factura.ticket:
+                factura.ticket.cajas.set(cajas_data)
+        if variados_data:
+            factura.variados.set(variados_data)
+            if factura.ticket:
+                factura.ticket.variados.set(variados_data)
         
         for detalle in detalles_data:
             u_id = detalle.get('unidad')
+            c_id = detalle.get('caja')
+            v_id = detalle.get('variado')
             monto = detalle.get('monto')
-            if u_id and monto:
-                FacturaDetalleUnidad.objects.create(factura=factura, unidad_id=u_id, monto=monto)
+            if (u_id or c_id or v_id) and monto:
+                FacturaDetalleUnidad.objects.create(
+                    factura=factura, 
+                    unidad_id=u_id, 
+                    caja_id=c_id, 
+                    variado_id=v_id, 
+                    monto=monto
+                )
                 if factura.ticket:
                     TicketDetalleUnidad.objects.get_or_create(
                         ticket=factura.ticket, 
                         unidad_id=u_id,
+                        caja_id=c_id,
+                        variado_id=v_id,
                         defaults={'monto': monto}
                     )
                 
@@ -156,6 +230,8 @@ class FacturaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         unidades_data = validated_data.pop('unidades', None)
+        cajas_data = validated_data.pop('cajas', None)
+        variados_data = validated_data.pop('variados', None)
         
         detalles_data = validated_data.pop('detalles_unidades', None)
         if detalles_data is None:
@@ -173,18 +249,36 @@ class FacturaSerializer(serializers.ModelSerializer):
             factura.unidades.set(unidades_data)
             if factura.ticket:
                 factura.ticket.unidades.set(unidades_data)
+        if cajas_data is not None:
+            factura.cajas.set(cajas_data)
+            if factura.ticket:
+                factura.ticket.cajas.set(cajas_data)
+        if variados_data is not None:
+            factura.variados.set(variados_data)
+            if factura.ticket:
+                factura.ticket.variados.set(variados_data)
         
         if detalles_data is not None:
             instance.detalles_unidades.all().delete()
             for detalle in detalles_data:
                 u_id = detalle.get('unidad')
+                c_id = detalle.get('caja')
+                v_id = detalle.get('variado')
                 monto = detalle.get('monto')
-                if u_id and monto:
-                    FacturaDetalleUnidad.objects.create(factura=factura, unidad_id=u_id, monto=monto)
+                if (u_id or c_id or v_id) and monto:
+                    FacturaDetalleUnidad.objects.create(
+                        factura=factura, 
+                        unidad_id=u_id, 
+                        caja_id=c_id, 
+                        variado_id=v_id, 
+                        monto=monto
+                    )
                     if factura.ticket:
                         TicketDetalleUnidad.objects.update_or_create(
                             ticket=factura.ticket,
                             unidad_id=u_id,
+                            caja_id=c_id,
+                            variado_id=v_id,
                             defaults={'monto': monto}
                         )
                     
