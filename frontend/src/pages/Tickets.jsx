@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import AltaTicket from './AltaTicket';
 import notify from '../utils/notifications';
+import { formatMediaUrl } from '../utils/media';
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -291,7 +292,7 @@ const Tickets = () => {
                     
                     {t.archivo_escaneado && (
                       <a 
-                        href={t.archivo_escaneado} 
+                        href={formatMediaUrl(t.archivo_escaneado)} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -518,7 +519,7 @@ const Tickets = () => {
             <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
               {selectedTicket.archivo_escaneado ? (
                 <a 
-                  href={selectedTicket.archivo_escaneado} 
+                  href={formatMediaUrl(selectedTicket.archivo_escaneado)} 
                   target="_blank" 
                   rel="noreferrer"
                   className="flex-grow bg-amber-600 hover:bg-amber-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"

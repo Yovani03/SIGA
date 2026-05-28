@@ -66,6 +66,23 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [scanning, setScanning] = useState(false);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [folioStatus, setFolioStatus] = useState({ error: '', warning: '' });
+  const [busquedaEntidad, setBusquedaEntidad] = useState('');
+  const [mostrarDropdownEntidad, setMostrarDropdownEntidad] = useState(false);
+
+  useEffect(() => {
+    if (entidades.length > 0) {
+      if (formData.taller) {
+        const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
+        if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
+      } else if (formData.proveedor) {
+        const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
+        if (provObj) setBusquedaEntidad(provObj.nombre);
+      } else {
+        setBusquedaEntidad('');
+      }
+    }
+  }, [formData.taller, formData.proveedor, entidades]);
+
 
   useEffect(() => {
     Promise.all([
@@ -329,6 +346,48 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     setMostrarDropdownUnidad(false);
   };
 
+  const handleEntidadSearchChange = (e) => {
+    const value = e.target.value;
+    setBusquedaEntidad(value);
+    setMostrarDropdownEntidad(true);
+    if (!value) {
+      setFormData(prev => ({
+        ...prev,
+        taller: '',
+        proveedor: '',
+        rfc_emisor: '',
+        razon_social_emisor: ''
+      }));
+    }
+  };
+
+  const seleccionarEntidad = (entidad) => {
+    setFormData(prev => ({
+      ...prev,
+      taller: entidad.tipo === 'taller' ? entidad.id : '',
+      proveedor: entidad.tipo === 'proveedor' ? entidad.id : '',
+      rfc_emisor: entidad.rfc || prev.rfc_emisor || '',
+      razon_social_emisor: entidad.razon_social || prev.razon_social_emisor || ''
+    }));
+    setBusquedaEntidad(entidad.nombre);
+    setMostrarDropdownEntidad(false);
+  };
+
+  const handleEntidadBlur = () => {
+    setTimeout(() => {
+      setMostrarDropdownEntidad(false);
+      if (formData.taller) {
+        const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
+        if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
+      } else if (formData.proveedor) {
+        const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
+        if (provObj) setBusquedaEntidad(provObj.nombre);
+      } else {
+        setBusquedaEntidad('');
+      }
+    }, 200);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -516,6 +575,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
+      setBusquedaEntidad('');
     } catch (err) {
       if (err.response?.data?.folio) {
         notify.error(`El folio ya existe o es inválido: ${err.response.data.folio.join(' ')}`);
@@ -533,6 +593,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     const search = busquedaTicket.toLowerCase();
     return folio.includes(search) || desc.includes(search);
   });
+
+  const entidadesFiltradas = entidades.filter(e =>
+    e.nombre.toLowerCase().includes(busquedaEntidad.toLowerCase())
+  );
 
   const vehiculosFiltrados = vehiculos.filter(v => 
     v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
@@ -637,24 +701,53 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                 {folioStatus.warning && !folioStatus.error && <p className="text-amber-500 text-[10px] mt-1 font-bold italic">{folioStatus.warning}</p>}
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-medium text-slate-400 mb-2 flex items-center gap-2">
                   <Store size={14} /> Taller / Proveedor
                 </label>
-                <select
-                  required
-                  name="entidad"
-                  value={formData.taller ? `taller_${formData.taller}` : formData.proveedor ? `proveedor_${formData.proveedor}` : ''}
-                  onChange={handleChange}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all appearance-none text-sm"
-                >
-                  <option value="">Seleccionar...</option>
-                  {entidades.map(e => (
-                    <option key={`${e.tipo}_${e.id}`} value={`${e.tipo}_${e.id}`}>
-                      {e.nombre} ({e.tipo === 'taller' ? 'Taller' : 'Proveedor'})
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <Search className="text-slate-500/40" size={12} />
+                  </div>
+                  <input
+                    type="text"
+                    required={!formData.taller && !formData.proveedor}
+                    placeholder="Buscar taller o proveedor..."
+                    value={busquedaEntidad}
+                    onChange={handleEntidadSearchChange}
+                    onFocus={() => setMostrarDropdownEntidad(true)}
+                    onBlur={handleEntidadBlur}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  />
+                  
+                  {mostrarDropdownEntidad && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                      {entidadesFiltradas.length === 0 ? (
+                        <div className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 italic">
+                          No se encontraron resultados
+                        </div>
+                      ) : (
+                        entidadesFiltradas.map(e => (
+                          <button
+                            key={`${e.tipo}-${e.id}`}
+                            type="button"
+                            onClick={() => seleccionarEntidad(e)}
+                            className="w-full flex items-center justify-between px-6 py-3 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                          >
+                            <div>
+                              <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                {e.nombre}
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                {e.tipo === 'taller' ? 'Taller' : 'Proveedor'} {e.rfc ? ` - RFC: ${e.rfc}` : ''}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

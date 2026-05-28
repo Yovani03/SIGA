@@ -33,6 +33,7 @@ import {
 } from '../components/ui/chart';
 import AltaFactura from './AltaFactura';
 import notify from '../utils/notifications';
+import { formatMediaUrl } from '../utils/media';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -560,7 +561,7 @@ const Facturacion = () => {
                   
                   {f.archivo_escaneado ? (
                     <a 
-                      href={f.archivo_escaneado} 
+                      href={formatMediaUrl(f.archivo_escaneado)} 
                       target="_blank" 
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -906,7 +907,7 @@ const Facturacion = () => {
             <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
               {selectedFactura.archivo_escaneado ? (
                 <a 
-                  href={selectedFactura.archivo_escaneado} 
+                  href={formatMediaUrl(selectedFactura.archivo_escaneado)} 
                   target="_blank" 
                   rel="noreferrer"
                   className="flex-grow bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"

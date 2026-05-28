@@ -39,6 +39,7 @@ import AltaCaja from './AltaCaja';
 import AltaVariado from './AltaVariado';
 import AnalisisGastos from './AnalisisGastos';
 import notify from '../utils/notifications';
+import { formatMediaUrl } from '../utils/media';
 
 const ListaVehiculos = () => {
   const [vehiculos, setVehiculos] = useState([]);
@@ -1173,7 +1174,7 @@ const ListaVehiculos = () => {
                         
                         {f.archivo_escaneado ? (
                           <a 
-                            href={f.archivo_escaneado} 
+                            href={formatMediaUrl(f.archivo_escaneado)} 
                             target="_blank" 
                             rel="noreferrer"
                             className="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
@@ -1627,7 +1628,7 @@ const ListaVehiculos = () => {
                         
                         {f.archivo_escaneado ? (
                           <a 
-                            href={f.archivo_escaneado} 
+                            href={formatMediaUrl(f.archivo_escaneado)} 
                             target="_blank" 
                             rel="noreferrer"
                             className="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
@@ -1726,7 +1727,7 @@ const ListaVehiculos = () => {
                         
                         {f.archivo_escaneado ? (
                           <a 
-                            href={f.archivo_escaneado} 
+                            href={formatMediaUrl(f.archivo_escaneado)} 
                             target="_blank" 
                             rel="noreferrer"
                             className="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
