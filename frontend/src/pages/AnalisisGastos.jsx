@@ -17,9 +17,13 @@ const categoryChartConfig = {
   value: {
     label: "Monto",
   },
-  "Mantenimiento y Refacciones": {
+  "Mantenimiento": {
     label: "Mantenimiento",
     color: "#3b82f6",
+  },
+  "Refacciones": {
+    label: "Refacciones",
+    color: "#14b8a6",
   },
   "Llantas": {
     label: "Llantas",
@@ -151,9 +155,6 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
         if (!cat || cat === 'Otro') {
           cat = f.producto_categoria || 'Otro';
         }
-        if (cat === 'Mantenimiento' || cat === 'Refacciones') {
-          cat = 'Mantenimiento y Refacciones';
-        }
       }
       const monto = parseFloat(f.monto);
       if (!categorias[cat]) categorias[cat] = 0;
@@ -182,9 +183,6 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
       } else {
         if (!cat || cat === 'Otro') {
           cat = f.producto_categoria || 'Otro';
-        }
-        if (cat === 'Mantenimiento' || cat === 'Refacciones') {
-          cat = 'Mantenimiento y Refacciones';
         }
       }
 

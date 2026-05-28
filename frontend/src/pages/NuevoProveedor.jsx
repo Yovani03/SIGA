@@ -17,13 +17,13 @@ const NuevoProveedor = ({ onSuccess, onClose, proveedorToEdit }) => {
   const [error, setError] = useState(null);
 
   const categorias = [
-    'Refacciones',
     'Mantenimiento',
+    'Refacciones',
+    'Administrativo',
     'Llantas',
+    'Operativo',
     'Combustible',
-    'Seguros',
-    'Servicios Generales',
-    'Otros'
+    'Otro'
   ];
 
   const handleChange = (e) => {

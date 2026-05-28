@@ -41,9 +41,13 @@ const categoryChartConfig = {
   value: {
     label: "Monto",
   },
-  "Mantenimiento y Refacciones": {
+  "Mantenimiento": {
     label: "Mantenimiento",
     color: "#3b82f6",
+  },
+  "Refacciones": {
+    label: "Refacciones",
+    color: "#14b8a6",
   },
   "Llantas": {
     label: "Llantas",
@@ -244,9 +248,6 @@ const Facturacion = () => {
       let cat = f.categoria;
       if (!cat || cat === 'Otro') {
         cat = f.producto_categoria || 'Otro';
-      }
-      if (cat === 'Mantenimiento' || cat === 'Refacciones') {
-        cat = 'Mantenimiento y Refacciones';
       }
       acc[cat] = (acc[cat] || 0) + parseFloat(f.monto);
       return acc;

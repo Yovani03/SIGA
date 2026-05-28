@@ -26,7 +26,8 @@ class Producto(models.Model):
 
 class Ticket(models.Model):
     CATEGORIAS = [
-        ('Mantenimiento y Refacciones', 'Mantenimiento y Refacciones'),
+        ('Mantenimiento', 'Mantenimiento'),
+        ('Refacciones', 'Refacciones'),
         ('Administrativo', 'Administrativo'),
         ('Operativo', 'Operativo'),
         ('Llantas', 'Llantas'),

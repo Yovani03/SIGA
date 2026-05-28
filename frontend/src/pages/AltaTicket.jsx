@@ -85,10 +85,12 @@ const AltaTicket = ({ onSuccess, onClose }) => {
     const { name, value } = e.target;
     if (name === 'entidad' && value) {
       const [tipo, id] = value.split('_');
+      const entidadObj = entidades.find(e => e.tipo === tipo && e.id === parseInt(id));
       setFormData(prev => ({
         ...prev,
         taller: tipo === 'taller' ? id : '',
-        proveedor: tipo === 'proveedor' ? id : ''
+        proveedor: tipo === 'proveedor' ? id : '',
+        categoria: tipo === 'taller' ? 'Mantenimiento' : (entidadObj?.categoria || prev.categoria || 'Otro')
       }));
       return;
     } else if (name === 'entidad' && !value) {
@@ -493,8 +495,9 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all cursor-pointer"
                 >
                   <option value="Otro" className="bg-white dark:bg-slate-900">Selecciona una categoría...</option>
+                  <option value="Mantenimiento" className="bg-white dark:bg-slate-900">Mantenimiento</option>
+                  <option value="Refacciones" className="bg-white dark:bg-slate-900">Refacciones</option>
                   <option value="Administrativo" className="bg-white dark:bg-slate-900">Administrativo</option>
-                  <option value="Mantenimiento y Refacciones" className="bg-white dark:bg-slate-900">Mantenimiento y Refacciones</option>
                   <option value="Llantas" className="bg-white dark:bg-slate-900">Llantas</option>
                   <option value="Operativo" className="bg-white dark:bg-slate-900">Operativo</option>
                   <option value="Combustible" className="bg-white dark:bg-slate-900">Combustible</option>

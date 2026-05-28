@@ -2,13 +2,13 @@ from django.db import models
 
 class Proveedor(models.Model):
     CATEGORIAS = [
-        ('Refacciones', 'Refacciones'),
         ('Mantenimiento', 'Mantenimiento'),
+        ('Refacciones', 'Refacciones'),
+        ('Administrativo', 'Administrativo'),
+        ('Operativo', 'Operativo'),
         ('Llantas', 'Llantas'),
         ('Combustible', 'Combustible'),
-        ('Seguros', 'Seguros'),
-        ('Servicios Generales', 'Servicios Generales'),
-        ('Otros', 'Otros'),
+        ('Otro', 'Otro'),
     ]
 
     nombre = models.CharField(max_length=200)

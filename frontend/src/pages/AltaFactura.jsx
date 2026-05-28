@@ -367,7 +367,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       taller: entidad.tipo === 'taller' ? entidad.id : '',
       proveedor: entidad.tipo === 'proveedor' ? entidad.id : '',
       rfc_emisor: entidad.rfc || prev.rfc_emisor || '',
-      razon_social_emisor: entidad.razon_social || prev.razon_social_emisor || ''
+      razon_social_emisor: entidad.razon_social || prev.razon_social_emisor || '',
+      categoria: entidad.tipo === 'taller' ? 'Mantenimiento' : (entidad.categoria || prev.categoria || 'Otro')
     }));
     setBusquedaEntidad(entidad.nombre);
     setMostrarDropdownEntidad(false);
@@ -1047,8 +1048,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all cursor-pointer"
                 >
                   <option value="Otro" className="bg-white dark:bg-slate-900">Seleccionar...</option>
+                  <option value="Mantenimiento" className="bg-white dark:bg-slate-900">Mantenimiento</option>
+                  <option value="Refacciones" className="bg-white dark:bg-slate-900">Refacciones</option>
                   <option value="Administrativo" className="bg-white dark:bg-slate-900">Administrativo</option>
-                  <option value="Mantenimiento y Refacciones" className="bg-white dark:bg-slate-900">Mantenimiento y Refacciones</option>
                   <option value="Llantas" className="bg-white dark:bg-slate-900">Llantas</option>
                   <option value="Operativo" className="bg-white dark:bg-slate-900">Operativo</option>
                   <option value="Combustible" className="bg-white dark:bg-slate-900">Combustible</option>
