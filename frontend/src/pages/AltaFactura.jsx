@@ -375,18 +375,16 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   };
 
   const handleEntidadBlur = () => {
-    setTimeout(() => {
-      setMostrarDropdownEntidad(false);
-      if (formData.taller) {
-        const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
-        if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
-      } else if (formData.proveedor) {
-        const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
-        if (provObj) setBusquedaEntidad(provObj.nombre);
-      } else {
-        setBusquedaEntidad('');
-      }
-    }, 200);
+    setMostrarDropdownEntidad(false);
+    if (formData.taller) {
+      const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
+      if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
+    } else if (formData.proveedor) {
+      const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
+      if (provObj) setBusquedaEntidad(provObj.nombre);
+    } else {
+      setBusquedaEntidad('');
+    }
   };
 
   const handleFileChange = (e) => {
@@ -722,7 +720,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   />
                   
                   {mostrarDropdownEntidad && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                    <div 
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar"
+                    >
                       {entidadesFiltradas.length === 0 ? (
                         <div className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 italic">
                           No se encontraron resultados
@@ -841,12 +842,15 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     value={busquedaUnidad}
                     onChange={(e) => setBusquedaUnidad(e.target.value)}
                     onFocus={() => setMostrarDropdownUnidad(true)}
-                    onBlur={() => setTimeout(() => setMostrarDropdownUnidad(false), 200)}
+                    onBlur={() => setMostrarDropdownUnidad(false)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500 outline-none transition-all shadow-sm"
                   />
                   
                   {mostrarDropdownUnidad && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                    <div 
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar"
+                    >
                       {(!busquedaUnidad || 'sin unidad asignada'.includes(busquedaUnidad.toLowerCase())) && (
                         <button
                           type="button"
