@@ -18,7 +18,8 @@ import {
   Store,
   Info,
   Archive,
-  Settings
+  Settings,
+  Tag
 } from 'lucide-react';
 import AltaTicket from './AltaTicket';
 import notify from '../utils/notifications';
