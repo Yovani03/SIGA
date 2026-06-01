@@ -617,6 +617,13 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                     {scanning ? <Spinner /> : <FilePlus size={16} />}
                     <span>{scanning ? 'Escaneando...' : 'Escanear Ahora'}</span>
                   </button>
+                  <a
+                    href="/agente_escaner.zip"
+                    download
+                    className="text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400 underline text-[10px] font-bold block mt-2 text-center"
+                  >
+                    ¿No tienes el asistente local? Descárgalo aquí
+                  </a>
                 </div>
               )}
             </div>
