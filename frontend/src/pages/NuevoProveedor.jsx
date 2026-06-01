@@ -37,16 +37,76 @@ const NuevoProveedor = ({ onSuccess, onClose, proveedorToEdit }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Limpiar y normalizar los datos antes de enviar al backend
+    const cleanedData = {};
+    Object.keys(formData).forEach((key) => {
+      const val = formData[key];
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (trimmed === '') {
+          cleanedData[key] = null;
+        } else if (key === 'sitio_web') {
+          // Si el URL no tiene protocolo, añadir https:// por defecto
+          if (!/^https?:\/\//i.test(trimmed)) {
+            cleanedData[key] = `https://${trimmed}`;
+          } else {
+            cleanedData[key] = trimmed;
+          }
+        } else if (key === 'rfc') {
+          // El RFC siempre va en mayúsculas
+          cleanedData[key] = trimmed.toUpperCase();
+        } else {
+          cleanedData[key] = trimmed;
+        }
+      } else {
+        cleanedData[key] = val;
+      }
+    });
+
     try {
       if (proveedorToEdit) {
-        await api.put(`proveedores/${proveedorToEdit.id}/`, formData);
+        await api.put(`proveedores/${proveedorToEdit.id}/`, cleanedData);
       } else {
-        await api.post('proveedores/', formData);
+        await api.post('proveedores/', cleanedData);
       }
       onSuccess();
     } catch (err) {
       console.error(err);
-      setError('Ocurrió un error al guardar el proveedor. Verifica los datos.');
+      if (err.response && err.response.data) {
+        const errors = err.response.data;
+        if (typeof errors === 'object') {
+          const errorList = [];
+          for (const [key, value] of Object.entries(errors)) {
+            const fieldName = {
+              nombre: 'Nombre',
+              categoria: 'Categoría',
+              rfc: 'RFC',
+              razon_social: 'Razón Social',
+              telefono: 'Teléfono',
+              email: 'Correo Electrónico',
+              direccion: 'Dirección',
+              sitio_web: 'Sitio Web'
+            }[key] || key;
+
+            // Traducir mensajes comunes de Django REST Framework
+            let messages = Array.isArray(value) ? value.join(', ') : String(value);
+            messages = messages
+              .replace(/Enter a valid URL\./i, 'Introduce una URL válida (ej. https://ejemplo.com)')
+              .replace(/Enter a valid email address\./i, 'Introduce un correo electrónico válido')
+              .replace(/This field is required\./i, 'Este campo es obligatorio')
+              .replace(/This field may not be blank\./i, 'Este campo no puede estar en blanco')
+              .replace(/Ensure this value has at most (\d+) characters/i, (match, max) => `Asegúrate de que este valor tenga como máximo ${max} caracteres`);
+
+            errorList.push(`${fieldName}: ${messages}`);
+          }
+          setError(`Error de validación: ${errorList.join(' | ')}`);
+        } else {
+          setError('Ocurrió un error al guardar el proveedor. Verifica los datos.');
+        }
+      } else {
+        setError('Ocurrió un error al guardar el proveedor. Verifica los datos.');
+      }
     } finally {
       setLoading(false);
     }
