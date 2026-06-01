@@ -15,9 +15,9 @@ try {
 }
 
 Write-Host "==================================================="
-Write-Host "🤖 AGENTE LOCAL DE ESCANEO INICIADO (PowerShell)"
-Write-Host "📡 Escuchando ordenes en: http://localhost:$port"
-Write-Host "⚠️  Por favor, manten esta ventana abierta."
+Write-Host "AGENTE LOCAL DE ESCANEO INICIADO (PowerShell)"
+Write-Host "Escuchando ordenes en: http://localhost:$port"
+Write-Host "Por favor, manten esta ventana abierta."
 Write-Host "==================================================="
 
 try {
@@ -59,7 +59,7 @@ try {
 
             if (-not (Test-Path $napsPath)) {
                 $errMsg = "No se encontro NAPS2 instalado. Por favor descarga e instala NAPS2."
-                Write-Host "❌ Error: $errMsg" -ForegroundColor Red
+                Write-Host "Error: $errMsg" -ForegroundColor Red
                 
                 $response.StatusCode = 500
                 $response.ContentType = "application/json"
@@ -83,7 +83,7 @@ try {
                 $response.ContentLength64 = $bytes.Length
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
             } else {
-                Write-Host "❌ Error: El escaner no pudo generar el archivo PDF." -ForegroundColor Red
+                Write-Host "Error: El escaner no pudo generar el archivo PDF." -ForegroundColor Red
                 $response.StatusCode = 500
                 $response.ContentType = "application/json"
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes('{"error": "El escaner no pudo generar el archivo. Asegurate de que este encendido y que el perfil se llame Brother."}')
