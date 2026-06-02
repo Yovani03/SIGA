@@ -203,8 +203,8 @@ const Facturacion = () => {
       end = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
     }
 
-    if (start && new Date(f.fecha) < start) return false;
-    if (end && new Date(f.fecha) > end) return false;
+    if (start && new Date(f.fecha + 'T00:00:00') < start) return false;
+    if (end && new Date(f.fecha + 'T00:00:00') > end) return false;
 
     const unidad = getUnidadInfo(f.unidad);
     const caja = getCajaInfo(f.caja);
@@ -224,7 +224,7 @@ const Facturacion = () => {
       (variado && variado.numero_economico.toLowerCase().includes(searchLower)) ||
       (variado && variado.placas && variado.placas.toLowerCase().includes(searchLower))
     );
-  }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }).sort((a, b) => new Date(b.fecha + 'T00:00:00') - new Date(a.fecha + 'T00:00:00'));
 
   useEffect(() => {
     setCurrentPage(1);
@@ -539,7 +539,7 @@ const Facturacion = () => {
                   <div className="flex items-center gap-4">
                     <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
                       <Calendar size={14} className="text-slate-600" />
-                      {new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(f.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                     
                     <button 
@@ -740,7 +740,7 @@ const Facturacion = () => {
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fecha de Emisión</p>
                   <p className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-end gap-2">
                     <Calendar size={18} className="text-blue-500" />
-                    {new Date(selectedFactura.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    {new Date(selectedFactura.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>

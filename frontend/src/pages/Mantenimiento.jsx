@@ -458,7 +458,7 @@ const Mantenimiento = () => {
                           </span>
                         </div>
                         <p className="text-slate-400 dark:text-slate-500 text-[10px] mt-1 flex items-center gap-2 font-medium">
-                          <Calendar size={12} /> {new Date(t.fecha).toLocaleDateString()}
+                          <Calendar size={12} /> {new Date(t.fecha + 'T00:00:00').toLocaleDateString()}
                           <span className="text-slate-300 dark:text-slate-700 font-black">•</span>
                           <span className="truncate">{t.descripcion || 'Sin descripción'}</span>
                         </p>

@@ -173,7 +173,7 @@ const ProyeccionesMantenimiento = () => {
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800/50">
                   <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Intervalo Tiempo</p>
                   <p className="text-sm text-white font-mono">
-                    {new Date(p.fecha_limite).toLocaleDateString()}
+                    {new Date(p.fecha_limite + 'T00:00:00').toLocaleDateString()}
                   </p>
                   <p className={`text-xs font-bold mt-1 ${p.dias_restantes <= 0 ? 'text-red-400' : 'text-slate-400'}`}>
                     {p.dias_restantes <= 0 ? `Vencido por ${Math.abs(p.dias_restantes)} días` : `Faltan ${p.dias_restantes} días`}

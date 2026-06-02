@@ -173,7 +173,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
   const dataPorMes = useMemo(() => {
     const meses = {};
     facturasFiltradas.forEach(f => {
-      const date = new Date(f.fecha);
+      const date = new Date(f.fecha + 'T00:00:00');
       const mesAnio = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!meses[mesAnio]) meses[mesAnio] = { name: mesAnio, total: 0 };
       

@@ -114,8 +114,8 @@ const Dashboard = () => {
 
       // Combine and sort recent activity
       const combined = [
-        ...facts.map(f => ({ ...f, type: 'factura', sortDate: new Date(f.fecha) })),
-        ...fuel.map(f => ({ ...f, type: 'combustible', sortDate: new Date(f.fecha) }))
+        ...facts.map(f => ({ ...f, type: 'factura', sortDate: new Date(f.fecha + 'T00:00:00') })),
+        ...fuel.map(f => ({ ...f, type: 'combustible', sortDate: new Date(f.fecha + 'T00:00:00') }))
       ].sort((a, b) => b.sortDate - a.sortDate).slice(0, 5);
 
       setRecentActivity(combined);
@@ -253,7 +253,7 @@ const Dashboard = () => {
                           <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider mb-1">Por Tiempo</p>
                           <div className="flex justify-between items-baseline">
                             <span className="text-xs font-bold text-slate-600 dark:text-slate-300 font-mono">
-                              Límite: {p.fecha_limite ? new Date(p.fecha_limite).toLocaleDateString() : ''}
+                              Límite: {p.fecha_limite ? new Date(p.fecha_limite + 'T00:00:00').toLocaleDateString() : ''}
                             </span>
                             <span className={`text-xs font-black ${p.dias_restantes <= 0 ? 'text-red-500' : 'text-slate-500'}`}>
                               {p.dias_restantes <= 0 

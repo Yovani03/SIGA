@@ -677,7 +677,7 @@ const ListaVehiculos = () => {
                             Última Carga
                           </div>
                           <span className="text-white text-xs font-bold bg-blue-600 dark:bg-blue-500/20 px-2 py-0.5 rounded-full">
-                            {v.fecha_ultima_carga ? new Date(v.fecha_ultima_carga).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '---'}
+                            {v.fecha_ultima_carga ? new Date(v.fecha_ultima_carga + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '---'}
                           </span>
                         </div>
                         
@@ -1512,7 +1512,7 @@ const ListaVehiculos = () => {
                          <div className="bg-blue-600/10 p-2 rounded-lg text-blue-400">
                            <Calendar size={16} />
                          </div>
-                         <span className="text-white font-mono text-xs font-bold">{new Date(carga.fecha).toLocaleDateString()}</span>
+                          <span className="text-white font-mono text-xs font-bold">{new Date(carga.fecha + 'T00:00:00').toLocaleDateString()}</span>
                        </div>
                        
                        <div className="space-y-3">

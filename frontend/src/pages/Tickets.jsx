@@ -99,7 +99,7 @@ const Tickets = () => {
       (variado && variado.numero_economico.toLowerCase().includes(searchLower)) ||
       (variado && variado.placas && variado.placas.toLowerCase().includes(searchLower))
     );
-  }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }).sort((a, b) => new Date(b.fecha + 'T00:00:00') - new Date(a.fecha + 'T00:00:00'));
 
   useEffect(() => {
     setCurrentPage(1);
@@ -280,7 +280,7 @@ const Tickets = () => {
                 <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <p className="text-slate-500 text-xs flex items-center gap-2 font-medium">
                     <Calendar size={14} className="text-slate-600" />
-                    {new Date(t.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {new Date(t.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
 
                   <div className="flex items-center gap-2">
@@ -407,7 +407,7 @@ const Tickets = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Calendar size={14} /> Fecha de Registro</span>
-                    <span className="font-semibold">{new Date(selectedTicket.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    <span className="font-semibold">{new Date(selectedTicket.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-400 flex items-center gap-1.5 mb-1"><Hash size={14} /> Folio Físico (Emisión)</span>
