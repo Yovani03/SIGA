@@ -61,6 +61,7 @@ const Talleres = () => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
       t.nombre.toLowerCase().includes(searchLower) ||
+      (t.razon_social && t.razon_social.toLowerCase().includes(searchLower)) ||
       (t.especialidad && t.especialidad.toLowerCase().includes(searchLower)) ||
       (t.direccion && t.direccion.toLowerCase().includes(searchLower))
     );
@@ -154,7 +155,10 @@ const Talleres = () => {
             <div key={t.id} className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-blue-500/50 transition-all group shadow-xl flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-xl pr-2">{t.nombre}</h3>
+                  <h3 className="text-white font-bold text-xl pr-2">{t.razon_social || t.nombre}</h3>
+                  {t.razon_social && t.nombre && t.razon_social.trim().toLowerCase() !== t.nombre.trim().toLowerCase() && (
+                    <p className="text-slate-400 text-sm font-medium mt-1">{t.nombre}</p>
+                  )}
                   {t.especialidad && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {t.especialidad.split(', ').map(esp => (

@@ -65,6 +65,7 @@ const Proveedores = () => {
     const searchLower = searchTerm.toLowerCase();
     return (
       p.nombre.toLowerCase().includes(searchLower) ||
+      (p.razon_social && p.razon_social.toLowerCase().includes(searchLower)) ||
       (p.telefono && p.telefono.includes(searchLower)) ||
       (p.email && p.email.toLowerCase().includes(searchLower)) ||
       (p.categoria.toLowerCase().includes(searchLower))
@@ -152,7 +153,10 @@ const Proveedores = () => {
             <div key={p.id} className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group shadow-xl flex flex-col h-full">
               <div className="flex justify-between items-start mb-4 bg-transparent w-full">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-xl truncate pr-2">{p.nombre}</h3>
+                  <h3 className="text-white font-bold text-xl truncate pr-2">{p.razon_social || p.nombre}</h3>
+                  {p.razon_social && p.nombre && p.razon_social.trim().toLowerCase() !== p.nombre.trim().toLowerCase() && (
+                    <p className="text-slate-400 text-sm font-medium mt-1 truncate">{p.nombre}</p>
+                  )}
                   <div className="inline-flex items-center gap-1.5 bg-purple-600/20 text-purple-400 text-xs font-bold px-2.5 py-1 rounded-md mt-2 border border-purple-500/20">
                     <Briefcase size={12} />
                     {p.categoria}

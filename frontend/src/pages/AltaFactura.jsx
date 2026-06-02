@@ -73,10 +73,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     if (entidades.length > 0) {
       if (formData.taller) {
         const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
-        if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
+        if (tallerObj) setBusquedaEntidad(tallerObj.razon_social || tallerObj.nombre);
       } else if (formData.proveedor) {
         const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
-        if (provObj) setBusquedaEntidad(provObj.nombre);
+        if (provObj) setBusquedaEntidad(provObj.razon_social || provObj.nombre);
       } else {
         setBusquedaEntidad('');
       }
@@ -370,7 +370,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       razon_social_emisor: entidad.razon_social || prev.razon_social_emisor || '',
       categoria: entidad.tipo === 'taller' ? 'Mantenimiento' : (entidad.categoria || prev.categoria || 'Otro')
     }));
-    setBusquedaEntidad(entidad.nombre);
+    setBusquedaEntidad(entidad.razon_social || entidad.nombre);
     setMostrarDropdownEntidad(false);
   };
 
@@ -378,12 +378,21 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     setMostrarDropdownEntidad(false);
     if (formData.taller) {
       const tallerObj = entidades.find(e => e.tipo === 'taller' && e.id === parseInt(formData.taller));
-      if (tallerObj) setBusquedaEntidad(tallerObj.nombre);
+      if (tallerObj) setBusquedaEntidad(tallerObj.razon_social || tallerObj.nombre);
     } else if (formData.proveedor) {
       const provObj = entidades.find(e => e.tipo === 'proveedor' && e.id === parseInt(formData.proveedor));
-      if (provObj) setBusquedaEntidad(provObj.nombre);
+      if (provObj) setBusquedaEntidad(provObj.razon_social || provObj.nombre);
     } else {
       setBusquedaEntidad('');
+    }
+  };
+
+  const handleKeyDownEntidad = (e) => {
+    if (e.key === 'Enter' && mostrarDropdownEntidad) {
+      if (entidadesFiltradas.length === 1) {
+        e.preventDefault();
+        seleccionarEntidad(entidadesFiltradas[0]);
+      }
     }
   };
 
@@ -593,9 +602,14 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     return folio.includes(search) || desc.includes(search);
   });
 
-  const entidadesFiltradas = entidades.filter(e =>
-    e.nombre.toLowerCase().includes(busquedaEntidad.toLowerCase())
-  );
+  const entidadesFiltradas = entidades.filter(e => {
+    const searchLower = busquedaEntidad.toLowerCase();
+    return (
+      e.nombre.toLowerCase().includes(searchLower) ||
+      (e.razon_social && e.razon_social.toLowerCase().includes(searchLower)) ||
+      (e.rfc && e.rfc.toLowerCase().includes(searchLower))
+    );
+  });
 
   const vehiculosFiltrados = vehiculos.filter(v => 
     v.numero_economico.toLowerCase().includes(busquedaUnidad.toLowerCase()) ||
@@ -716,6 +730,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     onChange={handleEntidadSearchChange}
                     onFocus={() => setMostrarDropdownEntidad(true)}
                     onBlur={handleEntidadBlur}
+                    onKeyDown={handleKeyDownEntidad}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500 outline-none transition-all shadow-sm"
                   />
                   
@@ -738,10 +753,16 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                           >
                             <div>
                               <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                                {e.nombre}
+                                {e.razon_social || e.nombre}
                               </div>
                               <div className="text-[11px] text-slate-500">
-                                {e.tipo === 'taller' ? 'Taller' : 'Proveedor'} {e.rfc ? ` - RFC: ${e.rfc}` : ''}
+                                {e.razon_social && e.nombre && e.razon_social.trim().toLowerCase() !== e.nombre.trim().toLowerCase() && (
+                                  <span className="font-medium text-slate-600 dark:text-slate-400 block mb-0.5">{e.nombre}</span>
+                                )}
+                                <span className="uppercase text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">
+                                  {e.tipo === 'taller' ? 'Taller' : 'Proveedor'}
+                                </span>
+                                {e.rfc && <span>RFC: {e.rfc}</span>}
                               </div>
                             </div>
                           </button>
