@@ -36,12 +36,7 @@ const Tickets = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [settingsIcon, setSettingsIcon] = useState(null); // Settings is not imported but let's check imports or add it if needed. Wait, we imported Archive, let's make sure Settings is imported or we use a settings/gear icon. Wait, is Settings imported? Let's check imports at line 20.
   const itemsPerPage = 6;
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const fetchData = async () => {
     try {
@@ -63,6 +58,10 @@ const Tickets = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAltaSuccess = () => {
     setShowAltaModal(false);

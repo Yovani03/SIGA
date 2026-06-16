@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Loader2,
   AlertTriangle,
+  AlertCircle,
   Filter,
   BarChart3,
   ChevronLeft,
@@ -101,10 +102,6 @@ const Facturacion = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const itemsPerPage = 6;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -125,6 +122,10 @@ const Facturacion = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAltaSuccess = () => {
     setShowAltaModal(false);
