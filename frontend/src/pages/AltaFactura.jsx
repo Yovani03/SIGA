@@ -399,11 +399,19 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (scannedFiles.length >= 20) {
+        notify.error('Límite de documentos alcanzado (máximo 20 páginas)');
+        return;
+      }
       setScannedFiles(prev => [...prev, file]);
     }
   };
 
   const handleScan = async () => {
+    if (scannedFiles.length >= 20) {
+      notify.error('Límite de escaneo alcanzado (máximo 20 páginas)');
+      return;
+    }
     setScanning(true);
     try {
       const response = await fetch('http://localhost:3001/api/scan');
@@ -1165,6 +1173,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-1/2 opacity-0 cursor-pointer z-10"
               accept="image/*,.pdf"
+              disabled={scannedFiles.length >= 20}
             />
             
             <div className="bg-blue-600/10 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
@@ -1174,7 +1183,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
             {scannedFiles.length > 0 ? (
               <div className="w-full space-y-3 relative z-20">
                 <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                  <CheckCircle size={12} /> {scannedFiles.length} {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
+                  <CheckCircle size={12} /> {scannedFiles.length}/20 {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
                 </p>
                 
                 <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -1203,8 +1212,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   <button
                     type="button"
                     onClick={handleScan}
-                    disabled={scanning}
-                    className="w-full py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30 transition-all flex items-center justify-center gap-2"
+                    disabled={scanning || scannedFiles.length >= 20}
+                    className="w-full py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {scanning ? <Spinner /> : <FilePlus size={14} />}
                     <span>ESCANEAR OTRA HOJA</span>
@@ -1231,7 +1240,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                 <button
                   type="button"
                   onClick={handleScan}
-                  disabled={scanning}
+                  disabled={scanning || scannedFiles.length >= 20}
                   className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:opacity-50 text-slate-600 dark:text-white hover:text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
                 >
                   {scanning ? <Spinner /> : <FilePlus size={16} />}

@@ -23,7 +23,8 @@ import {
   Tag,
   Pencil,
   Archive,
-  XCircle
+  XCircle,
+  Settings
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import {
