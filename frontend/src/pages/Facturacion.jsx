@@ -240,13 +240,14 @@ const Facturacion = () => {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const stats = {
-    total: filteredFacturas.reduce((acc, curr) => acc + parseFloat(curr.monto), 0),
+    total: filteredFacturas.reduce((acc, curr) => curr.cancelado ? acc : acc + parseFloat(curr.monto), 0),
     count: filteredFacturas.length,
     units: [...new Set(filteredFacturas.map(f => f.unidad))].length
   };
 
   const chartDataConFills = Object.entries(
     filteredFacturas.reduce((acc, f) => {
+      if (f.cancelado) return acc;
       let cat = f.categoria;
       if (!cat || cat === 'Otro') {
         cat = f.producto_categoria || 'Otro';
@@ -483,7 +484,7 @@ const Facturacion = () => {
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Monto</p>
-                    <p className="text-emerald-400 font-black text-2xl">${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                    <p className={`font-black text-2xl ${f.cancelado ? 'text-rose-400 line-through decoration-rose-400/50' : 'text-emerald-400'}`}>${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
 
@@ -530,8 +531,8 @@ const Facturacion = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-slate-500 text-[9px] font-bold uppercase">Descripción</p>
-                      <p className="text-slate-600 dark:text-slate-300 text-sm italic truncate" title={f.descripcion}>
-                        {f.descripcion || 'Sin descripción'}
+                      <p className={`text-sm italic truncate ${f.cancelado ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`} title={f.cancelado ? `CANCELADA - ${f.descripcion || 'Sin descripción'}` : f.descripcion}>
+                        {f.cancelado ? `CANCELADA - ${f.descripcion || 'Sin descripción'}` : (f.descripcion || 'Sin descripción')}
                       </p>
                     </div>
                   </div>
@@ -734,7 +735,7 @@ const Facturacion = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Monto Total</p>
-                  <p className="text-3xl font-black text-emerald-400">
+                  <p className={`text-3xl font-black ${selectedFactura.cancelado ? 'text-rose-500 line-through decoration-rose-500/50' : 'text-emerald-400'}`}>
                     ${parseFloat(selectedFactura.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
@@ -900,8 +901,8 @@ const Facturacion = () => {
                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 px-1">
                   <Info size={14} /> Descripción del Gasto
                 </p>
-                <div className="bg-slate-50 dark:bg-slate-950/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 italic text-sm leading-relaxed">
-                  {selectedFactura.descripcion || 'Sin descripción adicional proporcionada.'}
+                <div className={`bg-slate-50 dark:bg-slate-950/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 italic text-sm leading-relaxed ${selectedFactura.cancelado ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>
+                  {selectedFactura.cancelado ? `CANCELADA - ${selectedFactura.descripcion || 'Sin descripción'}` : (selectedFactura.descripcion || 'Sin descripción adicional proporcionada.')}
                 </div>
               </div>
             </div>
