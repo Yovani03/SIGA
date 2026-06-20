@@ -87,6 +87,16 @@ const Dashboard = () => {
       const facts = (resFacturas.data || []).filter(f => f.producto_categoria !== 'Combustible');
       const fuel = resFuel.data || [];
 
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const validMonthFacts = facts.filter(f => {
+        if (f.cancelado) return false;
+        const fDate = new Date(f.fecha + 'T00:00:00');
+        return fDate.getMonth() === currentMonth && fDate.getFullYear() === currentYear;
+      });
+
       setStats({
         unidades: {
           total: vehs.length,
@@ -98,8 +108,8 @@ const Dashboard = () => {
           proximos: 3 // Mockup for now
         },
         facturacion: {
-          total: facts.reduce((acc, f) => acc + parseFloat(f.monto || 0), 0),
-          count: facts.length
+          total: validMonthFacts.reduce((acc, f) => acc + parseFloat(f.monto || 0), 0),
+          count: validMonthFacts.length
         }
       });
 
