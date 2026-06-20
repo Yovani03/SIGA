@@ -573,6 +573,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       data.append('detalles_unidades', JSON.stringify(formData.detalles_unidades));
     }
 
+    if (factura && factura.cancelado !== undefined) {
+      data.append('cancelado', factura.cancelado);
+    }
+
     try {
       if (factura) {
         await api.put(`facturas/${factura.id}/`, data, {
