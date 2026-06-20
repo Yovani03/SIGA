@@ -1158,12 +1158,29 @@ const ListaVehiculos = () => {
                         </div>
                         <div className="text-right shrink-0 ml-4">
                           <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto {f.es_compartida ? '(Asignado)' : ''}</p>
-                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">
+                          <p className={`font-bold text-lg lg:text-xl ${f.cancelado ? 'text-rose-500 line-through' : 'text-emerald-400'}`}>
                             ${parseFloat(f.monto_especifico || f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                           </p>
                           {f.es_compartida && (
                             <p className="text-[8px] text-purple-400 font-bold uppercase mt-1">Factura Compartida</p>
                           )}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-4 space-y-3">
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Taller / Proveedor</p>
+                          <p className="text-slate-700 dark:text-slate-300 font-bold text-xs truncate flex items-center gap-2">
+                            <Wrench size={12} className="text-blue-500 shrink-0" />
+                            {f.taller_nombre || 'No asignado'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Descripción</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium line-clamp-2">
+                            {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
+                            {f.descripcion || 'Sin descripción'}
+                          </p>
                         </div>
                       </div>
                       
@@ -1614,9 +1631,29 @@ const ListaVehiculos = () => {
                           <p className="text-slate-900 dark:text-white font-mono text-base lg:text-lg font-bold truncate">{f.folio}</p>
                         </div>
                         <div className="text-right shrink-0 ml-4">
-                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto</p>
-                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">
-                            ${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto {f.es_compartida ? '(Asignado)' : ''}</p>
+                          <p className={`font-bold text-lg lg:text-xl ${f.cancelado ? 'text-rose-500 line-through' : 'text-emerald-400'}`}>
+                            ${parseFloat(f.monto_especifico || f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          {f.es_compartida && (
+                            <p className="text-[8px] text-purple-400 font-bold uppercase mt-1">Factura Compartida</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-4 space-y-3">
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Taller / Proveedor</p>
+                          <p className="text-slate-700 dark:text-slate-300 font-bold text-xs truncate flex items-center gap-2">
+                            <Wrench size={12} className="text-blue-500 shrink-0" />
+                            {f.taller_nombre || 'No asignado'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Descripción</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium line-clamp-2">
+                            {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
+                            {f.descripcion || 'Sin descripción'}
                           </p>
                         </div>
                       </div>
@@ -1713,9 +1750,29 @@ const ListaVehiculos = () => {
                           <p className="text-slate-900 dark:text-white font-mono text-base lg:text-lg font-bold truncate">{f.folio}</p>
                         </div>
                         <div className="text-right shrink-0 ml-4">
-                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto</p>
-                          <p className="text-emerald-400 font-bold text-lg lg:text-xl">
-                            ${parseFloat(f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Monto {f.es_compartida ? '(Asignado)' : ''}</p>
+                          <p className={`font-bold text-lg lg:text-xl ${f.cancelado ? 'text-rose-500 line-through' : 'text-emerald-400'}`}>
+                            ${parseFloat(f.monto_especifico || f.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          {f.es_compartida && (
+                            <p className="text-[8px] text-purple-400 font-bold uppercase mt-1">Factura Compartida</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-4 space-y-3">
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Taller / Proveedor</p>
+                          <p className="text-slate-700 dark:text-slate-300 font-bold text-xs truncate flex items-center gap-2">
+                            <Wrench size={12} className="text-blue-500 shrink-0" />
+                            {f.taller_nombre || 'No asignado'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Descripción</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium line-clamp-2">
+                            {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
+                            {f.descripcion || 'Sin descripción'}
                           </p>
                         </div>
                       </div>
