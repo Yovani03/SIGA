@@ -1181,6 +1181,11 @@ const ListaVehiculos = () => {
                             {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
                             {f.descripcion || 'Sin descripción'}
                           </p>
+                          {f.cancelado && f.motivo_cancelacion && (
+                            <p className="text-rose-400 text-[10px] mt-1 font-bold italic line-clamp-2" title={f.motivo_cancelacion}>
+                              Motivo: {f.motivo_cancelacion}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
@@ -1655,6 +1660,11 @@ const ListaVehiculos = () => {
                             {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
                             {f.descripcion || 'Sin descripción'}
                           </p>
+                          {f.cancelado && f.motivo_cancelacion && (
+                            <p className="text-rose-400 text-[10px] mt-1 font-bold italic line-clamp-2" title={f.motivo_cancelacion}>
+                              Motivo: {f.motivo_cancelacion}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
@@ -1774,6 +1784,11 @@ const ListaVehiculos = () => {
                             {f.cancelado && <span className="text-rose-500 font-bold mr-1">CANCELADA -</span>}
                             {f.descripcion || 'Sin descripción'}
                           </p>
+                          {f.cancelado && f.motivo_cancelacion && (
+                            <p className="text-rose-400 text-[10px] mt-1 font-bold italic line-clamp-2" title={f.motivo_cancelacion}>
+                              Motivo: {f.motivo_cancelacion}
+                            </p>
+                          )}
                         </div>
                       </div>
                       

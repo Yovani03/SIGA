@@ -534,6 +534,11 @@ const Facturacion = () => {
                       <p className={`text-sm italic truncate ${f.cancelado ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`} title={f.cancelado ? `CANCELADA - ${f.descripcion || 'Sin descripción'}` : f.descripcion}>
                         {f.cancelado ? `CANCELADA - ${f.descripcion || 'Sin descripción'}` : (f.descripcion || 'Sin descripción')}
                       </p>
+                      {f.cancelado && f.motivo_cancelacion && (
+                        <p className="text-rose-400 text-xs mt-1 italic line-clamp-1" title={f.motivo_cancelacion}>
+                          Motivo: {f.motivo_cancelacion}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -906,6 +911,16 @@ const Facturacion = () => {
                 <div className={`bg-slate-50 dark:bg-slate-950/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 italic text-sm leading-relaxed ${selectedFactura.cancelado ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>
                   {selectedFactura.cancelado ? `CANCELADA - ${selectedFactura.descripcion || 'Sin descripción'}` : (selectedFactura.descripcion || 'Sin descripción adicional proporcionada.')}
                 </div>
+                {selectedFactura.cancelado && selectedFactura.motivo_cancelacion && (
+                  <div className="bg-rose-50 dark:bg-rose-950/30 p-5 rounded-2xl border border-rose-100 dark:border-rose-900 mt-3">
+                    <p className="text-rose-400 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                      Motivo de Cancelación
+                    </p>
+                    <p className="text-rose-600 dark:text-rose-400 text-sm leading-relaxed italic font-medium">
+                      {selectedFactura.motivo_cancelacion}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
