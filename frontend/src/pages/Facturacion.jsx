@@ -545,13 +545,15 @@ const Facturacion = () => {
                       {new Date(f.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                     
-                    <button 
-                      onClick={(e) => handleEdit(e, f)}
-                      className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
-                      title="Editar Factura"
-                    >
-                      <Pencil size={16} />
-                    </button>
+                    {!f.cancelado && (
+                      <button 
+                        onClick={(e) => handleEdit(e, f)}
+                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+                        title="Editar Factura"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
                     {!f.cancelado && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setFacturaToCancel(f); setShowCancelModal(true); }}
