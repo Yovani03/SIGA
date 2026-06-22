@@ -30,25 +30,37 @@ function App() {
             
             <Route element={<ProtectedRoute allowedRoles={['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo']} />}>
               <Route path="/" element={<DashboardLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="facturacion" element={<Facturacion />} />
-                <Route path="vehiculos" element={<ListaVehiculos />} />
-                <Route path="mantenimiento" element={<Mantenimiento />} />
-                <Route path="catalogos" element={<Catalogos />} />
-                <Route path="logistica" element={<Logistica />} />
-                <Route path="operadores" element={<Operadores />} />
-
-                <Route path="combustible" element={<Combustibles />} />
-                <Route path="tickets" element={<Tickets />} />
                 
+                {/* Dashboard: All valid roles */}
+                <Route index element={<Dashboard />} />
+
+                {/* Rutas de Operaciones / Logística */}
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'jefe_logistica']} />}>
+                  <Route path="logistica" element={<Logistica />} />
+                  <Route path="operadores" element={<Operadores />} />
+                  <Route path="solicitudes-cambios" element={<SolicitudesCambios />} />
+                </Route>
+
+                {/* Rutas de Capturista */}
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista']} />}>
+                  <Route path="facturacion" element={<Facturacion />} />
+                  <Route path="mantenimiento" element={<Mantenimiento />} />
+                  <Route path="catalogos" element={<Catalogos />} />
+                  <Route path="tickets" element={<Tickets />} />
+                </Route>
+
+                {/* Rutas Compartidas (Capturista y Logística) */}
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'jefe_logistica']} />}>
+                  <Route path="vehiculos" element={<ListaVehiculos />} />
+                  <Route path="combustible" element={<Combustibles />} />
+                </Route>
+                
+                {/* Rutas de Administración General */}
                 <Route element={<ProtectedRoute allowedRoles={['admin_general']} />}>
                   <Route path="usuarios" element={<Usuarios />} />
                   <Route path="historial" element={<Historial />} />
                 </Route>
 
-                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'jefe_logistica']} />}>
-                  <Route path="solicitudes-cambios" element={<SolicitudesCambios />} />
-                </Route>
               </Route>
             </Route>
           </Routes>
