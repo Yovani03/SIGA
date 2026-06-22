@@ -100,7 +100,7 @@ const SolicitudesCambios = () => {
   };
 
   const resolveValue = (key, value, originalData) => {
-    if (value === null || value === undefined || value === '') return <span className="text-slate-400 italic">Vacío</span>;
+    if (value === null || value === undefined || value === '' || value === 'null') return 'Vacío';
     if (typeof value === 'boolean') return value ? 'Sí' : 'No';
     
     // Helper para mapear IDs a nombres
@@ -148,21 +148,38 @@ const SolicitudesCambios = () => {
         {fieldsToRender.map((key) => {
           const propuesto = cambios_propuestos[key];
           const original = getOriginalValue(key, factura_original);
+          
+          let renderedOriginal = resolveValue(key, original, true);
+          let renderedPropuesto = resolveValue(key, propuesto, false);
+          
+          // Boolean normalize
+          if (renderedOriginal === 'false') renderedOriginal = 'No';
+          if (renderedOriginal === 'true') renderedOriginal = 'Sí';
+          if (renderedPropuesto === 'false') renderedPropuesto = 'No';
+          if (renderedPropuesto === 'true') renderedPropuesto = 'Sí';
+
+          const isChanged = renderedOriginal !== renderedPropuesto;
 
           return (
-            <div key={key} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
-              <div className="text-xs font-bold text-slate-500 uppercase mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">{key.replace(/_/g, ' ')}</div>
+            <div key={key} className={`p-4 rounded-xl border transition-colors ${isChanged ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700/50 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60'}`}>
+              <div className="flex items-center gap-2 mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className={`text-xs font-bold uppercase ${isChanged ? 'text-amber-600 dark:text-amber-500' : 'text-slate-500'}`}>
+                  {key.replace(/_/g, ' ')}
+                </span>
+                {isChanged && <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Modificado</span>}
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Valor Original</span>
                   <span className="text-sm font-medium text-slate-600 dark:text-slate-400 break-all bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg" title={original}>
-                    {resolveValue(key, original, true) || <span className="text-slate-400 italic">Vacío</span>}
+                    {renderedOriginal === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedOriginal}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-amber-500 font-semibold mb-1 uppercase tracking-wider">Nuevo Valor Propuesto</span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white break-all bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 p-2 rounded-lg" title={propuesto}>
-                    {resolveValue(key, propuesto, false)}
+                  <span className={`text-[10px] font-semibold mb-1 uppercase tracking-wider ${isChanged ? 'text-amber-500' : 'text-slate-400'}`}>Nuevo Valor Propuesto</span>
+                  <span className={`text-sm font-bold break-all p-2 rounded-lg border ${isChanged ? 'text-slate-900 dark:text-white bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50' : 'text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border-transparent'}`} title={propuesto}>
+                    {renderedPropuesto === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedPropuesto}
                   </span>
                 </div>
               </div>
