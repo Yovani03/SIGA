@@ -307,3 +307,26 @@ class FacturaDetalleUnidad(models.Model):
         verbose_name = "Detalle de Gasto por Unidad (Factura)"
         verbose_name_plural = "Detalles de Gasto por Unidades (Facturas)"
         unique_together = (('factura', 'unidad'), ('factura', 'caja'), ('factura', 'variado'))
+
+class SolicitudCambioFactura(models.Model):
+    ESTADOS = (
+        ('Pendiente', 'Pendiente'),
+        ('Aprobada', 'Aprobada'),
+        ('Rechazada', 'Rechazada'),
+    )
+    factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='solicitudes_cambio', verbose_name="Factura a Modificar")
+    solicitante = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='solicitudes_cambio_creadas', verbose_name="Solicitante (Capturista)")
+    autorizador = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='solicitudes_cambio_autorizadas', verbose_name="Autorizador")
+    motivo = models.TextField(verbose_name="Motivo del Cambio")
+    cambios_propuestos = models.JSONField(verbose_name="Cambios Propuestos")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente', verbose_name="Estado de la Solicitud")
+    fecha_solicitud = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Solicitud")
+    fecha_resolucion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Resolución")
+
+    class Meta:
+        verbose_name = "Solicitud de Cambio de Factura"
+        verbose_name_plural = "Solicitudes de Cambio de Facturas"
+        ordering = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f"Solicitud Cambio Factura {self.factura.folio} - {self.estado}"

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 import { 
   FilePlus, 
   Upload, 
@@ -68,6 +69,11 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [folioStatus, setFolioStatus] = useState({ error: '', warning: '' });
   const [busquedaEntidad, setBusquedaEntidad] = useState('');
   const [mostrarDropdownEntidad, setMostrarDropdownEntidad] = useState(false);
+  
+  const { user } = useContext(AuthContext);
+  const isCapturista = user?.rol === 'capturista';
+  const [showMotivoModal, setShowMotivoModal] = useState(false);
+  const [motivoCambio, setMotivoCambio] = useState('');
 
   useEffect(() => {
     if (entidades.length > 0) {
@@ -494,7 +500,13 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    
+    if (factura && isCapturista && !motivoCambio) {
+        setShowMotivoModal(true);
+        return;
+    }
+    
     setLoading(true);
 
     const data = new FormData();
@@ -575,6 +587,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
 
     if (factura && factura.cancelado !== undefined) {
       data.append('cancelado', factura.cancelado);
+    }
+    if (motivoCambio) {
+      data.append('motivo_cambio', motivoCambio);
     }
 
     try {
@@ -1272,6 +1287,58 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
           </button>
         </div>
       </form>
+      
+      {showMotivoModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <AlertCircle className="text-amber-500" />
+                Motivo del Cambio
+              </h2>
+              <p className="text-slate-500 text-sm mt-2">
+                Como capturista, debes solicitar autorización para modificar esta factura. ¿Cuál es el motivo?
+              </p>
+            </div>
+            <div className="p-6">
+              <textarea
+                value={motivoCambio}
+                onChange={(e) => setMotivoCambio(e.target.value)}
+                placeholder="Ej. Se corrigió el monto porque el ticket original tenía un error..."
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-slate-900 dark:text-white focus:border-amber-500 outline-none transition-all resize-none min-h-[120px]"
+                required
+              />
+            </div>
+            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMotivoModal(false);
+                  setMotivoCambio('');
+                }}
+                className="px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!motivoCambio.trim()) {
+                    notify.error("Debes ingresar un motivo.");
+                    return;
+                  }
+                  setShowMotivoModal(false);
+                  handleSubmit();
+                }}
+                disabled={loading}
+                className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl transition-colors shadow-lg shadow-amber-600/30 flex items-center gap-2 font-medium text-sm disabled:opacity-50"
+              >
+                {loading ? <Spinner /> : 'Enviar Solicitud'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

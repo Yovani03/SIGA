@@ -11,10 +11,16 @@ def current_user(request):
 
 from rest_framework import viewsets
 from django.contrib.auth.models import User
-from .serializers import UserManagementSerializer
+from .models import HistorialAccion
+from .serializers import UserManagementSerializer, HistorialAccionSerializer
 from .permissions import IsAdminGeneral
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserManagementSerializer
+    permission_classes = [IsAuthenticated, IsAdminGeneral]
+
+class HistorialAccionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = HistorialAccion.objects.all().select_related('user', 'user__perfil').order_by('-fecha')
+    serializer_class = HistorialAccionSerializer
     permission_classes = [IsAuthenticated, IsAdminGeneral]

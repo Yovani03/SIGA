@@ -28,3 +28,18 @@ def save_user_profile(sender, instance, **kwargs):
     if not hasattr(instance, 'perfil'):
         Perfil.objects.create(user=instance)
     instance.perfil.save()
+
+class HistorialAccion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='historial_acciones')
+    accion = models.CharField(max_length=255, verbose_name="Acción Realizada")
+    detalles = models.TextField(blank=True, null=True, verbose_name="Detalles de la Acción")
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora")
+
+    class Meta:
+        verbose_name = "Historial de Acción"
+        verbose_name_plural = "Historial de Acciones"
+        ordering = ['-fecha']
+
+    def __str__(self):
+        usuario_nombre = self.user.username if self.user else "Usuario Desconocido"
+        return f"{usuario_nombre} - {self.accion} - {self.fecha.strftime('%Y-%m-%d %H:%M:%S')}"

@@ -19,9 +19,52 @@ class TicketViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(tickets, many=True)
         return Response(serializer.data)
 
+from usuarios.models import HistorialAccion
+
 class FacturaViewSet(viewsets.ModelViewSet):
     queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
+
+    def perform_create(self, serializer):
+        factura = serializer.save()
+        user = self.request.user if self.request.user.is_authenticated else None
+        
+        monto = factura.monto if hasattr(factura, 'monto') else 'N/A'
+        
+        HistorialAccion.objects.create(
+            user=user,
+            accion="Alta de Factura",
+            detalles=f"Se ha dado de alta la factura con folio {factura.folio}."
+        )
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            rol = user.perfil.rol
+        except:
+            rol = 'capturista'
+
+        if rol == 'capturista':
+            motivo = request.data.get('motivo_cambio')
+            if not motivo:
+                return Response({'detail': 'Se requiere un motivo para solicitar el cambio.'}, status=400)
+            
+            factura = self.get_object()
+            from .models import SolicitudCambioFactura
+            
+            # Quitar motivo_cambio de los datos a guardar
+            cambios = dict(request.data)
+            cambios.pop('motivo_cambio', None)
+            
+            SolicitudCambioFactura.objects.create(
+                factura=factura,
+                solicitante=user,
+                motivo=motivo,
+                cambios_propuestos=cambios
+            )
+            return Response({'detail': 'Solicitud de cambio enviada a revisión.'}, status=202)
+        
+        return super().update(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='candidatos')
     def candidatos(self, request, pk=None):
@@ -58,6 +101,77 @@ class FacturaViewSet(viewsets.ModelViewSet):
         except Factura.DoesNotExist:
             return Response({'detail': 'Factura de reemplazo no encontrada.'}, status=404)
         factura.cancel(motivo, reemplazo)
+        
+        user = request.user if request.user.is_authenticated else None
+        HistorialAccion.objects.create(
+            user=user,
+            accion="Cancelación de Factura",
+            detalles=f"Se solicitó la cancelación de la factura con folio {factura.folio}. Motivo: {motivo}."
+        )
+        
         serializer = self.get_serializer(factura)
         return Response(serializer.data, status=200)
+
+from .models import SolicitudCambioFactura
+from .serializers import SolicitudCambioFacturaSerializer
+from django.utils import timezone
+
+class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
+    queryset = SolicitudCambioFactura.objects.all()
+    serializer_class = SolicitudCambioFacturaSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            rol = user.perfil.rol
+        except:
+            rol = 'capturista'
+            
+        if rol == 'capturista':
+            return SolicitudCambioFactura.objects.filter(solicitante=user)
+        return SolicitudCambioFactura.objects.all()
+
+    @action(detail=True, methods=['post'])
+    def aprobar(self, request, pk=None):
+        solicitud = self.get_object()
+        if solicitud.estado != 'Pendiente':
+            return Response({'detail': 'Solo se pueden aprobar solicitudes pendientes.'}, status=400)
+            
+        # Aplicar los cambios
+        factura = solicitud.factura
+        # Re-usar el FacturaSerializer para procesar json
+        serializer = FacturaSerializer(factura, data=solicitud.cambios_propuestos, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            
+            solicitud.estado = 'Aprobada'
+            solicitud.autorizador = request.user
+            solicitud.fecha_resolucion = timezone.now()
+            solicitud.save()
+            
+            HistorialAccion.objects.create(
+                user=request.user,
+                accion="Aprobación de Cambio en Factura",
+                detalles=f"Se aprobó el cambio en la factura folio {factura.folio} solicitado por {solicitud.solicitante.username}."
+            )
+            return Response({'detail': 'Solicitud aprobada y factura actualizada.'})
+        return Response(serializer.errors, status=400)
+
+    @action(detail=True, methods=['post'])
+    def rechazar(self, request, pk=None):
+        solicitud = self.get_object()
+        if solicitud.estado != 'Pendiente':
+            return Response({'detail': 'Solo se pueden rechazar solicitudes pendientes.'}, status=400)
+            
+        solicitud.estado = 'Rechazada'
+        solicitud.autorizador = request.user
+        solicitud.fecha_resolucion = timezone.now()
+        solicitud.save()
+        
+        HistorialAccion.objects.create(
+            user=request.user,
+            accion="Rechazo de Cambio en Factura",
+            detalles=f"Se rechazó el cambio en la factura folio {solicitud.factura.folio} solicitado por {solicitud.solicitante.username}."
+        )
+        return Response({'detail': 'Solicitud rechazada.'})
 

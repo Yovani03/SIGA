@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Perfil
+from .models import Perfil, HistorialAccion
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -14,8 +14,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             token['rol'] = user.perfil.rol
         except Perfil.DoesNotExist:
             token['rol'] = 'capturista' # Default fallback
+            
+        # Log the login action
+        HistorialAccion.objects.create(
+            user=user,
+            accion="Login",
+            detalles=f"El usuario {user.username} inició sesión en el sistema."
+        )
         
         return token
+
+class HistorialAccionSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.CharField(source='user.username', read_only=True)
+    usuario_rol = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HistorialAccion
+        fields = ('id', 'usuario_nombre', 'usuario_rol', 'accion', 'detalles', 'fecha')
+
+    def get_usuario_rol(self, obj):
+        if obj.user and hasattr(obj.user, 'perfil'):
+            return obj.user.perfil.get_rol_display()
+        return 'Desconocido'
 
 class UsuarioSerializer(serializers.ModelSerializer):
     rol = serializers.SerializerMethodField()

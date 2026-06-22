@@ -18,8 +18,8 @@ const ProtectedRoute = ({ allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.rol)) {
-        // Redirigir a una página de "No autorizado" o al login si no tiene el rol
-        return <Navigate to="/login" replace />; 
+        // Redirigir al inicio (Dashboard) en lugar de login si no tiene los permisos
+        return <Navigate to="/" replace />; 
     }
 
     return <Outlet />;

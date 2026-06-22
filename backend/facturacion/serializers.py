@@ -1,7 +1,17 @@
 from rest_framework import serializers
-from .models import Factura, Producto, Ticket, FacturaDetalleUnidad, TicketDetalleUnidad
+from .models import Factura, Producto, Ticket, FacturaDetalleUnidad, TicketDetalleUnidad, SolicitudCambioFactura
 from vehiculos.models import UnidadTractocamion
 from mantenimiento.models import Taller
+
+class SolicitudCambioFacturaSerializer(serializers.ModelSerializer):
+    solicitante_nombre = serializers.ReadOnlyField(source='solicitante.username')
+    autorizador_nombre = serializers.ReadOnlyField(source='autorizador.username')
+    factura_folio = serializers.ReadOnlyField(source='factura.folio')
+    
+    class Meta:
+        model = SolicitudCambioFactura
+        fields = '__all__'
+        read_only_fields = ['estado', 'autorizador', 'fecha_solicitud', 'fecha_resolucion']
 
 class ProductoSerializer(serializers.ModelSerializer):
     class Meta:

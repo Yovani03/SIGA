@@ -13,6 +13,8 @@ import Catalogos from './pages/Catalogos';
 import Tickets from './pages/Tickets';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
+import Historial from './pages/Historial';
+import SolicitudesCambios from './pages/SolicitudesCambios';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -38,7 +40,15 @@ function App() {
 
                 <Route path="combustible" element={<Combustibles />} />
                 <Route path="tickets" element={<Tickets />} />
-                <Route path="usuarios" element={<Usuarios />} />
+                
+                <Route element={<ProtectedRoute allowedRoles={['admin_general']} />}>
+                  <Route path="usuarios" element={<Usuarios />} />
+                  <Route path="historial" element={<Historial />} />
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'jefe_logistica']} />}>
+                  <Route path="solicitudes-cambios" element={<SolicitudesCambios />} />
+                </Route>
               </Route>
             </Route>
           </Routes>
