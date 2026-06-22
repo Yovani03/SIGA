@@ -169,19 +169,30 @@ const SolicitudesCambios = () => {
                 {isChanged && <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Modificado</span>}
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Valor Original</span>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400 break-all bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg" title={original}>
-                    {renderedOriginal === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedOriginal}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className={`text-[10px] font-semibold mb-1 uppercase tracking-wider ${isChanged ? 'text-amber-500' : 'text-slate-400'}`}>Nuevo Valor Propuesto</span>
-                  <span className={`text-sm font-bold break-all p-2 rounded-lg border ${isChanged ? 'text-slate-900 dark:text-white bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50' : 'text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border-transparent'}`} title={propuesto}>
-                    {renderedPropuesto === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedPropuesto}
-                  </span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isChanged ? (
+                  <>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Valor Original</span>
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400 break-all bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg" title={original}>
+                        {renderedOriginal === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedOriginal}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-semibold mb-1 uppercase tracking-wider text-amber-500">Nuevo Valor Propuesto</span>
+                      <span className="text-sm font-bold break-all p-2 rounded-lg border text-slate-900 dark:text-white bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50" title={propuesto}>
+                        {renderedPropuesto === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedPropuesto}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col md:col-span-2">
+                    <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Valor Actual</span>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400 break-all bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg" title={original}>
+                      {renderedOriginal === 'Vacío' ? <span className="text-slate-400 italic">Vacío</span> : renderedOriginal}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           );
