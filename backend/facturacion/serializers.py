@@ -7,11 +7,16 @@ class SolicitudCambioFacturaSerializer(serializers.ModelSerializer):
     solicitante_nombre = serializers.ReadOnlyField(source='solicitante.username')
     autorizador_nombre = serializers.ReadOnlyField(source='autorizador.username')
     factura_folio = serializers.ReadOnlyField(source='factura.folio')
-    
+    factura_original = serializers.SerializerMethodField()
+
     class Meta:
         model = SolicitudCambioFactura
         fields = '__all__'
         read_only_fields = ['estado', 'autorizador', 'fecha_solicitud', 'fecha_resolucion']
+
+    def get_factura_original(self, obj):
+        serializer = FacturaSerializer(obj.factura, context=self.context)
+        return serializer.data
 
 class ProductoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -191,11 +196,16 @@ class FacturaSerializer(serializers.ModelSerializer):
         
         detalles_data = validated_data.pop('detalles_unidades', [])
         if not detalles_data:
-            raw_detalles = self.context['request'].data.get('detalles_unidades')
+            raw_detalles = None
+            if 'request' in self.context:
+                raw_detalles = self.context['request'].data.get('detalles_unidades')
+            if not raw_detalles and hasattr(self, 'initial_data'):
+                raw_detalles = self.initial_data.get('detalles_unidades')
+                
             if raw_detalles:
                 import json
                 try:
-                    detalles_data = json.loads(raw_detalles)
+                    detalles_data = json.loads(raw_detalles) if isinstance(raw_detalles, str) else raw_detalles
                 except:
                     pass
 
@@ -245,11 +255,16 @@ class FacturaSerializer(serializers.ModelSerializer):
         
         detalles_data = validated_data.pop('detalles_unidades', None)
         if detalles_data is None:
-            raw_detalles = self.context['request'].data.get('detalles_unidades')
+            raw_detalles = None
+            if 'request' in self.context:
+                raw_detalles = self.context['request'].data.get('detalles_unidades')
+            if not raw_detalles and hasattr(self, 'initial_data'):
+                raw_detalles = self.initial_data.get('detalles_unidades')
+                
             if raw_detalles:
                 import json
                 try:
-                    detalles_data = json.loads(raw_detalles)
+                    detalles_data = json.loads(raw_detalles) if isinstance(raw_detalles, str) else raw_detalles
                 except:
                     pass
 

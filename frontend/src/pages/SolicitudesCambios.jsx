@@ -17,6 +17,45 @@ const SolicitudesCambios = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+  
+  const [catalogs, setCatalogs] = useState({
+    vehiculos: {},
+    cajas: {},
+    variados: {},
+    talleres: {},
+    proveedores: {},
+    productos: {},
+    tickets: {}
+  });
+
+  const fetchCatalogs = async () => {
+    try {
+      const [veh, caj, varis, tall, prov, prod, tick] = await Promise.all([
+        api.get('vehiculos/'),
+        api.get('cajas/'),
+        api.get('variados/'),
+        api.get('talleres/'),
+        api.get('proveedores/'),
+        api.get('productos/'),
+        api.get('tickets/')
+      ]);
+
+      const toDict = (arr, keyField, valField) => 
+        arr.reduce((acc, item) => ({ ...acc, [item[keyField]]: item[valField] }), {});
+
+      setCatalogs({
+        vehiculos: toDict(veh.data, 'id', 'numero_economico'),
+        cajas: toDict(caj.data, 'id', 'numero_economico'),
+        variados: toDict(varis.data, 'id', 'numero_economico'),
+        talleres: toDict(tall.data, 'id', 'nombre'),
+        proveedores: toDict(prov.data, 'id', 'nombre'),
+        productos: toDict(prod.data, 'id', 'nombre'),
+        tickets: toDict(tick.data, 'id', 'folio_interno')
+      });
+    } catch (err) {
+      console.error("Error al cargar catálogos", err);
+    }
+  };
 
   const fetchSolicitudes = async () => {
     try {
@@ -32,6 +71,7 @@ const SolicitudesCambios = () => {
   };
 
   useEffect(() => {
+    fetchCatalogs();
     fetchSolicitudes();
   }, []);
 
@@ -59,21 +99,73 @@ const SolicitudesCambios = () => {
     }
   };
 
-  const renderChanges = (cambios) => {
-    if (!cambios || typeof cambios !== 'object') return <p className="text-sm text-slate-500">No hay detalles legibles.</p>;
+  const resolveValue = (key, value, originalData) => {
+    if (value === null || value === undefined || value === '') return <span className="text-slate-400 italic">Vacío</span>;
+    if (typeof value === 'boolean') return value ? 'Sí' : 'No';
     
+    // Helper para mapear IDs a nombres
+    const mapIdToName = (val, dict) => {
+      const ids = Array.isArray(val) ? val : [val];
+      return ids.map(id => dict[id] || id).join(', ');
+    };
+
+    if (key === 'unidad' || key === 'unidades') return mapIdToName(value, catalogs.vehiculos);
+    if (key === 'caja' || key === 'cajas') return mapIdToName(value, catalogs.cajas);
+    if (key === 'variado' || key === 'variados') return mapIdToName(value, catalogs.variados);
+    if (key === 'taller') return catalogs.talleres[value] || value;
+    if (key === 'proveedor') return catalogs.proveedores[value] || value;
+    if (key === 'producto') return catalogs.productos[value] || value;
+    if (key === 'ticket') return catalogs.tickets[value] || value;
+
+    return value.toString();
+  };
+
+  const getOriginalValue = (key, facturaOriginal) => {
+    if (!facturaOriginal) return null;
+    if (key === 'unidad' || key === 'unidades') return facturaOriginal.unidad_nombre || facturaOriginal.unidades_info?.join(', ');
+    if (key === 'caja' || key === 'cajas') return facturaOriginal.caja_numero_economico;
+    if (key === 'variado' || key === 'variados') return facturaOriginal.variado_numero_economico;
+    if (key === 'taller') return facturaOriginal.taller_nombre;
+    if (key === 'proveedor') return facturaOriginal.proveedor_nombre;
+    if (key === 'producto') return facturaOriginal.producto_nombre;
+    if (key === 'ticket') return facturaOriginal.ticket_folio_interno;
+    
+    return facturaOriginal[key];
+  };
+
+  const renderChanges = (solicitud) => {
+    const { cambios_propuestos, factura_original } = solicitud;
+    if (!cambios_propuestos || typeof cambios_propuestos !== 'object') return <p className="text-sm text-slate-500">No hay detalles legibles.</p>;
+    
+    const fieldsToRender = Object.keys(cambios_propuestos).filter(key => 
+      !['archivo_escaneado', 'detalles_unidades', 'unidades', 'cajas', 'variados'].includes(key)
+    );
+
+    if (fieldsToRender.length === 0) return <p className="text-sm text-slate-500">No hay cambios aplicables a la vista rápida.</p>;
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(cambios).map(([key, value]) => {
-          // Filtrar campos que no sean útiles visualmente o arreglos grandes
-          if (['archivo_escaneado', 'detalles_unidades', 'unidades', 'cajas', 'variados'].includes(key)) return null;
-          
+      <div className="grid grid-cols-1 gap-4">
+        {fieldsToRender.map((key) => {
+          const propuesto = cambios_propuestos[key];
+          const original = getOriginalValue(key, factura_original);
+
           return (
-            <div key={key} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/_/g, ' ')}</span>
-              <span className="text-sm font-medium text-slate-900 dark:text-white truncate max-w-[200px]" title={value}>
-                {value || <span className="text-slate-400 italic">Vacío</span>}
-              </span>
+            <div key={key} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
+              <div className="text-xs font-bold text-slate-500 uppercase mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">{key.replace(/_/g, ' ')}</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Valor Original</span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400 break-all bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg" title={original}>
+                    {resolveValue(key, original, true) || <span className="text-slate-400 italic">Vacío</span>}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-amber-500 font-semibold mb-1 uppercase tracking-wider">Nuevo Valor Propuesto</span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white break-all bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 p-2 rounded-lg" title={propuesto}>
+                    {resolveValue(key, propuesto, false)}
+                  </span>
+                </div>
+              </div>
             </div>
           );
         })}
@@ -154,8 +246,8 @@ const SolicitudesCambios = () => {
                   </div>
 
                   <div className="mb-8">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Nuevos Valores Propuestos</h4>
-                    {renderChanges(solicitud.cambios_propuestos)}
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Detalle de Cambios</h4>
+                    {renderChanges(solicitud)}
                   </div>
 
                   {solicitud.estado === 'Pendiente' && (

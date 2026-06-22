@@ -52,9 +52,26 @@ class FacturaViewSet(viewsets.ModelViewSet):
             factura = self.get_object()
             from .models import SolicitudCambioFactura
             
-            # Quitar motivo_cambio de los datos a guardar
-            cambios = dict(request.data)
-            cambios.pop('motivo_cambio', None)
+            # Preparar los datos a guardar en JSON, parseando listas y excluyendo archivos
+            cambios = {}
+            import json
+            for k in request.data.keys():
+                if k == 'motivo_cambio': continue
+                
+                # Excluir archivos
+                val = request.data[k]
+                if hasattr(val, 'file') or hasattr(val, 'read'):
+                    continue
+                
+                if k in ['unidades', 'cajas', 'variados']:
+                    cambios[k] = request.data.getlist(k)
+                elif k == 'detalles_unidades':
+                    try:
+                        cambios[k] = json.loads(request.data.get(k))
+                    except:
+                        cambios[k] = request.data.get(k)
+                else:
+                    cambios[k] = request.data.get(k)
             
             SolicitudCambioFactura.objects.create(
                 factura=factura,
