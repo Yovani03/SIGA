@@ -56,22 +56,23 @@ class FacturaViewSet(viewsets.ModelViewSet):
             cambios = {}
             import json
             for k in request.data.keys():
-                if k == 'motivo_cambio': continue
+                if k == 'motivo_cambio' or k == 'archivo_escaneado': continue
                 
-                # Excluir archivos
-                val = request.data[k]
-                if hasattr(val, 'file') or hasattr(val, 'read'):
-                    continue
-                
+                # Filtrar arreglos vacíos o nulos en M2M
                 if k in ['unidades', 'cajas', 'variados']:
-                    cambios[k] = request.data.getlist(k)
+                    # Remover strings vacíos
+                    val_list = request.data.getlist(k)
+                    cambios[k] = [v for v in val_list if v and v != 'null']
                 elif k == 'detalles_unidades':
                     try:
                         cambios[k] = json.loads(request.data.get(k))
                     except:
                         cambios[k] = request.data.get(k)
                 else:
-                    cambios[k] = request.data.get(k)
+                    val = request.data.get(k)
+                    if val == 'null' or val == 'undefined':
+                        val = None
+                    cambios[k] = val
             
             SolicitudCambioFactura.objects.create(
                 factura=factura,
@@ -154,10 +155,21 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
         if solicitud.estado != 'Pendiente':
             return Response({'detail': 'Solo se pueden aprobar solicitudes pendientes.'}, status=400)
             
-        # Aplicar los cambios
-        factura = solicitud.factura
-        # Re-usar el FacturaSerializer para procesar json
-        serializer = FacturaSerializer(factura, data=solicitud.cambios_propuestos, partial=True)
+        # Copiar los cambios propuestos
+        cambios = solicitud.cambios_propuestos.copy()
+
+        # Limpiar datos corruptos de solicitudes antiguas si las hay
+        if 'archivo_escaneado' in cambios:
+            del cambios['archivo_escaneado']
+        for k in ['unidades', 'cajas', 'variados']:
+            if k in cambios and isinstance(cambios[k], list):
+                cambios[k] = [v for v in cambios[k] if v and v != 'null']
+        for k, v in list(cambios.items()):
+            if v == 'null' or v == 'undefined' or v == '':
+                cambios[k] = None
+
+        # Usar FacturaSerializer con partial=True para validar los cambios
+        serializer = FacturaSerializer(solicitud.factura, data=cambios, partial=True)
         if serializer.is_valid():
             serializer.save()
             
