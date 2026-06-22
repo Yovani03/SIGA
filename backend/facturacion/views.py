@@ -181,7 +181,7 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
             HistorialAccion.objects.create(
                 user=request.user,
                 accion="Aprobación de Cambio en Factura",
-                detalles=f"Se aprobó el cambio en la factura folio {factura.folio} solicitado por {solicitud.solicitante.username}."
+                detalles=f"Se aprobó el cambio en la factura folio {solicitud.factura.folio} solicitado por {solicitud.solicitante.username}."
             )
             return Response({'detail': 'Solicitud aprobada y factura actualizada.'})
         return Response(serializer.errors, status=400)
