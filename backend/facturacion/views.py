@@ -80,6 +80,13 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 motivo=motivo,
                 cambios_propuestos=cambios
             )
+            
+            HistorialAccion.objects.create(
+                user=user,
+                accion="Solicitud de Cambio en Factura",
+                detalles=f"Se ha solicitado un cambio en la factura con folio {factura.folio}. Motivo: {motivo}"
+            )
+            
             return Response({'detail': 'Solicitud de cambio enviada a revisión.'}, status=202)
         
         return super().update(request, *args, **kwargs)
