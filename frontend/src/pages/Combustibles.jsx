@@ -40,6 +40,7 @@ const Combustibles = () => {
   const [cargas, setCargas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaFocus, setBusquedaFocus] = useState(false);
   const [activeTab, setActiveTab] = useState(isLector ? 'historial' : 'nuevo'); // 'nuevo', 'especial' o 'historial'
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
@@ -474,10 +475,12 @@ const Combustibles = () => {
                   placeholder="Buscar unidad por económico o placa..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
+                  onFocus={() => setBusquedaFocus(true)}
+                  onBlur={() => setTimeout(() => setBusquedaFocus(false), 200)}
                   className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 />
                 
-                {busqueda && (
+                {(busquedaFocus || busqueda) && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
                     {filteredUnidades.length > 0 ? (
                       filteredUnidades.map(u => (
