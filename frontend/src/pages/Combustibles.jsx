@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { 
   Droplets, 
@@ -22,8 +22,12 @@ import {
 import notify from '../utils/notifications';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { AuthContext } from '../context/AuthContext';
 
 const Combustibles = () => {
+  const { user } = useContext(AuthContext);
+  const isLector = user?.rol === 'lector_gastos';
+
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [precios, setPrecios] = useState({
     magna: '',
@@ -35,7 +39,7 @@ const Combustibles = () => {
   const [cargas, setCargas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
-  const [activeTab, setActiveTab] = useState('nuevo'); // 'nuevo', 'especial' o 'historial'
+  const [activeTab, setActiveTab] = useState(isLector ? 'historial' : 'nuevo'); // 'nuevo', 'especial' o 'historial'
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split('T')[0]);
@@ -350,36 +354,40 @@ const Combustibles = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex bg-white dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-sm dark:shadow-inner">
-        <button 
-          onClick={() => setActiveTab('nuevo')}
-          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
-            activeTab === 'nuevo' 
-              ? 'text-white shadow-lg shadow-blue-900/20' 
-              : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
-          }`}
-        >
-          {activeTab === 'nuevo' && (
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            <Plus size={18} /> Nuevo Registro
-          </span>
-        </button>
-        <button 
-          onClick={() => { setActiveTab('especial'); }}
-          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
-            activeTab === 'especial' 
-              ? 'text-white shadow-lg shadow-amber-900/20' 
-              : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
-          }`}
-        >
-          {activeTab === 'especial' && (
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-500 rounded-full" />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            <AlertCircle size={18} /> Carga Especial
-          </span>
-        </button>
+        {!isLector && (
+          <button 
+            onClick={() => setActiveTab('nuevo')}
+            className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+              activeTab === 'nuevo' 
+                ? 'text-white shadow-lg shadow-blue-900/20' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+            }`}
+          >
+            {activeTab === 'nuevo' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Plus size={18} /> Nuevo Registro
+            </span>
+          </button>
+        )}
+        {!isLector && (
+          <button 
+            onClick={() => { setActiveTab('especial'); }}
+            className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+              activeTab === 'especial' 
+                ? 'text-white shadow-lg shadow-amber-900/20' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+            }`}
+          >
+            {activeTab === 'especial' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-500 rounded-full" />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <AlertCircle size={18} /> Carga Especial
+            </span>
+          </button>
+        )}
         <button 
           onClick={() => { setActiveTab('historial'); }}
           className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${

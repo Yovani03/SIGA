@@ -8,6 +8,7 @@ class Perfil(models.Model):
         ('capturista', 'Capturista'),
         ('jefe_logistica', 'Jefe de Logística'),
         ('monitoreo', 'Monitoreo'),
+        ('lector_gastos', 'Lector de Gastos'),
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     rol = models.CharField(max_length=20, choices=ROLES_CHOICES, default='capturista')

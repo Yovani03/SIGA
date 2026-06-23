@@ -14,7 +14,7 @@ const Login = () => {
 
     // Redirigir si ya está logueado
     useEffect(() => {
-        if (user && ['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo'].includes(user.rol)) {
+        if (user && ['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo', 'lector_gastos'].includes(user.rol)) {
             navigate('/');
         }
     }, [user, navigate]);

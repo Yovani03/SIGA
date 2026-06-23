@@ -60,6 +60,7 @@ const ListaVehiculos = () => {
   const [allFacturas, setAllFacturas] = useState([]);
   const [loadingFacturas, setLoadingFacturas] = useState(false);
   const { user } = React.useContext(AuthContext);
+  const isLector = user?.rol === 'lector_gastos';
   const [ordenesTrabajo, setOrdenesTrabajo] = useState([]);
   const [showInfoMantenimientoModal, setShowInfoMantenimientoModal] = useState(false);
   const [showMantenimientoModal, setShowMantenimientoModal] = useState(false);
@@ -386,7 +387,7 @@ const ListaVehiculos = () => {
     }
 
     // Si está operativa y NO es jefe logistica, permitimos dar salida
-    if (user?.rol !== 'jefe_logistica') {
+    if (user?.rol !== 'jefe_logistica' && !isLector) {
         setOrdenForm({ tipo: 'correctivo', taller: '', descripcion: '' });
         setShowOrdenModal(true);
     }
@@ -487,7 +488,7 @@ const ListaVehiculos = () => {
           </p>
         </div>
         
-        {user?.rol !== 'jefe_logistica' && activeTab !== 'analisis' && (
+        {user?.rol !== 'jefe_logistica' && !isLector && activeTab !== 'analisis' && (
           <button 
             onClick={() => {
               if (activeTab === 'cajas') setShowAltaCajaModal(true);
@@ -726,6 +727,7 @@ const ListaVehiculos = () => {
                           </button>
                         </div>
 
+                        {!isLector && (
                         <div className="flex items-center gap-2">
                           <button 
                             onClick={(e) => handleEditClick(e, v)}
@@ -742,6 +744,7 @@ const ListaVehiculos = () => {
                             <Trash2 size={18} />
                           </button>
                         </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -819,7 +822,7 @@ const ListaVehiculos = () => {
                   {searchTerm ? `No hay resultados para "${searchTerm}". Intenta con otros términos.` : "Aún no has registrado ningún remolque en el sistema."}
                 </p>
               </div>
-              {!searchTerm && user?.rol !== 'jefe_logistica' && (
+              {!searchTerm && user?.rol !== 'jefe_logistica' && !isLector && (
                 <button 
                   onClick={() => setShowAltaCajaModal(true)}
                   className="inline-flex items-center gap-2 text-blue-500 font-bold hover:text-blue-400 transition-colors"
@@ -871,7 +874,7 @@ const ListaVehiculos = () => {
                         Gastos / Facturas <ExternalLink size={14} />
                       </button>
 
-                      {user?.rol !== 'jefe_logistica' && (
+                      {user?.rol !== 'jefe_logistica' && !isLector && (
                         <div className="flex items-center gap-2">
                           <button 
                             type="button"
@@ -967,7 +970,7 @@ const ListaVehiculos = () => {
                   {searchTerm ? `No hay resultados para "${searchTerm}". Intenta con otros términos.` : "Aún no has registrado ningún vehículo variado en el sistema."}
                 </p>
               </div>
-              {!searchTerm && user?.rol !== 'jefe_logistica' && (
+              {!searchTerm && user?.rol !== 'jefe_logistica' && !isLector && (
                 <button 
                   onClick={() => setShowAltaVariadoModal(true)}
                   className="inline-flex items-center gap-2 text-blue-500 font-bold hover:text-blue-400 transition-colors"
@@ -1019,7 +1022,7 @@ const ListaVehiculos = () => {
                         Gastos / Facturas <ExternalLink size={14} />
                       </button>
 
-                      {user?.rol !== 'jefe_logistica' && (
+                      {user?.rol !== 'jefe_logistica' && !isLector && (
                         <div className="flex items-center gap-2">
                           <button 
                             type="button"
@@ -1406,7 +1409,7 @@ const ListaVehiculos = () => {
                     CERRAR
                 </button>
                 
-                {user?.rol !== 'jefe_logistica' && (
+                {user?.rol !== 'jefe_logistica' && !isLector && (
                     <button 
                         onClick={() => {
                             setFacturasSeleccionadas([]);

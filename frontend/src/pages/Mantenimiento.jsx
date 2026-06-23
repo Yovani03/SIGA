@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { 
   Wrench, 
@@ -20,6 +20,7 @@ import {
   Ticket as TicketIcon
 } from 'lucide-react';
 import notify from '../utils/notifications';
+import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import ProyeccionesMantenimiento from './ProyeccionesMantenimiento';
 
@@ -38,6 +39,8 @@ const Mantenimiento = () => {
   const [showModal, setShowModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('todos');
+  const { user } = useContext(AuthContext);
+  const isLector = user?.rol === 'lector_gastos';
   
   const [formData, setFormData] = useState({
     unidad: '',
@@ -162,12 +165,14 @@ const Mantenimiento = () => {
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 lg:mt-2 text-sm">Gestiona órdenes de trabajo y servicios.</p>
         </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 lg:px-6 py-3 rounded-xl lg:rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
-        >
-          <Plus size={20} /> Nueva Orden
-        </button>
+        {!isLector && (
+          <button 
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-5 lg:px-6 py-3 rounded-xl lg:rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
+          >
+            <Plus size={20} /> Nueva Orden
+          </button>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -289,7 +294,7 @@ const Mantenimiento = () => {
                </div>
 
                <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-                 {o.estatus === 'en proceso' && (
+                 {o.estatus === 'en proceso' && !isLector && (
                    <>
                      <button onClick={() => { setOrdenAPausar(o); setReason(''); setShowPausarModal(true); }} className="flex-1 sm:flex-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold py-2.5 px-4 rounded-xl transition-all text-[10px] lg:text-xs shadow-sm">
                        PAUSAR
@@ -299,7 +304,7 @@ const Mantenimiento = () => {
                      </button>
                    </>
                  )}
-                 {o.estatus === 'en espera' && (
+                 {o.estatus === 'en espera' && !isLector && (
                    <button onClick={() => handleStatusChange(o.id, 'en proceso')} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all text-sm shadow-lg shadow-amber-900/20">
                      REANUDAR
                    </button>

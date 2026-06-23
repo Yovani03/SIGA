@@ -28,7 +28,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route element={<ProtectedRoute allowedRoles={['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['admin_general', 'capturista', 'admin', 'jefe_logistica', 'monitoreo', 'lector_gastos']} />}>
               <Route path="/" element={<DashboardLayout />}>
                 
                 {/* Dashboard: All valid roles */}
@@ -42,7 +42,7 @@ function App() {
                 </Route>
 
                 {/* Rutas de Capturista */}
-                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'lector_gastos']} />}>
                   <Route path="facturacion" element={<Facturacion />} />
                   <Route path="mantenimiento" element={<Mantenimiento />} />
                   <Route path="catalogos" element={<Catalogos />} />
@@ -50,7 +50,7 @@ function App() {
                 </Route>
 
                 {/* Rutas Compartidas (Capturista y Logística) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'jefe_logistica']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos']} />}>
                   <Route path="vehiculos" element={<ListaVehiculos />} />
                   <Route path="combustible" element={<Combustibles />} />
                 </Route>

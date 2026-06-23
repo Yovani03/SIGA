@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { 
   Ticket as TicketIcon, 
@@ -21,8 +21,8 @@ import {
   Settings,
   Tag
 } from 'lucide-react';
-import AltaTicket from './AltaTicket';
 import notify from '../utils/notifications';
+import { AuthContext } from '../context/AuthContext';
 import { formatMediaUrl } from '../utils/media';
 
 const Tickets = () => {
@@ -31,6 +31,8 @@ const Tickets = () => {
   const [cajas, setCajas] = useState([]);
   const [variados, setVariados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext);
+  const isLector = user?.rol === 'lector_gastos';
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,13 +124,15 @@ const Tickets = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm lg:text-lg">Gestión de notas simples y folios físicos.</p>
         </div>
         
-        <button 
-          onClick={() => setShowAltaModal(true)}
-          className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-amber-900/20 active:scale-95 w-full md:w-auto"
-        >
-          <Plus size={20} />
-          Nuevo Ticket / Nota
-        </button>
+        {!isLector && (
+          <button 
+            onClick={() => setShowAltaModal(true)}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 w-full md:w-auto"
+          >
+            <Plus size={20} />
+            Nuevo Ticket
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { 
   FilePlus, 
@@ -35,6 +35,7 @@ import {
 } from '../components/ui/chart';
 import AltaFactura from './AltaFactura';
 import notify from '../utils/notifications';
+import { AuthContext } from '../context/AuthContext';
 import { formatMediaUrl } from '../utils/media';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -83,6 +84,8 @@ const Facturacion = () => {
   const [cajas, setCajas] = useState([]);
   const [variados, setVariados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext);
+  const isLector = user?.rol === 'lector_gastos';
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [editingFactura, setEditingFactura] = useState(null);
@@ -272,13 +275,15 @@ const Facturacion = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm lg:text-lg">Gestión de comprobantes fiscales y gastos generales.</p>
         </div>
         
-        <button 
-          onClick={() => setShowAltaModal(true)}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 w-full md:w-auto"
-        >
-          <Plus size={20} />
-          Nueva Factura
-        </button>
+        {!isLector && (
+          <button 
+            onClick={() => setShowAltaModal(true)}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 w-full md:w-auto"
+          >
+            <Plus size={20} />
+            Nueva Factura
+          </button>
+        )}
       </div>
 
       {/* Date Filter Selector and Specific Controls */}
@@ -550,7 +555,7 @@ const Facturacion = () => {
                       {new Date(f.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                     
-                    {!f.cancelado && (
+                    {(!f.cancelado && !isLector) && (
                       <button 
                         onClick={(e) => handleEdit(e, f)}
                         className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
@@ -559,7 +564,7 @@ const Facturacion = () => {
                         <Pencil size={16} />
                       </button>
                     )}
-                    {!f.cancelado && (
+                    {(!f.cancelado && !isLector) && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setFacturaToCancel(f); setShowCancelModal(true); }}
                           className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
