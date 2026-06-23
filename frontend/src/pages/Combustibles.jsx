@@ -398,7 +398,7 @@ const Combustibles = () => {
 
   const filteredUnidades = unidades.filter(u => 
     u.numero_economico.toLowerCase().includes(busqueda.toLowerCase()) || 
-    u.placas.toLowerCase().includes(busqueda.toLowerCase())
+    u.placas?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (

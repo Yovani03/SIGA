@@ -172,6 +172,8 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
 
   const dataPorMes = useMemo(() => {
     const meses = {};
+    const categoriasPresentes = new Set();
+    
     facturasFiltradas.forEach(f => {
       const date = new Date(f.fecha + 'T00:00:00');
       const mesAnio = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -186,12 +188,22 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
         }
       }
 
+      categoriasPresentes.add(cat);
       if (!meses[mesAnio][cat]) meses[mesAnio][cat] = 0;
       
       meses[mesAnio][cat] += parseFloat(f.monto);
       meses[mesAnio].total += parseFloat(f.monto);
     });
-    return Object.values(meses).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Rellenar con 0 las categorías faltantes en cada mes para que el AreaChart las apile correctamente
+    const result = Object.values(meses).sort((a, b) => a.name.localeCompare(b.name));
+    result.forEach(mes => {
+      categoriasPresentes.forEach(cat => {
+        if (mes[cat] === undefined) mes[cat] = 0;
+      });
+    });
+
+    return result;
   }, [facturasFiltradas, unidadSeleccionada]);
 
   return (

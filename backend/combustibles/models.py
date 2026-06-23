@@ -107,6 +107,7 @@ class CargaCombustible(models.Model):
                 monto=self.monto_total,
                 folio=folio_generado,
                 unidad=self.unidad,
+                variado=self.unidad_variada,
                 producto=producto_combustible
             )
 
