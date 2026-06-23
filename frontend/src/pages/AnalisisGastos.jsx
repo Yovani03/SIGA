@@ -84,8 +84,8 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
   const facturasFiltradas = useMemo(() => {
     // Excluir "Combustible" de las facturas para evitar duplicados y cargas antiguas
     const facturasSinCombustible = facturas.filter(f => {
-      const cat = f.categoria || f.producto_categoria || 'Otro';
-      return cat !== 'Combustible';
+      const cat = String(f.categoria || f.producto_categoria || 'Otro').trim().toLowerCase();
+      return cat !== 'combustible';
     });
 
     // Mapear cargas de combustible al formato de facturas

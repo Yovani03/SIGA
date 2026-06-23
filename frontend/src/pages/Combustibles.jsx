@@ -1054,6 +1054,106 @@ const Combustibles = () => {
           </div>
         </div>
       )}
+      
+      {/* Block Details Modal */}
+      {selectedBlock && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-4">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <History className="text-blue-500" />
+                  Detalles del Bloque
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  ID: {selectedBlock.id} | Fecha Registro: {new Date(selectedBlock.fecha_registro).toLocaleString()}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedBlock(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Unidades</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{selectedBlock.cargas?.length || 0}</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Litros</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white font-mono">{parseFloat(selectedBlock.total_litros).toFixed(2)} L</p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50">
+                  <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-1">Monto Total</p>
+                  <p className="text-2xl font-black text-blue-700 dark:text-blue-400 font-mono">
+                    ${parseFloat(selectedBlock.total_monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Unidad</th>
+                      <th className="px-4 py-3 font-semibold">Tipo</th>
+                      <th className="px-4 py-3 font-semibold text-right">Litros</th>
+                      <th className="px-4 py-3 font-semibold text-right">Precio/L</th>
+                      <th className="px-4 py-3 font-semibold text-right">Total</th>
+                      <th className="px-4 py-3 font-semibold text-right">Kilometraje</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                    {selectedBlock.cargas?.map((carga, i) => (
+                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                          {carga.unidad_detalle || `Eco ${carga.unidad || carga.unidad_variada}`}
+                          {carga.es_especial && <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full uppercase font-bold">Especial</span>}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
+                        <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">{parseFloat(carga.litros).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">${parseFloat(carga.precio_unitario).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
+                          ${parseFloat(carga.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {carga.ignorar_kilometraje ? (
+                            <span className="text-slate-400 italic">No reg.</span>
+                          ) : (
+                            <span className={`font-mono ${carga.km_equivocado ? 'text-amber-500' : 'text-slate-600 dark:text-slate-300'}`}>
+                              {carga.kilometraje}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {(!selectedBlock.cargas || selectedBlock.cargas.length === 0) && (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                          No hay detalles disponibles para este bloque.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
+              <button 
+                onClick={() => setSelectedBlock(null)}
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
+              >
+                Cerrar Detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
