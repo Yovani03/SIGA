@@ -254,12 +254,31 @@ const Combustibles = () => {
   };
 
   const handleSubmit = async () => {
-    if (!precios.magna || !precios.premium || !precios.diesel) {
-      notify.info("Ingresa los precios del día.");
-      return;
-    }
     if (cargas.length === 0) {
       notify.info("Agrega al menos una carga.");
+      return;
+    }
+
+    const typesUsed = new Set(cargas.map(c => c.tipo_combustible));
+    
+    if (typesUsed.has('magna') && !precios.magna) {
+      notify.info("Ingresa el precio de Gasolina Magna para las cargas registradas.");
+      return;
+    }
+    if (typesUsed.has('premium') && !precios.premium) {
+      notify.info("Ingresa el precio de Gasolina Premium para las cargas registradas.");
+      return;
+    }
+    if (typesUsed.has('diesel') && !precios.diesel) {
+      notify.info("Ingresa el precio de Diésel para las cargas registradas.");
+      return;
+    }
+    if (typesUsed.has('electrico') && !precios.electrico) {
+      notify.info("Ingresa el precio de Eléctrico para las cargas registradas.");
+      return;
+    }
+    if (typesUsed.has('gas_lp') && !precios.gas_lp) {
+      notify.info("Ingresa el precio de Gas LP para las cargas registradas.");
       return;
     }
 
@@ -275,11 +294,11 @@ const Combustibles = () => {
     try {
       const data = {
         fecha,
-        precio_magna: precios.magna,
-        precio_premium: precios.premium,
-        precio_diesel: precios.diesel,
-        precio_electrico: precios.electrico,
-        precio_gas_lp: precios.gas_lp,
+        precio_magna: precios.magna || 0,
+        precio_premium: precios.premium || 0,
+        precio_diesel: precios.diesel || 0,
+        precio_electrico: precios.electrico || 0,
+        precio_gas_lp: precios.gas_lp || 0,
         cargas: cargas.map(c => ({
           unidad: c.is_variado ? null : c.unidad,
           unidad_variada: c.is_variado ? c.unidad : null,

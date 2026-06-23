@@ -27,9 +27,9 @@ class CargaCombustibleSerializer(serializers.ModelSerializer):
 
 class BulkCargaCombustibleSerializer(serializers.Serializer):
     fecha = serializers.DateField()
-    precio_magna = serializers.DecimalField(max_digits=10, decimal_places=2)
-    precio_premium = serializers.DecimalField(max_digits=10, decimal_places=2)
-    precio_diesel = serializers.DecimalField(max_digits=10, decimal_places=2)
+    precio_magna = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    precio_premium = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    precio_diesel = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     precio_electrico = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     precio_gas_lp = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     cargas = CargaCombustibleSerializer(many=True)
