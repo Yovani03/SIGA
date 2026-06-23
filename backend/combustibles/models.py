@@ -8,6 +8,7 @@ class PrecioCombustible(models.Model):
     precio_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio Premium")
     precio_diesel = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio Diesel")
     precio_electrico = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio Eléctrico")
+    precio_gas_lp = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio Gas LP")
 
     class Meta:
         verbose_name = "Precio de Combustible"
@@ -23,6 +24,7 @@ class CargaCombustible(models.Model):
         ('premium', 'Premium'),
         ('diesel', 'Diesel'),
         ('electrico', 'Eléctrico'),
+        ('gas_lp', 'Gas LP'),
     ]
     unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, related_name='cargas_combustible')
     fecha = models.DateField(verbose_name="Fecha de Carga")

@@ -23,6 +23,7 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
     precio_premium = serializers.DecimalField(max_digits=10, decimal_places=2)
     precio_diesel = serializers.DecimalField(max_digits=10, decimal_places=2)
     precio_electrico = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    precio_gas_lp = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     cargas = CargaCombustibleSerializer(many=True)
 
     def create(self, validated_data):
@@ -35,6 +36,7 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
                 'precio_premium': validated_data['precio_premium'],
                 'precio_diesel': validated_data['precio_diesel'],
                 'precio_electrico': validated_data.get('precio_electrico', 0),
+                'precio_gas_lp': validated_data.get('precio_gas_lp', 0),
             }
         )
         
@@ -50,8 +52,12 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
                 carga_data['precio_unitario'] = precio_obj.precio_premium
             elif tipo == 'diesel':
                 carga_data['precio_unitario'] = precio_obj.precio_diesel
-            else:
+            elif tipo == 'electrico':
                 carga_data['precio_unitario'] = precio_obj.precio_electrico
+            elif tipo == 'gas_lp':
+                carga_data['precio_unitario'] = precio_obj.precio_gas_lp
+            else:
+                carga_data['precio_unitario'] = 0
                 
             carga = CargaCombustible.objects.create(**carga_data)
             cargas_created.append(carga)

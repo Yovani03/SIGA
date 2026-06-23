@@ -20,6 +20,7 @@ class UnidadTractocamion(models.Model):
         ('magna', 'Gasolina Magna'),
         ('premium', 'Gasolina Premium'),
         ('electrico', 'Eléctrico'),
+        ('gas_lp', 'Gas LP'),
     ]
     tipo_combustible = models.CharField(max_length=20, choices=FUEL_CHOICES, default='diesel', verbose_name="Tipo de Combustible")
     placas = models.CharField(max_length=20, unique=True)

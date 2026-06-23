@@ -29,11 +29,11 @@ const Combustibles = () => {
   const isLector = user?.rol === 'lector_gastos';
 
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-  const [precios, setPrecios] = useState({
     magna: '',
     premium: '',
     diesel: '',
-    electrico: '0'
+    electrico: '0',
+    gas_lp: ''
   });
   const [unidades, setUnidades] = useState([]);
   const [cargas, setCargas] = useState([]);
@@ -109,6 +109,7 @@ const Combustibles = () => {
     const dieselL = historial.filter(c => c.tipo_combustible === 'diesel').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
     const magnaL = historial.filter(c => c.tipo_combustible === 'magna').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
     const premiumL = historial.filter(c => c.tipo_combustible === 'premium').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const gasLpL = historial.filter(c => c.tipo_combustible === 'gas_lp').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
     const electricoKwh = historial.filter(c => c.tipo_combustible === 'electrico').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
 
     // Render Stats
@@ -125,11 +126,17 @@ const Combustibles = () => {
     doc.text(`Diésel: ${dieselL.toFixed(2)} L`, 110, 51);
     doc.text(`Magna: ${magnaL.toFixed(2)} L`, 110, 56);
     doc.text(`Premium: ${premiumL.toFixed(2)} L`, 110, 61);
+    let yOffsetRight = 66;
+    if (gasLpL > 0) {
+      doc.text(`Gas LP: ${gasLpL.toFixed(2)} L`, 110, yOffsetRight);
+      yOffsetRight += 5;
+    }
     if (electricoKwh > 0) {
-      doc.text(`Eléctrico: ${electricoKwh.toFixed(2)} kWh`, 110, 66);
+      doc.text(`Eléctrico: ${electricoKwh.toFixed(2)} kWh`, 110, yOffsetRight);
+      yOffsetRight += 5;
     }
     
-    let currentY = electricoKwh > 0 ? 73 : 68;
+    let currentY = Math.max(68, yOffsetRight + 2);
 
     // Table Data
     const tableData = historial.map((carga) => [
@@ -192,13 +199,15 @@ const Combustibles = () => {
         setPrecios({
           magna: res.data.precio_magna,
           premium: res.data.precio_premium,
-          diesel: res.data.precio_diesel
+          diesel: res.data.precio_diesel,
+          electrico: res.data.precio_electrico || '0',
+          gas_lp: res.data.precio_gas_lp || ''
         });
       } else {
-        setPrecios({ magna: '', premium: '', diesel: '' });
+        setPrecios({ magna: '', premium: '', diesel: '', electrico: '0', gas_lp: '' });
       }
     } catch (err) {
-      setPrecios({ magna: '', premium: '', diesel: '' });
+      setPrecios({ magna: '', premium: '', diesel: '', electrico: '0', gas_lp: '' });
     }
   };
 
@@ -256,6 +265,8 @@ const Combustibles = () => {
         precio_magna: precios.magna,
         precio_premium: precios.premium,
         precio_diesel: precios.diesel,
+        precio_electrico: precios.electrico,
+        precio_gas_lp: precios.gas_lp,
         cargas: cargas.map(c => ({
           unidad: c.unidad,
           tipo_combustible: c.tipo_combustible,
@@ -427,11 +438,12 @@ const Combustibles = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {[
               { id: 'magna', label: 'Magna', color: 'bg-green-500/10 border-green-500/20 text-green-500' },
               { id: 'premium', label: 'Premium', color: 'bg-red-500/10 border-red-500/20 text-red-500' },
-              { id: 'diesel', label: 'Diesel', color: 'bg-slate-700/20 border-slate-700/30 text-slate-400' }
+              { id: 'diesel', label: 'Diesel', color: 'bg-slate-700/20 border-slate-700/30 text-slate-400' },
+              { id: 'gas_lp', label: 'Gas LP', color: 'bg-orange-500/10 border-orange-500/20 text-orange-500' }
             ].map(fuel => (
               <div key={fuel.id} className={`${fuel.color} border rounded-2xl p-5 flex flex-col gap-3 group transition-all hover:bg-opacity-20`}>
                 <div className="flex items-center justify-between">
@@ -525,6 +537,7 @@ const Combustibles = () => {
                             <option value="magna">Magna</option>
                             <option value="premium">Premium</option>
                             <option value="electrico">Eléctrico</option>
+                            <option value="gas_lp">Gas LP</option>
                           </select>
                         </td>
                         <td className="px-6 py-4">
@@ -699,6 +712,7 @@ const Combustibles = () => {
                   <option value="magna">Magna</option>
                   <option value="premium">Premium</option>
                   <option value="electrico">Eléctrico</option>
+                  <option value="gas_lp">Gas LP</option>
                 </select>
               </div>
 
