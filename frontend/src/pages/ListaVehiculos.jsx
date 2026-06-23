@@ -58,6 +58,7 @@ const ListaVehiculos = () => {
   const [showFacturasModal, setShowFacturasModal] = useState(false);
   const [facturas, setFacturas] = useState([]);
   const [allFacturas, setAllFacturas] = useState([]);
+  const [cargasCombustible, setCargasCombustible] = useState([]);
   const [loadingFacturas, setLoadingFacturas] = useState(false);
   const { user } = React.useContext(AuthContext);
   const isLector = user?.rol === 'lector_gastos';
@@ -183,10 +184,20 @@ const ListaVehiculos = () => {
     fetchVehiculos();
     fetchTalleres();
     fetchAllFacturas();
+    fetchCargasCombustible();
     fetchOrdenes();
     fetchCajas();
     fetchVariados();
   }, []);
+
+  const fetchCargasCombustible = async () => {
+    try {
+      const res = await api.get('cargas-combustible/');
+      setCargasCombustible(res.data);
+    } catch (err) {
+      console.error("Error cargando cargas de combustible", err);
+    }
+  };
 
   const fetchOrdenes = async () => {
     try {
@@ -1092,6 +1103,7 @@ const ListaVehiculos = () => {
           vehiculos={vehiculos} 
           cajas={cajas}
           variados={variados}
+          cargasCombustible={cargasCombustible}
         />
       )}
 

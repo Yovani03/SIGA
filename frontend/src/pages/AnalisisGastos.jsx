@@ -53,7 +53,7 @@ const trendChartConfig = {
   }
 };
 
-const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
+const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargasCombustible = [] }) => {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState('todas');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
 
@@ -82,14 +82,33 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
   }, [variados, busquedaUnidad]);
 
   const facturasFiltradas = useMemo(() => {
-    if (unidadSeleccionada === 'todas') return facturas;
+    // Excluir "Combustible" de las facturas para evitar duplicados y cargas antiguas
+    const facturasSinCombustible = facturas.filter(f => {
+      const cat = f.categoria || f.producto_categoria || 'Otro';
+      return cat !== 'Combustible';
+    });
+
+    // Mapear cargas de combustible al formato de facturas
+    const cargasMapeadas = cargasCombustible.map(c => ({
+      id: `carga_${c.id}`,
+      categoria: 'Combustible',
+      monto: c.monto_total,
+      fecha: c.fecha,
+      unidad: c.unidad,
+      variado: c.unidad_variada,
+      caja: null
+    }));
+
+    const datosCombinados = [...facturasSinCombustible, ...cargasMapeadas];
+
+    if (unidadSeleccionada === 'todas') return datosCombinados;
     if (unidadSeleccionada === 'sin_asignar') {
-      return facturas.filter(f => !f.unidad && (!f.unidades || f.unidades.length === 0) && !f.caja && !f.variado);
+      return datosCombinados.filter(f => !f.unidad && (!f.unidades || f.unidades.length === 0) && !f.caja && !f.variado);
     }
     
     if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('caja_')) {
       const cajaId = parseInt(unidadSeleccionada.replace('caja_', ''), 10);
-      return facturas.reduce((acc, f) => {
+      return datosCombinados.reduce((acc, f) => {
         const detalle = f.detalles_unidades?.find(d => d.caja === cajaId);
         if (detalle) {
           acc.push({ ...f, monto: detalle.monto });
@@ -104,7 +123,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
 
     if (typeof unidadSeleccionada === 'string' && unidadSeleccionada.startsWith('variado_')) {
       const variadoId = parseInt(unidadSeleccionada.replace('variado_', ''), 10);
-      return facturas.reduce((acc, f) => {
+      return datosCombinados.reduce((acc, f) => {
         const detalle = f.detalles_unidades?.find(d => d.variado === variadoId);
         if (detalle) {
           acc.push({ ...f, monto: detalle.monto });
@@ -119,7 +138,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
 
     const uId = parseInt(unidadSeleccionada, 10);
     
-    return facturas.reduce((acc, f) => {
+    return datosCombinados.reduce((acc, f) => {
       const detalle = f.detalles_unidades?.find(d => d.unidad === uId);
       if (detalle) {
         acc.push({ ...f, monto: detalle.monto });
@@ -134,7 +153,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
       }
       return acc;
     }, []);
-  }, [facturas, unidadSeleccionada]);
+  }, [facturas, cargasCombustible, unidadSeleccionada]);
 
   const dataPorCategoria = useMemo(() => {
     const categorias = {};
