@@ -29,6 +29,7 @@ const Combustibles = () => {
   const isLector = user?.rol === 'lector_gastos';
 
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [precios, setPrecios] = useState({
     magna: '',
     premium: '',
     diesel: '',
