@@ -59,6 +59,10 @@ const Combustibles = () => {
     ultimo_kilometraje: 0
   });
   const [cargasEspecialesList, setCargasEspecialesList] = useState([]);
+  
+  // State for Block Details Modal
+  const [selectedBlock, setSelectedBlock] = useState(null);
+  const [isEditingBlock, setIsEditingBlock] = useState(false);
 
   useEffect(() => {
     fetchUnidades();
@@ -74,7 +78,7 @@ const Combustibles = () => {
   const fetchHistorial = async () => {
     try {
       setLoadingHistorial(true);
-      const res = await api.get(`cargas-combustible/por_dia/?fecha=${fechaHistorial}`);
+      const res = await api.get(`bloques/por_dia/?fecha=${fechaHistorial}`);
       setHistorial(res.data);
     } catch (err) {
       console.error("Error fetching history", err);
@@ -103,16 +107,19 @@ const Combustibles = () => {
     doc.setDrawColor(226, 232, 240); // Slate-200
     doc.line(15, 38, pageWidth - 15, 38);
 
+    // Extract all individual loads from blocks
+    const todasLasCargas = historial.flatMap(b => b.cargas || []);
+
     // Summary Stats
-    const totalLitros = historial.reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
-    const totalMonto = historial.reduce((acc, curr) => acc + parseFloat(curr.monto_total), 0);
-    const totalCargas = historial.length;
+    const totalLitros = todasLasCargas.reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const totalMonto = todasLasCargas.reduce((acc, curr) => acc + parseFloat(curr.monto_total), 0);
+    const totalCargas = todasLasCargas.length;
     
-    const dieselL = historial.filter(c => c.tipo_combustible === 'diesel').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
-    const magnaL = historial.filter(c => c.tipo_combustible === 'magna').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
-    const premiumL = historial.filter(c => c.tipo_combustible === 'premium').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
-    const gasLpL = historial.filter(c => c.tipo_combustible === 'gas_lp').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
-    const electricoKwh = historial.filter(c => c.tipo_combustible === 'electrico').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const dieselL = todasLasCargas.filter(c => c.tipo_combustible === 'diesel').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const magnaL = todasLasCargas.filter(c => c.tipo_combustible === 'magna').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const premiumL = todasLasCargas.filter(c => c.tipo_combustible === 'premium').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const gasLpL = todasLasCargas.filter(c => c.tipo_combustible === 'gas_lp').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
+    const electricoKwh = todasLasCargas.filter(c => c.tipo_combustible === 'electrico').reduce((acc, curr) => acc + parseFloat(curr.litros), 0);
 
     // Render Stats
     doc.setFontSize(10);
@@ -141,7 +148,7 @@ const Combustibles = () => {
     let currentY = Math.max(68, yOffsetRight + 2);
 
     // Table Data
-    const tableData = historial.map((carga) => [
+    const tableData = todasLasCargas.map((carga) => [
       carga.unidad_detalle,
       carga.es_especial ? 'Especial' : 'Normal',
       carga.tipo_combustible.toUpperCase(),
@@ -973,75 +980,50 @@ const Combustibles = () => {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">
-                      <th className="px-8 py-5">Unidad</th>
-                      <th className="px-8 py-5">Tipo</th>
-                      <th className="px-8 py-5">Combustible</th>
-                      <th className="px-8 py-5 text-right">Litros</th>
-                      <th className="px-8 py-5 text-right">Precio U.</th>
+                      <th className="px-8 py-5">Bloque ID</th>
+                      <th className="px-8 py-5">Hora de Registro</th>
+                      <th className="px-8 py-5 text-right">Cant. Cargas</th>
+                      <th className="px-8 py-5 text-right">Total Litros</th>
                       <th className="px-8 py-5 text-right">Monto Total</th>
-                      <th className="px-8 py-5">Kilometraje</th>
-                      <th className="px-8 py-5">Hora/Info</th>
+                      <th className="px-8 py-5 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
-                    {historial.map((carga, idx) => (
+                    {historial.map((bloque, idx) => (
                       <tr key={idx} className="group hover:bg-blue-600/5 transition-colors">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                              <Truck size={20} />
+                              <History size={20} />
                             </div>
                             <div>
-                              <p className="text-slate-900 dark:text-white font-bold">{carga.unidad_detalle}</p>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">ID: {carga.id}</p>
+                              <p className="text-slate-900 dark:text-white font-bold">Bloque #{bloque.id}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-8 py-5">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                            carga.es_especial ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'
-                          }`}>
-                            {carga.es_especial ? 'Especial' : 'Normal'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                            carga.tipo_combustible === 'diesel' ? 'bg-slate-800 text-slate-300' :
-                            carga.tipo_combustible === 'magna' ? 'bg-green-500/10 text-green-400' :
-                            'bg-red-500/10 text-red-400'
-                          }`}>
-                            {carga.tipo_combustible}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-right font-mono font-bold text-white">
-                          {carga.litros} <span className="text-slate-500 text-[10px]">L</span>
-                        </td>
-                        <td className="px-8 py-5 text-right text-slate-400 text-sm">
-                          ${carga.precio_unitario}
+                          <p className="text-slate-900 dark:text-slate-300 font-medium">{new Date(bloque.fecha_registro).toLocaleTimeString()}</p>
                         </td>
                         <td className="px-8 py-5 text-right">
-                          <p className="text-emerald-600 dark:text-emerald-400 font-black text-lg">${parseFloat(carga.monto_total).toLocaleString()}</p>
+                          <p className="text-slate-900 dark:text-slate-300 font-bold">{bloque.cargas?.length || 0} unid.</p>
                         </td>
-                        <td className="px-8 py-5">
-                          {carga.ignorar_kilometraje ? (
-                            <span className="text-slate-500 italic text-xs">No registrado</span>
-                          ) : (
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-2 text-white font-medium">
-                                <Activity size={14} className={carga.km_equivocado ? "text-amber-500" : "text-blue-500"} />
-                                {carga.kilometraje?.toLocaleString()} <span className="text-[10px] text-slate-500">KM</span>
-                              </div>
-                              {carga.km_equivocado && (
-                                <span className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">KM Equivocado</span>
-                              )}
-                            </div>
-                          )}
+                        <td className="px-8 py-5 text-right">
+                          <p className="text-slate-900 dark:text-slate-300 font-bold font-mono">
+                            {parseFloat(bloque.total_litros).toFixed(2)} L
+                          </p>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2 text-slate-500 text-xs">
-                            <Clock size={14} />
-                            {carga.fecha}
-                          </div>
+                        <td className="px-8 py-5 text-right">
+                          <p className="text-blue-600 dark:text-blue-400 font-black font-mono text-lg">
+                            ${parseFloat(bloque.total_monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                          <button 
+                            onClick={() => setSelectedBlock(bloque)}
+                            className="bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
+                          >
+                            Ver Detalles
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1050,13 +1032,12 @@ const Combustibles = () => {
                     <tr className="bg-slate-950/30 border-t border-slate-800">
                       <td colSpan="3" className="px-8 py-6 text-slate-500 font-bold text-sm uppercase">Totales del día</td>
                       <td className="px-8 py-6 text-right font-black text-white text-lg">
-                        {historial.reduce((acc, curr) => acc + parseFloat(curr.litros), 0).toFixed(2)} <span className="text-slate-500 text-xs">L</span>
+                        {historial.reduce((acc, curr) => acc + parseFloat(curr.total_litros), 0).toFixed(2)} <span className="text-slate-500 text-xs">L</span>
                       </td>
-                      <td className="px-8 py-6"></td>
                       <td className="px-8 py-6 text-right font-black text-emerald-400 text-2xl">
-                        ${historial.reduce((acc, curr) => acc + parseFloat(curr.monto_total), 0).toLocaleString()}
+                        ${historial.reduce((acc, curr) => acc + parseFloat(curr.total_monto), 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                       </td>
-                      <td colSpan="2"></td>
+                      <td></td>
                     </tr>
                   </tfoot>
                 </table>

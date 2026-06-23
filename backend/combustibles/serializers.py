@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import PrecioCombustible, CargaCombustible
+from .models import PrecioCombustible, CargaCombustible, BloqueCargaCombustible
 from vehiculos.models import UnidadTractocamion
 
 class PrecioCombustibleSerializer(serializers.ModelSerializer):
@@ -25,6 +25,13 @@ class CargaCombustibleSerializer(serializers.ModelSerializer):
             return obj.unidad_variada.numero_economico
         return 'Desconocido'
 
+class BloqueCargaCombustibleSerializer(serializers.ModelSerializer):
+    cargas = CargaCombustibleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BloqueCargaCombustible
+        fields = '__all__'
+
 class BulkCargaCombustibleSerializer(serializers.Serializer):
     fecha = serializers.DateField()
     precio_magna = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
@@ -48,10 +55,14 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
             }
         )
         
+        # Create the block
+        bloque = BloqueCargaCombustible.objects.create(fecha=fecha)
+
         cargas_data = validated_data['cargas']
         cargas_created = []
         for carga_data in cargas_data:
             carga_data['fecha'] = fecha
+            carga_data['bloque'] = bloque
             # Ensure price matches the type
             tipo = carga_data['tipo_combustible']
             if tipo == 'magna':
@@ -70,4 +81,6 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
             carga = CargaCombustible.objects.create(**carga_data)
             cargas_created.append(carga)
             
-        return {'fecha': fecha, 'cargas': cargas_created}
+        bloque.update_totals()
+            
+        return {'fecha': fecha, 'bloque_id': bloque.id, 'cargas': cargas_created}

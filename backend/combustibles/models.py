@@ -18,6 +18,26 @@ class PrecioCombustible(models.Model):
     def __str__(self):
         return f"Precios al {self.fecha}"
 
+class BloqueCargaCombustible(models.Model):
+    fecha = models.DateField(verbose_name="Fecha de Registro")
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    total_litros = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_monto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = "Bloque de Carga"
+        verbose_name_plural = "Bloques de Cargas"
+        ordering = ['-fecha_registro']
+
+    def __str__(self):
+        return f"Bloque {self.fecha} - {self.total_monto} MXN"
+
+    def update_totals(self):
+        cargas = self.cargas.all()
+        self.total_litros = sum(c.litros for c in cargas if c.litros)
+        self.total_monto = sum(c.monto_total for c in cargas if c.monto_total)
+        self.save(update_fields=['total_litros', 'total_monto'])
+
 class CargaCombustible(models.Model):
     TIPO_CHOICES = [
         ('magna', 'Magna'),
@@ -26,6 +46,7 @@ class CargaCombustible(models.Model):
         ('electrico', 'Eléctrico'),
         ('gas_lp', 'Gas LP'),
     ]
+    bloque = models.ForeignKey(BloqueCargaCombustible, on_delete=models.CASCADE, related_name='cargas', null=True, blank=True)
     unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, related_name='cargas_combustible', null=True, blank=True)
     unidad_variada = models.ForeignKey(VehiculoVariado, on_delete=models.CASCADE, related_name='cargas_combustible', null=True, blank=True)
     fecha = models.DateField(verbose_name="Fecha de Carga")

@@ -1,15 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
-} from 'recharts';
+import ReactApexChart from 'react-apexcharts';
 import { PieChart as PieChartIcon, BarChart3, TrendingUp, Filter, Truck, Search } from 'lucide-react';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent
-} from '../components/ui/chart';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -206,6 +197,59 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
     return result;
   }, [facturasFiltradas, unidadSeleccionada]);
 
+  // ApexCharts Configs
+  const pieOptions = useMemo(() => ({
+    chart: { type: 'donut', background: 'transparent', fontFamily: 'inherit' },
+    labels: dataPorCategoria.map(d => categoryChartConfig[d.name]?.label || d.name),
+    colors: dataPorCategoria.map(d => categoryChartConfig[d.name]?.color || '#cbd5e1'),
+    theme: { mode: 'dark' },
+    stroke: { show: false },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+    tooltip: {
+      theme: 'dark',
+      y: { formatter: (val) => `$${val.toLocaleString('es-MX', {minimumFractionDigits: 2})}` }
+    }
+  }), [dataPorCategoria]);
+  const pieSeries = useMemo(() => dataPorCategoria.map(d => d.value), [dataPorCategoria]);
+
+  const lineOptions = useMemo(() => ({
+    chart: { type: 'line', background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+    stroke: { curve: 'smooth', width: 4 },
+    colors: ['#10b981'],
+    theme: { mode: 'dark' },
+    xaxis: { categories: dataPorMes.map(d => d.name), labels: { style: { colors: '#94a3b8' } } },
+    yaxis: { labels: { style: { colors: '#94a3b8' }, formatter: (val) => `$${(val/1000).toFixed(0)}k` } },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: 'dark',
+      y: { formatter: (val) => `$${val.toLocaleString('es-MX', {minimumFractionDigits: 2})}` }
+    },
+    grid: { borderColor: '#1e293b', strokeDashArray: 3 }
+  }), [dataPorMes]);
+  const lineSeries = useMemo(() => [{ name: 'Monto Total', data: dataPorMes.map(d => d.total) }], [dataPorMes]);
+
+  const areaOptions = useMemo(() => ({
+    chart: { type: 'area', stacked: true, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+    colors: dataPorCategoriaConFills.map(c => c.fill),
+    stroke: { curve: 'smooth', width: 2 },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+    theme: { mode: 'dark' },
+    xaxis: { categories: dataPorMes.map(d => d.name), labels: { style: { colors: '#94a3b8' } } },
+    yaxis: { labels: { style: { colors: '#94a3b8' }, formatter: (val) => `$${(val/1000).toFixed(0)}k` } },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: 'dark',
+      y: { formatter: (val) => `$${val.toLocaleString('es-MX', {minimumFractionDigits: 2})}` }
+    },
+    grid: { borderColor: '#1e293b', strokeDashArray: 3 },
+    legend: { position: 'bottom', labels: { colors: '#94a3b8' } }
+  }), [dataPorMes, dataPorCategoriaConFills]);
+  const areaSeries = useMemo(() => dataPorCategoriaConFills.map(cat => ({
+    name: categoryChartConfig[cat.name]?.label || cat.name,
+    data: dataPorMes.map(d => d[cat.name] || 0)
+  })), [dataPorMes, dataPorCategoriaConFills]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       
@@ -297,25 +341,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
           {dataPorCategoriaConFills.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="h-64 w-full">
-                <ChartContainer config={categoryChartConfig} className="h-full w-full">
-                  <PieChart>
-                    <Pie
-                      data={dataPorCategoriaConFills}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={65}
-                      outerRadius={90}
-                      paddingAngle={3}
-                      dataKey="value"
-                      stroke="rgba(0,0,0,0)"
-                    >
-                      {dataPorCategoriaConFills.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent config={categoryChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
-                  </PieChart>
-                </ChartContainer>
+                <ReactApexChart options={pieOptions} series={pieSeries} type="donut" height="100%" />
               </div>
               <div className="space-y-3">
                 {(() => {
@@ -358,23 +384,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
           
           {dataPorMes.length > 0 ? (
             <div className="h-80 w-full">
-              <ChartContainer config={trendChartConfig} className="h-full w-full">
-                <LineChart data={dataPorMes} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
-                  <YAxis stroke="#64748b" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
-                  <ChartTooltip content={<ChartTooltipContent config={trendChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="total" 
-                    name="total" 
-                    stroke="var(--color-total)" 
-                    strokeWidth={4}
-                    dot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} 
-                    activeDot={{ r: 7 }} 
-                  />
-                </LineChart>
-              </ChartContainer>
+              <ReactApexChart options={lineOptions} series={lineSeries} type="line" height="100%" />
             </div>
           ) : (
             <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
@@ -394,35 +404,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [] }) => {
           
           {dataPorMes.length > 0 ? (
             <div className="h-96 w-full">
-              <ChartContainer config={categoryChartConfig} className="h-full w-full">
-                <AreaChart data={dataPorMes} margin={{ top: 20, right: 15, left: -10, bottom: 5 }}>
-                  <defs>
-                    {dataPorCategoriaConFills.map((cat) => (
-                      <linearGradient key={`grad-${cat.name}`} id={`color-${cat.name}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={cat.fill} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={cat.fill} stopOpacity={0.0}/>
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
-                  <YAxis stroke="#64748b" fontSize={10} tickFormatter={(value) => `$${value/1000}k`} />
-                  <ChartTooltip content={<ChartTooltipContent config={categoryChartConfig} formatter={(value) => `$${parseFloat(value).toLocaleString('es-MX', {minimumFractionDigits: 2})}`} />} />
-                  <ChartLegend content={<ChartLegendContent config={categoryChartConfig} />} />
-                  
-                  {dataPorCategoriaConFills.map((cat) => (
-                    <Area 
-                      key={cat.name} 
-                      type="monotone"
-                      dataKey={cat.name} 
-                      stackId="a" 
-                      stroke={cat.fill}
-                      strokeWidth={2}
-                      fill={`url(#color-${cat.name})`} 
-                    />
-                  ))}
-                </AreaChart>
-              </ChartContainer>
+              <ReactApexChart options={areaOptions} series={areaSeries} type="area" height="100%" />
             </div>
           ) : (
             <div className="h-96 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
