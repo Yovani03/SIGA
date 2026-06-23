@@ -30,8 +30,26 @@ class BloqueCargaCombustibleViewSet(viewsets.ModelViewSet):
         if not fecha:
             return Response({"error": "fecha requerida"}, status=status.HTTP_400_BAD_REQUEST)
         
-        bloques = BloqueCargaCombustible.objects.filter(fecha=fecha).order_by('-fecha_registro')
-        return Response(BloqueCargaCombustibleSerializer(bloques, many=True).data)
+        bloques = list(BloqueCargaCombustible.objects.filter(fecha=fecha).order_by('-fecha_registro'))
+        data = BloqueCargaCombustibleSerializer(bloques, many=True).data
+
+        cargas_sin_bloque = CargaCombustible.objects.filter(fecha=fecha, bloque__isnull=True).order_by('-fecha_registro')
+        if cargas_sin_bloque.exists():
+            cargas_data = CargaCombustibleSerializer(cargas_sin_bloque, many=True).data
+            total_litros = sum(float(c.litros) for c in cargas_sin_bloque)
+            total_monto = sum(float(c.monto_total) for c in cargas_sin_bloque)
+            
+            synthetic_block = {
+                "id": "Especiales",
+                "fecha": fecha,
+                "fecha_registro": cargas_sin_bloque.first().fecha_registro.isoformat() if cargas_sin_bloque.first().fecha_registro else None,
+                "total_litros": total_litros,
+                "total_monto": total_monto,
+                "cargas": cargas_data
+            }
+            data.append(synthetic_block)
+
+        return Response(data)
 
 class CargaCombustibleViewSet(viewsets.ModelViewSet):
     queryset = CargaCombustible.objects.all()
