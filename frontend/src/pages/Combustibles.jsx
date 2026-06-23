@@ -189,7 +189,7 @@ const Combustibles = () => {
     try {
       const [resUnidades, resVariados] = await Promise.all([
         api.get('vehiculos/'),
-        api.get('vehiculos/variados/')
+        api.get('variados/')
       ]);
       const mappedUnidades = resUnidades.data.map(u => ({ ...u, is_variado: false }));
       const mappedVariados = resVariados.data.map(v => ({ 
