@@ -24,6 +24,7 @@ import {
 import notify from '../utils/notifications';
 import { AuthContext } from '../context/AuthContext';
 import { formatMediaUrl } from '../utils/media';
+import AltaTicket from './AltaTicket';
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);

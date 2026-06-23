@@ -113,24 +113,7 @@ class CargaCombustible(models.Model):
                 
             self.unidad.save()
 
-        # Register as a Factura (expense)
-        producto_combustible, _ = Producto.objects.get_or_create(
-            nombre="Combustible (Carga Diaria)",
-            defaults={'categoria': 'Combustible', 'descripcion': 'Carga de combustible registrada vía módulo diario'}
-        )
-        
-        # Check if already exists to avoid duplicates on updates
-        num_eco = self.unidad.numero_economico if self.unidad else (self.unidad_variada.numero_economico if self.unidad_variada else 'UNK')
-        folio_generado = f"FUEL-{self.fecha}-{num_eco}-{self.id or 'NEW'}"
-        if not Factura.objects.filter(folio__startswith=f"FUEL-{self.fecha}-{num_eco}").exists():
-            Factura.objects.create(
-                fecha=self.fecha,
-                monto=self.monto_total,
-                folio=folio_generado,
-                unidad=self.unidad,
-                variado=self.unidad_variada,
-                producto=producto_combustible
-            )
+
 
     def __str__(self):
         num_eco = self.unidad.numero_economico if self.unidad else (self.unidad_variada.numero_economico if self.unidad_variada else 'UNK')

@@ -60,13 +60,6 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.bloque:
             instance.bloque.update_totals()
-        # Actualizar la factura asociada
-        from facturacion.models import Factura
-        num_eco = instance.unidad.numero_economico if instance.unidad else (instance.unidad_variada.numero_economico if instance.unidad_variada else 'UNK')
-        facturas = Factura.objects.filter(folio__startswith=f"FUEL-{instance.fecha}-{num_eco}")
-        for f in facturas:
-            f.monto = instance.monto_total
-            f.save()
         return response
 
     @action(detail=False, methods=['post'])
