@@ -1,5 +1,5 @@
 from django.db import models
-from vehiculos.models import UnidadTractocamion
+from vehiculos.models import UnidadTractocamion, VehiculoVariado
 from facturacion.models import Factura, Producto
 
 class PrecioCombustible(models.Model):
@@ -26,7 +26,8 @@ class CargaCombustible(models.Model):
         ('electrico', 'Eléctrico'),
         ('gas_lp', 'Gas LP'),
     ]
-    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, related_name='cargas_combustible')
+    unidad = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, related_name='cargas_combustible', null=True, blank=True)
+    unidad_variada = models.ForeignKey(VehiculoVariado, on_delete=models.CASCADE, related_name='cargas_combustible', null=True, blank=True)
     fecha = models.DateField(verbose_name="Fecha de Carga")
     tipo_combustible = models.CharField(max_length=20, choices=TIPO_CHOICES)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio por Litro")
@@ -46,7 +47,7 @@ class CargaCombustible(models.Model):
         ordering = ['-fecha', '-fecha_registro']
 
     def save(self, *args, **kwargs):
-        if self.km_equivocado:
+        if self.km_equivocado and self.unidad:
             self.kilometraje = self.unidad.ultimo_kilometraje
 
         # Calculate monto_total if not provided
@@ -54,7 +55,7 @@ class CargaCombustible(models.Model):
             self.monto_total = self.litros * self.precio_unitario
         
         # Rendimiento calculation logic
-        if not self.ignorar_kilometraje and self.kilometraje and self.litros:
+        if not self.ignorar_kilometraje and self.kilometraje and self.litros and self.unidad:
             # Get previous load to calculate distance
             ultima_carga = CargaCombustible.objects.filter(
                 unidad=self.unidad, 
@@ -70,25 +71,26 @@ class CargaCombustible(models.Model):
         super().save(*args, **kwargs)
         
         # Update unit's info
-        self.unidad.fecha_ultima_carga = self.fecha
-        
-        if not self.ignorar_kilometraje and self.kilometraje:
-            self.unidad.ultimo_kilometraje = self.kilometraje
-            # Si es la primera carga con kilometraje de la unidad, o nunca se ha reiniciado el mantenimiento,
-            # tomamos este kilometraje como el punto inicial para empezar a calcular el próximo mantenimiento.
-            if self.unidad.ultimo_kilometraje_mantenimiento == 0:
-                self.unidad.ultimo_kilometraje_mantenimiento = self.kilometraje
-        
-        # Para camionetas (o cualquier unidad) que no tenga una fecha de último mantenimiento registrada,
-        # inicializamos la fecha del último mantenimiento con la fecha de este primer registro de combustible.
-        # Esto permite empezar a calcular el tiempo transcurrido desde este punto de partida real.
-        if not self.unidad.fecha_ultimo_mantenimiento:
-            self.unidad.fecha_ultimo_mantenimiento = self.fecha
-
-        if self.rendimiento:
-            self.unidad.ultimo_rendimiento = self.rendimiento
+        if self.unidad:
+            self.unidad.fecha_ultima_carga = self.fecha
             
-        self.unidad.save()
+            if not self.ignorar_kilometraje and self.kilometraje:
+                self.unidad.ultimo_kilometraje = self.kilometraje
+                # Si es la primera carga con kilometraje de la unidad, o nunca se ha reiniciado el mantenimiento,
+                # tomamos este kilometraje como el punto inicial para empezar a calcular el próximo mantenimiento.
+                if self.unidad.ultimo_kilometraje_mantenimiento == 0:
+                    self.unidad.ultimo_kilometraje_mantenimiento = self.kilometraje
+            
+            # Para camionetas (o cualquier unidad) que no tenga una fecha de último mantenimiento registrada,
+            # inicializamos la fecha del último mantenimiento con la fecha de este primer registro de combustible.
+            # Esto permite empezar a calcular el tiempo transcurrido desde este punto de partida real.
+            if not self.unidad.fecha_ultimo_mantenimiento:
+                self.unidad.fecha_ultimo_mantenimiento = self.fecha
+
+            if self.rendimiento:
+                self.unidad.ultimo_rendimiento = self.rendimiento
+                
+            self.unidad.save()
 
         # Register as a Factura (expense)
         producto_combustible, _ = Producto.objects.get_or_create(
@@ -97,8 +99,9 @@ class CargaCombustible(models.Model):
         )
         
         # Check if already exists to avoid duplicates on updates
-        folio_generado = f"FUEL-{self.fecha}-{self.unidad.numero_economico}-{self.id or 'NEW'}"
-        if not Factura.objects.filter(folio__startswith=f"FUEL-{self.fecha}-{self.unidad.numero_economico}").exists():
+        num_eco = self.unidad.numero_economico if self.unidad else (self.unidad_variada.numero_economico if self.unidad_variada else 'UNK')
+        folio_generado = f"FUEL-{self.fecha}-{num_eco}-{self.id or 'NEW'}"
+        if not Factura.objects.filter(folio__startswith=f"FUEL-{self.fecha}-{num_eco}").exists():
             Factura.objects.create(
                 fecha=self.fecha,
                 monto=self.monto_total,
@@ -108,4 +111,5 @@ class CargaCombustible(models.Model):
             )
 
     def __str__(self):
-        return f"{self.unidad.numero_economico} - {self.fecha} - {self.litros}L"
+        num_eco = self.unidad.numero_economico if self.unidad else (self.unidad_variada.numero_economico if self.unidad_variada else 'UNK')
+        return f"{num_eco} - {self.fecha} - {self.litros}L"

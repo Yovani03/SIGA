@@ -8,7 +8,8 @@ class PrecioCombustibleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CargaCombustibleSerializer(serializers.ModelSerializer):
-    unidad_detalle = serializers.ReadOnlyField(source='unidad.numero_economico')
+    unidad_detalle = serializers.SerializerMethodField()
+    unidad = serializers.PrimaryKeyRelatedField(queryset=UnidadTractocamion.objects.all(), required=False, allow_null=True)
     precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     monto_total = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     fecha = serializers.DateField(required=False)
@@ -16,6 +17,13 @@ class CargaCombustibleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CargaCombustible
         fields = '__all__'
+
+    def get_unidad_detalle(self, obj):
+        if obj.unidad:
+            return obj.unidad.numero_economico
+        if obj.unidad_variada:
+            return obj.unidad_variada.numero_economico
+        return 'Desconocido'
 
 class BulkCargaCombustibleSerializer(serializers.Serializer):
     fecha = serializers.DateField()

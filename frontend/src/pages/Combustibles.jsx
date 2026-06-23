@@ -187,8 +187,18 @@ const Combustibles = () => {
 
   const fetchUnidades = async () => {
     try {
-      const res = await api.get('vehiculos/');
-      setUnidades(res.data);
+      const [resUnidades, resVariados] = await Promise.all([
+        api.get('vehiculos/'),
+        api.get('vehiculos/variados/')
+      ]);
+      const mappedUnidades = resUnidades.data.map(u => ({ ...u, is_variado: false }));
+      const mappedVariados = resVariados.data.map(v => ({ 
+        ...v, 
+        id: v.id, 
+        is_variado: true, 
+        marca: v.tipo || 'Vehículo Variado' 
+      }));
+      setUnidades([...mappedUnidades, ...mappedVariados]);
     } catch (err) {
       console.error("Error fetching units", err);
     }
@@ -214,10 +224,11 @@ const Combustibles = () => {
   };
 
   const handleAddUnidad = (unidad) => {
-    if (cargas.find(c => c.unidad === unidad.id)) return;
+    if (cargas.find(c => c.unidad === unidad.id && c.is_variado === unidad.is_variado)) return;
     
     setCargas([...cargas, {
       unidad: unidad.id,
+      is_variado: unidad.is_variado,
       numero_economico: unidad.numero_economico,
       placas: unidad.placas,
       tipo_combustible: unidad.tipo_combustible || 'diesel',
@@ -270,7 +281,8 @@ const Combustibles = () => {
         precio_electrico: precios.electrico,
         precio_gas_lp: precios.gas_lp,
         cargas: cargas.map(c => ({
-          unidad: c.unidad,
+          unidad: c.is_variado ? null : c.unidad,
+          unidad_variada: c.is_variado ? c.unidad : null,
           tipo_combustible: c.tipo_combustible,
           litros: parseFloat(c.litros),
           kilometraje: c.ignorar_kilometraje ? null : parseInt(c.kilometraje),
@@ -299,11 +311,15 @@ const Combustibles = () => {
       return;
     }
 
-    const unidadObj = unidades.find(u => u.id === parseInt(cargaEspecial.unidad));
+    const is_variado = cargaEspecial.unidad.startsWith('v-');
+    const unidadId = parseInt(cargaEspecial.unidad.split('-')[1]);
+    const unidadObj = unidades.find(u => u.id === unidadId && u.is_variado === is_variado);
     if (!unidadObj) return;
 
     setCargasEspecialesList([...cargasEspecialesList, {
       ...cargaEspecial,
+      unidad: unidadId,
+      is_variado: is_variado,
       numero_economico: unidadObj.numero_economico,
       placas: unidadObj.placas
     }]);
@@ -333,9 +349,10 @@ const Combustibles = () => {
 
     setLoading(true);
     try {
-      const promises = cargasEspecialesList.map(carga => 
-        api.post('cargas-combustible/', {
-          unidad: parseInt(carga.unidad),
+      const promises = cargasEspecialesList.map(carga => {
+        const mappedEspecial = {
+          unidad: carga.is_variado ? null : parseInt(carga.unidad),
+          unidad_variada: carga.is_variado ? parseInt(carga.unidad) : null,
           fecha: carga.fecha,
           tipo_combustible: carga.tipo_combustible,
           precio_unitario: parseFloat(carga.precio_unitario),
@@ -485,13 +502,13 @@ const Combustibles = () => {
                     {filteredUnidades.length > 0 ? (
                       filteredUnidades.map(u => (
                         <button 
-                          key={u.id}
+                          key={`${u.is_variado ? 'v' : 't'}-${u.id}`}
                           onClick={() => handleAddUnidad(u)}
                           className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
                         >
                           <div>
                             <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">{u.numero_economico}</div>
-                            <div className="text-xs text-slate-500">{u.placas} - {u.marca}</div>
+                            <div className="text-xs text-slate-500">{u.placas ? `${u.placas} - ` : ''}{u.marca}</div>
                           </div>
                           <Plus size={18} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                         </button>
@@ -676,10 +693,17 @@ const Combustibles = () => {
                   value={cargaEspecial.unidad}
                   onChange={(e) => {
                     const val = e.target.value;
-                    const unit = unidades.find(u => u.id === parseInt(val));
+                    if (!val) {
+                      setCargaEspecial({ ...cargaEspecial, unidad: val, ultimo_kilometraje: 0, kilometraje: '', km_equivocado: false });
+                      return;
+                    }
+                    const is_variado = val.startsWith('v-');
+                    const unidadId = parseInt(val.split('-')[1]);
+                    const unit = unidades.find(u => u.id === unidadId && u.is_variado === is_variado);
                     setCargaEspecial({
                       ...cargaEspecial,
                       unidad: val,
+                      is_variado: unit ? unit.is_variado : false,
                       ultimo_kilometraje: unit ? (unit.ultimo_kilometraje || 0) : 0,
                       kilometraje: unit ? (unit.ultimo_kilometraje || '') : '',
                       km_equivocado: false
@@ -689,7 +713,9 @@ const Combustibles = () => {
                 >
                   <option value="">Seleccionar Unidad...</option>
                   {unidades.map(u => (
-                    <option key={u.id} value={u.id}>{u.numero_economico} - {u.placas}</option>
+                    <option key={`${u.is_variado ? 'v' : 't'}-${u.id}`} value={`${u.is_variado ? 'v' : 't'}-${u.id}`}>
+                      {u.numero_economico} {u.placas ? `- ${u.placas}` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
