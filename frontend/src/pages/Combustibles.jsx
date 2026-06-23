@@ -361,8 +361,9 @@ const Combustibles = () => {
           ignorar_kilometraje: carga.ignorar_kilometraje,
           es_especial: true,
           km_equivocado: carga.km_equivocado || false
-        })
-      );
+        };
+        return api.post('cargas-combustible/', mappedEspecial);
+      });
       
       await Promise.all(promises);
       
