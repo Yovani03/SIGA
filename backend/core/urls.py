@@ -14,7 +14,7 @@ from mantenimiento.views import (
 from proveedores.views import ProveedorViewSet
 from operadores.views import OperadorViewSet, AsignacionHorarioViewSet
 from logistica.views import ViajeViewSet, ConfiguracionBonoViewSet
-from combustibles.views import PrecioCombustibleViewSet, CargaCombustibleViewSet
+from combustibles.views import PrecioCombustibleViewSet, CargaCombustibleViewSet, BloqueCargaCombustibleViewSet
 
 
 router = routers.DefaultRouter()
@@ -36,6 +36,7 @@ router.register(r'viajes', ViajeViewSet)
 router.register(r'configuracion-bonos', ConfiguracionBonoViewSet)
 router.register(r'precios-combustible', PrecioCombustibleViewSet)
 router.register(r'cargas-combustible', CargaCombustibleViewSet)
+router.register(r'bloques', BloqueCargaCombustibleViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
