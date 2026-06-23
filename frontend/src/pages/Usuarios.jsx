@@ -11,7 +11,8 @@ const Usuarios = () => {
   
   const [formData, setFormData] = useState({
     username: '',
-    email: '',
+    first_name: '',
+    last_name: '',
     password: '',
     rol: 'capturista',
     is_active: true
@@ -37,7 +38,8 @@ const Usuarios = () => {
       setEditingUser(user);
       setFormData({
         username: user.username,
-        email: user.email,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
         password: '',
         rol: user.rol,
         is_active: user.is_active
@@ -46,7 +48,8 @@ const Usuarios = () => {
       setEditingUser(null);
       setFormData({
         username: '',
-        email: '',
+        first_name: '',
+        last_name: '',
         password: '',
         rol: 'capturista',
         is_active: true
@@ -78,7 +81,8 @@ const Usuarios = () => {
 
   const filteredUsers = users.filter(u => 
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.first_name && u.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (u.last_name && u.last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     u.rol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -139,9 +143,11 @@ const Usuarios = () => {
                           {u.username.substring(0, 2)}
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">{u.username}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : u.username}
+                          </p>
                           <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <Mail size={14} /> {u.email || 'Sin correo'}
+                            @{u.username}
                           </p>
                         </div>
                       </div>
@@ -185,63 +191,77 @@ const Usuarios = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                 {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-500">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-500">
                 <XCircle size={24} />
               </button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Usuario</label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
-                  value={formData.username}
-                  onChange={e => setFormData({...formData, username: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Correo Electrónico</label>
-                <input
-                  type="email"
-                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
-                  value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    value={formData.first_name}
+                    onChange={e => setFormData({...formData, first_name: e.target.value})}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contraseña {editingUser && '(dejar en blanco para mantener actual)'}</label>
-                <input
-                  type={editingUser ? "password" : "text"}
-                  required={!editingUser}
-                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
-                  value={formData.password}
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    value={formData.last_name}
+                    onChange={e => setFormData({...formData, last_name: e.target.value})}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rol</label>
-                <select
-                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
-                  value={formData.rol}
-                  onChange={e => setFormData({...formData, rol: e.target.value})}
-                >
-                  <option value="admin_general">Administrador General</option>
-                  <option value="admin">Administrador</option>
-                  <option value="capturista">Capturista</option>
-                  <option value="jefe_logistica">Jefe de Logística</option>
-                  <option value="monitoreo">Monitoreo</option>
-                  <option value="lector_gastos">Lector de Gastos</option>
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Usuario (sin espacios)</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    value={formData.username}
+                    onChange={e => setFormData({...formData, username: e.target.value.replace(/\s/g, '')})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rol</label>
+                  <select
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    value={formData.rol}
+                    onChange={e => setFormData({...formData, rol: e.target.value})}
+                  >
+                    <option value="admin_general">Administrador General</option>
+                    <option value="admin">Administrador</option>
+                    <option value="capturista">Capturista</option>
+                    <option value="jefe_logistica">Jefe de Logística</option>
+                    <option value="monitoreo">Monitoreo</option>
+                    <option value="lector_gastos">Lector de Gastos</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contraseña {editingUser && '(dejar en blanco para mantener actual)'}</label>
+                  <input
+                    type={editingUser ? "password" : "text"}
+                    required={!editingUser}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    value={formData.password}
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-2">

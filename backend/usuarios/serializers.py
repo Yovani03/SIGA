@@ -56,7 +56,7 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'is_active', 'rol')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'password', 'is_active', 'rol')
 
     def to_representation(self, instance):
         repr = super().to_representation(instance)
