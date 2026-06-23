@@ -56,10 +56,10 @@ const DashboardLayout = () => {
     { icon: <MapPin size={20} />, label: 'Logística', path: '/logistica', roles: ['admin_general', 'admin', 'jefe_logistica'] },
     { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
     { icon: <Ticket size={20} />, label: 'Tickets', path: '/tickets', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
-    { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
-    { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'] },
-    { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
-    { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'] },
+    { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin_general', 'admin', 'capturista'] },
+    { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
   ];
 
   const filteredMainItems = mainItems.filter(item => !item.roles || item.roles.includes(user?.rol || 'admin'));
