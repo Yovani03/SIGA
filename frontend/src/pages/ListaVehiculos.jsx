@@ -697,7 +697,7 @@ const ListaVehiculos = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Kilometraje</p>
-                            <p className="text-slate-900 dark:text-white font-black text-lg">{v.ultimo_kilometraje != null ? `${v.ultimo_kilometraje.toLocaleString()} km` : '---'}</p>
+                            <p className="text-slate-900 dark:text-white font-black text-lg">{v.ultimo_kilometraje != null ? `${String(v.ultimo_kilometraje)} km` : '---'}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Rendimiento</p>
@@ -1044,7 +1044,7 @@ const ListaVehiculos = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Km / Hrs</p>
-                          <p className="text-slate-900 dark:text-white font-black text-lg">{v.ultimo_kilometraje != null ? `${v.ultimo_kilometraje.toLocaleString()}` : '---'}</p>
+                          <p className="text-slate-900 dark:text-white font-black text-lg">{v.ultimo_kilometraje != null ? `${String(v.ultimo_kilometraje)}` : '---'}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Rendimiento</p>
@@ -1604,7 +1604,7 @@ const ListaVehiculos = () => {
                          <div className="pt-3 border-t border-slate-800/50">
                             <div className="flex justify-between items-center text-[11px]">
                               <span className="text-slate-500 font-bold">KM ACTUAL</span>
-                              <span className="text-slate-300 font-mono">{carga.kilometraje != null ? carga.kilometraje.toLocaleString() : '---'} km</span>
+                              <span className="text-slate-300 font-mono">{carga.kilometraje != null ? String(carga.kilometraje) : '---'} km</span>
                             </div>
                             {carga.rendimiento > 0 && (
                               <div className="flex justify-between items-center text-[11px] mt-1.5">
