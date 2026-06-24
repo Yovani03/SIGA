@@ -1597,14 +1597,14 @@ const ListaVehiculos = () => {
                             </div>
                             <div className="text-right">
                               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Costo</p>
-                              <p className="text-emerald-400 text-lg font-black">${parseFloat(carga.costo_total).toLocaleString()}</p>
+                              <p className="text-emerald-400 text-lg font-black">${parseFloat(carga.monto_total || 0).toLocaleString()}</p>
                             </div>
                          </div>
                          
                          <div className="pt-3 border-t border-slate-800/50">
                             <div className="flex justify-between items-center text-[11px]">
                               <span className="text-slate-500 font-bold">KM ACTUAL</span>
-                              <span className="text-slate-300 font-mono">{carga.kilometraje_actual.toLocaleString()} km</span>
+                              <span className="text-slate-300 font-mono">{carga.kilometraje ? carga.kilometraje.toLocaleString() : '---'} km</span>
                             </div>
                             {carga.rendimiento > 0 && (
                               <div className="flex justify-between items-center text-[11px] mt-1.5">
