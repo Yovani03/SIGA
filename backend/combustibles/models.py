@@ -91,7 +91,7 @@ class CargaCombustible(models.Model):
                     ignorar_kilometraje=False
                 ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
             
-            if ultima_carga and ultima_carga.kilometraje:
+            if ultima_carga and ultima_carga.kilometraje is not None and self.kilometraje is not None:
                 distancia = self.kilometraje - ultima_carga.kilometraje
                 if distancia > 0:
                     self.rendimiento = distancia / self.litros
@@ -102,7 +102,7 @@ class CargaCombustible(models.Model):
         if self.unidad:
             self.unidad.fecha_ultima_carga = self.fecha
             
-            if not self.ignorar_kilometraje and self.kilometraje:
+            if not self.ignorar_kilometraje and self.kilometraje is not None:
                 self.unidad.ultimo_kilometraje = self.kilometraje
                 # Si es la primera carga con kilometraje de la unidad, o nunca se ha reiniciado el mantenimiento,
                 # tomamos este kilometraje como el punto inicial para empezar a calcular el próximo mantenimiento.
@@ -115,7 +115,7 @@ class CargaCombustible(models.Model):
             if not self.unidad.fecha_ultimo_mantenimiento:
                 self.unidad.fecha_ultimo_mantenimiento = self.fecha
 
-            if self.rendimiento:
+            if self.rendimiento is not None:
                 self.unidad.ultimo_rendimiento = self.rendimiento
                 
             self.unidad.save()
@@ -123,10 +123,10 @@ class CargaCombustible(models.Model):
         elif self.unidad_variada:
             self.unidad_variada.fecha_ultima_carga = self.fecha
             
-            if not self.ignorar_kilometraje and self.kilometraje:
+            if not self.ignorar_kilometraje and self.kilometraje is not None:
                 self.unidad_variada.ultimo_kilometraje = self.kilometraje
                 
-            if self.rendimiento:
+            if self.rendimiento is not None:
                 self.unidad_variada.ultimo_rendimiento = self.rendimiento
                 
             self.unidad_variada.save()

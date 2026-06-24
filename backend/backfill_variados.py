@@ -13,10 +13,11 @@ def backfill():
     for v in variados:
         ultima_carga = CargaCombustible.objects.filter(unidad_variada=v, ignorar_kilometraje=False).order_by('-fecha', '-fecha_registro').first()
         if ultima_carga:
-            v.fecha_ultima_carga = ultima_carga.fecha
-            if ultima_carga.kilometraje:
+            if v.fecha_ultima_carga != ultima_carga.fecha:
+                v.fecha_ultima_carga = ultima_carga.fecha
+            if ultima_carga.kilometraje is not None and v.ultimo_kilometraje != ultima_carga.kilometraje:
                 v.ultimo_kilometraje = ultima_carga.kilometraje
-            if ultima_carga.rendimiento:
+            if ultima_carga.rendimiento is not None and v.ultimo_rendimiento != ultima_carga.rendimiento:
                 v.ultimo_rendimiento = ultima_carga.rendimiento
             v.save()
             count += 1
