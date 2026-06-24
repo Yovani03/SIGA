@@ -95,11 +95,12 @@ const ListaVehiculos = () => {
   const [variadoFacturas, setVariadoFacturas] = useState([]);
   const [loadingVariadoFacturas, setLoadingVariadoFacturas] = useState(false);
 
-  const fetchFuelHistory = async (unit) => {
+  const fetchFuelHistory = async (unit, tipoEntidad = 'vehiculo') => {
     try {
       setLoadingHistory(true);
       setSelectedUnitForFuel(unit);
-      const res = await api.get(`cargas-combustible/historial_unidad/?unidad_id=${unit.id}`);
+      const queryParam = tipoEntidad === 'variado' ? `unidad_variada_id=${unit.id}` : `unidad_id=${unit.id}`;
+      const res = await api.get(`cargas-combustible/historial_unidad/?${queryParam}`);
       setFuelHistory(res.data);
     } catch (err) {
       console.error("Error fetching fuel history", err);
@@ -680,7 +681,7 @@ const ListaVehiculos = () => {
                       {/* Fuel & Efficiency Section */}
                       <button 
                         type="button"
-                        onClick={() => fetchFuelHistory(v)}
+                        onClick={() => fetchFuelHistory(v, 'vehiculo')}
                         className="w-full text-left bg-blue-600/5 dark:bg-blue-600/5 border border-blue-500/10 dark:border-blue-500/10 rounded-2xl p-4 space-y-3 hover:bg-blue-600/10 transition-all group/fuel active:scale-[0.98] shadow-sm"
                       >
                         <div className="flex items-center justify-between">
@@ -1023,6 +1024,42 @@ const ListaVehiculos = () => {
                         <span>{v.placas || 'N/A'}</span>
                       </p>
                     </div>
+
+                    {/* Fuel & Efficiency Section */}
+                    <button 
+                      type="button"
+                      onClick={() => fetchFuelHistory(v, 'variado')}
+                      className="w-full text-left bg-blue-600/5 dark:bg-blue-600/5 border border-blue-500/10 dark:border-blue-500/10 rounded-2xl p-4 space-y-3 hover:bg-blue-600/10 transition-all group/fuel active:scale-[0.98] shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest">
+                          <Droplets size={14} className="group-hover/fuel:animate-pulse" />
+                          Última Carga
+                        </div>
+                        <span className="text-white text-xs font-bold bg-blue-600 dark:bg-blue-500/20 px-2 py-0.5 rounded-full">
+                          {v.fecha_ultima_carga ? new Date(v.fecha_ultima_carga + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '---'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Km / Hrs</p>
+                          <p className="text-slate-900 dark:text-white font-black text-lg">{v.ultimo_kilometraje ? `${v.ultimo_kilometraje.toLocaleString()}` : '---'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-tight">Rendimiento</p>
+                          <p className="text-emerald-600 dark:text-emerald-400 font-black text-lg flex items-center justify-end gap-1">
+                            <Droplets size={14} />
+                            {v.ultimo_rendimiento > 0 ? `${v.ultimo_rendimiento} km/l` : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2 border-t border-blue-500/10 flex items-center justify-center gap-2 text-blue-500/50 dark:text-blue-400/50 group-hover/fuel:text-blue-600 dark:group-hover/fuel:text-blue-400 transition-colors">
+                         <History size={12} />
+                         <span className="text-[10px] font-bold uppercase tracking-wider">Ver Historial Completo</span>
+                      </div>
+                    </button>
 
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
                       <button 

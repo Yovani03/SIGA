@@ -58,6 +58,10 @@ class VehiculoVariado(models.Model):
     tipo = models.CharField(max_length=100, blank=True, null=True)
     modelo = models.CharField(max_length=100, blank=True, null=True)
     numero_serie = models.CharField(max_length=100, blank=True, null=True)
+    
+    ultimo_kilometraje = models.IntegerField(default=0, verbose_name="Último Kilometraje/Horómetro")
+    fecha_ultima_carga = models.DateField(null=True, blank=True, verbose_name="Fecha Última Carga")
+    ultimo_rendimiento = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Rendimiento")
 
     def __str__(self):
         return self.numero_economico

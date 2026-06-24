@@ -76,13 +76,20 @@ class CargaCombustible(models.Model):
             self.monto_total = self.litros * self.precio_unitario
         
         # Rendimiento calculation logic
-        if not self.ignorar_kilometraje and self.kilometraje and self.litros and self.unidad:
+        if not self.ignorar_kilometraje and self.kilometraje and self.litros and (self.unidad or self.unidad_variada):
             # Get previous load to calculate distance
-            ultima_carga = CargaCombustible.objects.filter(
-                unidad=self.unidad, 
-                fecha__lte=self.fecha,
-                ignorar_kilometraje=False
-            ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
+            if self.unidad:
+                ultima_carga = CargaCombustible.objects.filter(
+                    unidad=self.unidad, 
+                    fecha__lte=self.fecha,
+                    ignorar_kilometraje=False
+                ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
+            else:
+                ultima_carga = CargaCombustible.objects.filter(
+                    unidad_variada=self.unidad_variada, 
+                    fecha__lte=self.fecha,
+                    ignorar_kilometraje=False
+                ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
             
             if ultima_carga and ultima_carga.kilometraje:
                 distancia = self.kilometraje - ultima_carga.kilometraje
@@ -112,6 +119,17 @@ class CargaCombustible(models.Model):
                 self.unidad.ultimo_rendimiento = self.rendimiento
                 
             self.unidad.save()
+            
+        elif self.unidad_variada:
+            self.unidad_variada.fecha_ultima_carga = self.fecha
+            
+            if not self.ignorar_kilometraje and self.kilometraje:
+                self.unidad_variada.ultimo_kilometraje = self.kilometraje
+                
+            if self.rendimiento:
+                self.unidad_variada.ultimo_rendimiento = self.rendimiento
+                
+            self.unidad_variada.save()
 
 
 
