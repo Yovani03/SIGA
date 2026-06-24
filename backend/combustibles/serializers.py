@@ -10,8 +10,9 @@ class PrecioCombustibleSerializer(serializers.ModelSerializer):
 class CargaCombustibleSerializer(serializers.ModelSerializer):
     unidad_detalle = serializers.SerializerMethodField()
     unidad = serializers.PrimaryKeyRelatedField(queryset=UnidadTractocamion.objects.all(), required=False, allow_null=True)
-    precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
-    monto_total = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    precio_unitario = serializers.FloatField(required=False)
+    monto_total = serializers.FloatField(required=False)
+    litros = serializers.FloatField()
     fecha = serializers.DateField(required=False)
     
     class Meta:
@@ -34,11 +35,11 @@ class BloqueCargaCombustibleSerializer(serializers.ModelSerializer):
 
 class BulkCargaCombustibleSerializer(serializers.Serializer):
     fecha = serializers.DateField()
-    precio_magna = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
-    precio_premium = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
-    precio_diesel = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
-    precio_electrico = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
-    precio_gas_lp = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    precio_magna = serializers.FloatField(required=False, default=0)
+    precio_premium = serializers.FloatField(required=False, default=0)
+    precio_diesel = serializers.FloatField(required=False, default=0)
+    precio_electrico = serializers.FloatField(required=False, default=0)
+    precio_gas_lp = serializers.FloatField(required=False, default=0)
     cargas = CargaCombustibleSerializer(many=True)
 
     def create(self, validated_data):
