@@ -310,7 +310,7 @@ const Combustibles = () => {
           unidad: c.is_variado ? null : c.unidad,
           unidad_variada: c.is_variado ? c.unidad : null,
           tipo_combustible: c.tipo_combustible,
-          litros: parseFloat(c.litros),
+          litros: Number(parseFloat(c.litros).toFixed(2)),
           kilometraje: c.ignorar_kilometraje ? null : parseInt(c.kilometraje),
           ignorar_kilometraje: c.ignorar_kilometraje,
           km_equivocado: c.km_equivocado || false
@@ -382,7 +382,7 @@ const Combustibles = () => {
           fecha: carga.fecha,
           tipo_combustible: carga.tipo_combustible,
           precio_unitario: parseFloat(carga.precio_unitario),
-          litros: parseFloat(carga.litros),
+          litros: Number(parseFloat(carga.litros).toFixed(2)),
           kilometraje: carga.ignorar_kilometraje ? null : parseInt(carga.kilometraje),
           ignorar_kilometraje: carga.ignorar_kilometraje,
           es_especial: true,
