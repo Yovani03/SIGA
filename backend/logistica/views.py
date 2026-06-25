@@ -161,7 +161,7 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             return Response(BitacoraSerializer(existing).data)
 
         # Excel Manipulation
-        template_path = settings.BASE_DIR.parent / 'formato bitacora' / 'FORMATO CEDIS Y TRANSPORTES FINAL.xlsx'
+        template_path = settings.BASE_DIR / 'logistica' / 'plantillas' / 'FORMATO CEDIS Y TRANSPORTES FINAL.xlsx'
         if not template_path.exists():
             return Response({'error': f'Template de Excel no encontrado: {template_path}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
