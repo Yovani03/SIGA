@@ -22,7 +22,7 @@ const Bitacoras = () => {
     setLoading(true);
     try {
       const [resBitacoras, resVehiculos] = await Promise.all([
-        api.get('logistica/bitacoras/'),
+        api.get('bitacoras/'),
         api.get('vehiculos/')
       ]);
       setBitacoras(resBitacoras.data);
@@ -72,7 +72,7 @@ const Bitacoras = () => {
     e.preventDefault();
     setIsGenerating(true);
     try {
-      const res = await api.post('logistica/bitacoras/generar/', formData);
+      const res = await api.post('bitacoras/generar/', formData);
       
       // If we need to download it immediately:
       if (res.data.archivo) {

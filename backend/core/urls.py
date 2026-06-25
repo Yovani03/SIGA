@@ -13,7 +13,7 @@ from mantenimiento.views import (
 )
 from proveedores.views import ProveedorViewSet
 from operadores.views import OperadorViewSet, AsignacionHorarioViewSet
-from logistica.views import ViajeViewSet, ConfiguracionBonoViewSet
+from logistica.views import ViajeViewSet, ConfiguracionBonoViewSet, BitacoraViewSet
 from combustibles.views import PrecioCombustibleViewSet, CargaCombustibleViewSet, BloqueCargaCombustibleViewSet
 
 
@@ -34,6 +34,7 @@ router.register(r'operadores', OperadorViewSet)
 router.register(r'asignaciones-horarios', AsignacionHorarioViewSet)
 router.register(r'viajes', ViajeViewSet)
 router.register(r'configuracion-bonos', ConfiguracionBonoViewSet)
+router.register(r'bitacoras', BitacoraViewSet)
 router.register(r'precios-combustible', PrecioCombustibleViewSet)
 router.register(r'cargas-combustible', CargaCombustibleViewSet)
 router.register(r'bloques', BloqueCargaCombustibleViewSet)
