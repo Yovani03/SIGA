@@ -14,9 +14,55 @@ class VehiculoVariadoViewSet(viewsets.ModelViewSet):
     queryset = VehiculoVariado.objects.all()
     serializer_class = VehiculoVariadoSerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        fecha = request.query_params.get('fecha')
+        
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        
+        if fecha:
+            from combustibles.models import CargaCombustible
+            for item in data:
+                ultima_carga = CargaCombustible.objects.filter(
+                    unidad_variada_id=item['id'], 
+                    fecha__lt=fecha,
+                    kilometraje__isnull=False
+                ).order_by('-fecha', '-id').first()
+                
+                if ultima_carga:
+                    item['ultimo_kilometraje'] = ultima_carga.kilometraje
+                else:
+                    item['ultimo_kilometraje'] = 0
+
+        return Response(data)
+
 class UnidadViewSet(viewsets.ModelViewSet):
     queryset = UnidadTractocamion.objects.all()
     serializer_class = UnidadSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        fecha = request.query_params.get('fecha')
+        
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        
+        if fecha:
+            from combustibles.models import CargaCombustible
+            for item in data:
+                ultima_carga = CargaCombustible.objects.filter(
+                    unidad_id=item['id'], 
+                    fecha__lt=fecha,
+                    kilometraje__isnull=False
+                ).order_by('-fecha', '-id').first()
+                
+                if ultima_carga:
+                    item['ultimo_kilometraje'] = ultima_carga.kilometraje
+                else:
+                    item['ultimo_kilometraje'] = 0
+
+        return Response(data)
 
     @action(detail=False, methods=['get'])
     def proyeccion_mantenimiento(self, request):

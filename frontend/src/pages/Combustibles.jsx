@@ -195,8 +195,8 @@ const Combustibles = () => {
   const fetchUnidades = async () => {
     try {
       const [resUnidades, resVariados] = await Promise.all([
-        api.get('vehiculos/'),
-        api.get('variados/')
+        api.get(`vehiculos/?fecha=${fecha}`),
+        api.get(`variados/?fecha=${fecha}`)
       ]);
       const mappedUnidades = resUnidades.data.map(u => ({ ...u, is_variado: false }));
       const mappedVariados = resVariados.data.map(v => ({ 
