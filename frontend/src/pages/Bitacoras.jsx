@@ -66,6 +66,17 @@ const Bitacoras = () => {
     setFormData({...formData, fecha_inicio: d.toISOString().split('T')[0]});
   };
 
+  const shiftFilterWeek = (direction) => {
+    if (!filterDate) {
+      setFilterDate(getNextFriday());
+      return;
+    }
+    const d = new Date(filterDate + 'T00:00:00');
+    d.setDate(d.getDate() + (direction * 7));
+    setFilterDate(d.toISOString().split('T')[0]);
+    setCurrentPage(1);
+  };
+
   const formatDateRange = (dateString) => {
     if (!dateString) return '';
     const start = new Date(dateString + 'T00:00:00');
@@ -137,20 +148,38 @@ const Bitacoras = () => {
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
-          <div className="relative w-full sm:w-auto">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <select
-              value={filterDate}
-              onChange={(e) => { setFilterDate(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-auto pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+          {filterDate ? (
+            <div className="bg-[#0b1120] border border-slate-800 rounded-2xl flex items-center justify-between p-2 shadow-inner w-full sm:w-64">
+              <button 
+                type="button"
+                onClick={() => shiftFilterWeek(-1)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="flex flex-col items-center flex-1 cursor-pointer" onClick={() => { setFilterDate(''); setCurrentPage(1); }} title="Click para quitar filtro">
+                <span className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Semana del</span>
+                <span className="text-sm font-black text-white tracking-wide">
+                  {formatDateRange(filterDate)}
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => shiftFilterWeek(1)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => { setFilterDate(getNextFriday()); setCurrentPage(1); }}
+              className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white focus:ring-2 focus:ring-blue-500 outline-none flex items-center justify-center gap-2 transition-all"
             >
-              <option value="">Todas las fechas</option>
-              {/* Extract unique months/years from bitacoras */}
-              {Array.from(new Set(bitacoras.map(b => b.fecha_inicio.substring(0, 7)))).sort().reverse().map(date => (
-                <option key={date} value={date}>{date}</option>
-              ))}
-            </select>
-          </div>
+              <Calendar size={18} />
+              Filtrar por Semana
+            </button>
+          )}
           <button 
             onClick={openModal}
             className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 whitespace-nowrap"
