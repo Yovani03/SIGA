@@ -78,7 +78,7 @@ const Bitacoras = () => {
       
       // If we need to download it immediately:
       if (res.data.archivo) {
-        window.open(`http://localhost:8000${res.data.archivo}`, '_blank');
+        downloadBitacora(res.data.archivo);
       }
       
       fetchData();
