@@ -92,15 +92,24 @@ const Bitacoras = () => {
   };
 
   const downloadBitacora = (archivoUrl) => {
-    if (archivoUrl.startsWith('http')) {
-      window.open(archivoUrl, '_blank');
-    } else {
-      window.open(archivoUrl, '_blank');
-    }
+    // Si la URL viene con el dominio del backend (ej. http://localhost:8000/media/...)
+    // extraemos solo la ruta relativa (/media/...) para que el navegador la resuelva contra el host actual.
+    const cleanUrl = archivoUrl.replace(/^https?:\/\/[^\/]+/, '');
+    window.open(cleanUrl, '_blank');
   };
 
-  const viewPDF = (id) => {
-    window.open(`/api/bitacoras/${id}/pdf/`, '_blank');
+  const viewPDF = async (id) => {
+    try {
+      const response = await api.get(`/bitacoras/${id}/pdf/`, {
+        responseType: 'blob' // Importante para recibir el PDF correctamente
+      });
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      window.open(fileURL, '_blank');
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      alert('Hubo un error al abrir el PDF. Por favor, intenta de nuevo.');
+    }
   };
 
   if (loading) {
