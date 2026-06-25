@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 const Bitacoras = () => {
   const [bitacoras, setBitacoras] = useState([]);
@@ -95,11 +95,12 @@ const Bitacoras = () => {
     if (archivoUrl.startsWith('http')) {
       window.open(archivoUrl, '_blank');
     } else {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      // Remove any trailing slash from baseUrl if present
-      const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      window.open(`${cleanBase}${archivoUrl}`, '_blank');
+      window.open(archivoUrl, '_blank');
     }
+  };
+
+  const viewPDF = (id) => {
+    window.open(`/api/bitacoras/${id}/pdf/`, '_blank');
   };
 
   if (loading) {
@@ -185,17 +186,26 @@ const Bitacoras = () => {
                       {new Date(b.fecha_generacion).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-right">
-                      {b.archivo ? (
+                      <div className="flex justify-end gap-2">
                         <button 
-                          onClick={() => downloadBitacora(b.archivo)}
-                          className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                          title="Descargar Excel"
+                          onClick={() => viewPDF(b.id)}
+                          className="text-slate-500 hover:text-blue-600 transition-colors bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg p-2"
+                          title="Ver PDF"
                         >
-                          <Download size={18} />
+                          <Eye size={18} />
                         </button>
-                      ) : (
-                        <span className="text-xs text-slate-400">Sin archivo</span>
-                      )}
+                        {b.archivo ? (
+                          <button 
+                            onClick={() => downloadBitacora(b.archivo)}
+                            className="text-slate-500 hover:text-green-600 transition-colors bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg p-2"
+                            title="Descargar Excel"
+                          >
+                            <Download size={18} />
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400 self-center ml-2">Sin archivo</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

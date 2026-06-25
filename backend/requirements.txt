@@ -20,3 +20,4 @@ six==1.17.0
 sqlparse==0.5.5
 tzdata==2026.2
 urllib3==2.6.3
+xhtml2pdf==0.2.17

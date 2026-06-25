@@ -125,6 +125,33 @@ class BitacoraViewSet(viewsets.ModelViewSet):
     queryset = Bitacora.objects.all()
     serializer_class = BitacoraSerializer
 
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        bitacora = self.get_object()
+        
+        context = {
+            'numero_economico': bitacora.vehiculo.numero_economico,
+            'placas': bitacora.vehiculo.placas or 'Sin placas',
+            'folio': bitacora.folio,
+            'semana': f"{bitacora.fecha_inicio.strftime('%d/%m/%Y')} al {bitacora.fecha_fin.strftime('%d/%m/%Y')}"
+        }
+        
+        from django.template.loader import render_to_string
+        from django.http import HttpResponse
+        import xhtml2pdf.pisa as pisa
+        import io
+        
+        html_string = render_to_string('bitacora_base.html', context)
+        
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="Bitacora_{bitacora.vehiculo.numero_economico}_Folio{bitacora.folio}.pdf"'
+            return response
+        return Response({'error': 'Error generating PDF'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['post'])
     def generar(self, request):
         vehiculo_id = request.data.get('vehiculo_id')
