@@ -38,3 +38,20 @@ class ConfiguracionBono(models.Model):
     class Meta:
         verbose_name = "Configuración de Bono"
         verbose_name_plural = "Configuraciones de Bonos"
+
+class Bitacora(models.Model):
+    vehiculo = models.ForeignKey(UnidadTractocamion, on_delete=models.CASCADE, related_name='bitacoras')
+    folio = models.IntegerField()
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    archivo = models.FileField(upload_to='bitacoras/', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Bitácora'
+        verbose_name_plural = 'Bitácoras'
+        ordering = ['-fecha_inicio', '-folio']
+        unique_together = ('vehiculo', 'folio')
+
+    def __str__(self):
+        return f"Bitácora {self.folio} - Unidad {self.vehiculo.numero_economico} ({self.fecha_inicio} al {self.fecha_fin})"

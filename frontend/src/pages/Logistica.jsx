@@ -22,10 +22,12 @@ import {
   History,
   Building2,
   UserPlus,
-  Calendar
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 import Combustibles from './Combustibles';
 import Bonos from './Bonos';
+import Bitacoras from './Bitacoras';
 
 const Logistica = () => {
   const { user } = useContext(AuthContext);
@@ -291,6 +293,22 @@ const Logistica = () => {
             Bonos
           </span>
         </button>
+        <button
+          onClick={() => setActiveTab('bitacoras')}
+          className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'bitacoras' 
+              ? 'text-white shadow-lg shadow-blue-900/20' 
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/50'
+          }`}
+        >
+          {activeTab === 'bitacoras' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <FileSpreadsheet size={18} />
+            Bitácoras
+          </span>
+        </button>
       </div>
 
       {activeTab === 'monitor' && (
@@ -448,6 +466,7 @@ const Logistica = () => {
 
       {activeTab === 'combustible' && <Combustibles />}
       {activeTab === 'bonos' && <Bonos />}
+      {activeTab === 'bitacoras' && <Bitacoras />}
 
       {/* Modal Registrar Salida */}
       {isModalOpen && (
