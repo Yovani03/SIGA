@@ -31,6 +31,7 @@ services:
     volumes:
       - ./backend/media:/app/media
       - ./backend/staticfiles:/app/staticfiles
+      - "./formato bitacora:/formato bitacora:ro"
 
   frontend:
     build:
