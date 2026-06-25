@@ -13,6 +13,7 @@ const Bitacoras = () => {
     fecha_inicio: ''
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -117,13 +118,25 @@ const Bitacoras = () => {
           <p className="text-sm text-slate-500">Historial y generación de formatos semanales (Viernes a Jueves)</p>
         </div>
         
-        <button 
-          onClick={openModal}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
-        >
-          <Plus size={20} />
-          Generar Bitácora
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Buscar unidad o folio..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+          <button 
+            onClick={openModal}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 whitespace-nowrap"
+          >
+            <Plus size={20} />
+            Generar
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -139,12 +152,20 @@ const Bitacoras = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {bitacoras.length === 0 ? (
+              {bitacoras.filter(b => 
+                b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                b.folio.toString().includes(searchTerm) ||
+                b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase())
+              ).length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-500 italic">No hay bitácoras generadas aún.</td>
+                  <td colSpan="5" className="p-8 text-center text-slate-500 italic">No se encontraron bitácoras.</td>
                 </tr>
               ) : (
-                bitacoras.map((b) => (
+                bitacoras.filter(b => 
+                  b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  b.folio.toString().includes(searchTerm) ||
+                  b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="p-4 font-bold text-slate-900 dark:text-white">#{b.folio.toString().padStart(3, '0')}</td>
                     <td className="p-4">
