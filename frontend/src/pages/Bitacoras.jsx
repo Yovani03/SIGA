@@ -14,6 +14,7 @@ const Bitacoras = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [modalSearchTerm, setModalSearchTerm] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -94,7 +95,10 @@ const Bitacoras = () => {
     if (archivoUrl.startsWith('http')) {
       window.open(archivoUrl, '_blank');
     } else {
-      window.open(`http://localhost:8000${archivoUrl}`, '_blank');
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      // Remove any trailing slash from baseUrl if present
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      window.open(`${cleanBase}${archivoUrl}`, '_blank');
     }
   };
 
@@ -217,6 +221,16 @@ const Bitacoras = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Unidad</label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Buscar por Nº Económico..."
+                    value={modalSearchTerm}
+                    onChange={(e) => setModalSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-1 focus:ring-blue-500/50 outline-none"
+                  />
+                </div>
                 <select 
                   required
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none cursor-pointer"
@@ -224,7 +238,7 @@ const Bitacoras = () => {
                   onChange={(e) => setFormData({...formData, vehiculo_id: e.target.value})}
                 >
                   <option value="">Seleccionar Unidad</option>
-                  {vehiculos.map(v => (
+                  {vehiculos.filter(v => v.numero_economico?.toLowerCase().includes(modalSearchTerm.toLowerCase())).map(v => (
                     <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>
                   ))}
                 </select>
