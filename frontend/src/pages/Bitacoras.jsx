@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye, CheckCircle2 } from 'lucide-react';
 
 const Bitacoras = () => {
   const [bitacoras, setBitacoras] = useState([]);
@@ -15,6 +15,7 @@ const Bitacoras = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalSearchTerm, setModalSearchTerm] = useState('');
+  const [modalSearchFocus, setModalSearchFocus] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -48,6 +49,7 @@ const Bitacoras = () => {
       vehiculo_id: '',
       fecha_inicio: getNextFriday()
     });
+    setModalSearchTerm('');
     setIsModalOpen(true);
   };
 
@@ -219,29 +221,62 @@ const Bitacoras = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Unidad</label>
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                   <input
                     type="text"
-                    placeholder="Buscar por Nº Económico..."
+                    required={!formData.vehiculo_id}
+                    placeholder="Buscar unidad por económico o placa..."
                     value={modalSearchTerm}
-                    onChange={(e) => setModalSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-1 focus:ring-blue-500/50 outline-none"
+                    onChange={(e) => {
+                      setModalSearchTerm(e.target.value);
+                      if (formData.vehiculo_id) setFormData({...formData, vehiculo_id: ''});
+                    }}
+                    onFocus={() => setModalSearchFocus(true)}
+                    onBlur={() => setTimeout(() => setModalSearchFocus(false), 200)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
+                  {formData.vehiculo_id && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <CheckCircle2 size={18} className="text-green-500" />
+                    </div>
+                  )}
+                  
+                  {(modalSearchFocus || modalSearchTerm) && !formData.vehiculo_id && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scrollbar">
+                      {vehiculos.filter(v => 
+                        v.numero_economico?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                        v.placas?.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                      ).length > 0 ? (
+                        vehiculos.filter(v => 
+                          v.numero_economico?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                          v.placas?.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                        ).map(v => (
+                          <button 
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({...formData, vehiculo_id: v.id});
+                              setModalSearchTerm(`${v.numero_economico} - ${v.placas}`);
+                              setModalSearchFocus(false);
+                            }}
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors"
+                          >
+                            <div>
+                              <div className="text-sm text-slate-900 dark:text-white font-bold">{v.numero_economico}</div>
+                              <div className="text-xs text-slate-500">{v.placas}</div>
+                            </div>
+                            <Plus size={16} className="text-slate-400" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-slate-500 text-sm text-center">No se encontraron unidades</div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <select 
-                  required
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none cursor-pointer"
-                  value={formData.vehiculo_id}
-                  onChange={(e) => setFormData({...formData, vehiculo_id: e.target.value})}
-                >
-                  <option value="">Seleccionar Unidad</option>
-                  {vehiculos.filter(v => v.numero_economico?.toLowerCase().includes(modalSearchTerm.toLowerCase())).map(v => (
-                    <option key={v.id} value={v.id}>{v.numero_economico} - {v.placas}</option>
-                  ))}
-                </select>
               </div>
 
               <div className="space-y-2">
