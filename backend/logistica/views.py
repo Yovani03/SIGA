@@ -172,12 +172,11 @@ class BitacoraViewSet(viewsets.ModelViewSet):
         meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
         str_fecha = f"{fecha_inicio.day} de {meses[fecha_inicio.month - 1]} al {fecha_fin.day} de {meses[fecha_fin.month - 1]}"
 
-        # Header formatting
-        sheet.cell(row=1, column=1, value=f"AUTOTRANSPORTES COLUMBIA                                                                                 FOLIO: {folio:03d}")
-        sheet.cell(row=2, column=1, value=f"UNIDAD: {vehiculo.numero_economico}  |  PLACAS: {vehiculo.placas or 'S/N'}  |  SEMANA: {str_fecha}")
-        
-        # Optional: format the row 2
-        sheet.cell(row=2, column=1).font = openpyxl.styles.Font(bold=True, size=12)
+        # Header formatting (A1:O2 is merged, so we write to A1 with newline)
+        header_text = f"AUTOTRANSPORTES COLUMBIA                                                                                 FOLIO: {folio:03d}\nUNIDAD: {vehiculo.numero_economico}  |  PLACAS: {vehiculo.placas or 'S/N'}  |  SEMANA: {str_fecha}"
+        sheet.cell(row=1, column=1, value=header_text)
+        sheet.cell(row=1, column=1).alignment = openpyxl.styles.Alignment(wrap_text=True, horizontal='center', vertical='center')
+        sheet.cell(row=1, column=1).font = openpyxl.styles.Font(bold=True, size=12)
 
         # Save to temp file
         with NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
