@@ -98,19 +98,7 @@ const Bitacoras = () => {
     window.open(cleanUrl, '_blank');
   };
 
-  const viewPDF = async (id) => {
-    try {
-      const response = await api.get(`/bitacoras/${id}/pdf/`, {
-        responseType: 'blob' // Importante para recibir el PDF correctamente
-      });
-      const file = new Blob([response.data], { type: 'application/pdf' });
-      const fileURL = URL.createObjectURL(file);
-      window.open(fileURL, '_blank');
-    } catch (error) {
-      console.error('Error al generar el PDF:', error);
-      alert('Hubo un error al abrir el PDF. Por favor, intenta de nuevo.');
-    }
-  };
+  // PDF view logic removed at user request
 
   if (loading) {
     return (
@@ -196,13 +184,6 @@ const Bitacoras = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => viewPDF(b.id)}
-                          className="text-slate-500 hover:text-blue-600 transition-colors bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg p-2"
-                          title="Ver PDF"
-                        >
-                          <Eye size={18} />
-                        </button>
                         {b.archivo ? (
                           <button 
                             onClick={() => downloadBitacora(b.archivo)}

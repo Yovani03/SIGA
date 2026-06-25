@@ -199,38 +199,12 @@ class BitacoraViewSet(viewsets.ModelViewSet):
         meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
         str_fecha = f"{fecha_inicio.day} de {meses[fecha_inicio.month - 1]} al {fecha_fin.day} de {meses[fecha_fin.month - 1]}"
 
-        # Header formatting (A1:O2 is originally merged. We unmerge and re-layout)
-        try:
-            sheet.unmerge_cells('A1:O2')
-        except KeyError:
-            pass # In case it was already unmerged or format changed
-        
-        sheet.merge_cells('A1:E1')
-        sheet.merge_cells('A2:E2')
-        sheet.merge_cells('F1:K2')
-        sheet.merge_cells('L1:O1')
-        sheet.merge_cells('L2:O2')
-
-        from openpyxl.styles import Alignment, Font
+        # Write to the merged cells directly (top-left cell of each merge)
         sheet['A1'] = f"Nº ECONOMICO: {vehiculo.numero_economico}"
-        sheet['A1'].alignment = Alignment(horizontal='left', vertical='center')
-        sheet['A1'].font = Font(bold=True, size=12)
-
         sheet['A2'] = f"PLACAS: {vehiculo.placas or 'S/N'}"
-        sheet['A2'].alignment = Alignment(horizontal='left', vertical='center')
-        sheet['A2'].font = Font(bold=True, size=12)
-
         sheet['F1'] = "AUTOTRANSPORTES COLUMBIA"
-        sheet['F1'].alignment = Alignment(horizontal='center', vertical='center')
-        sheet['F1'].font = Font(bold=True, size=16)
-
         sheet['L1'] = f"FOLIO: {folio:03d}"
-        sheet['L1'].alignment = Alignment(horizontal='right', vertical='center')
-        sheet['L1'].font = Font(bold=True, size=14)
-
         sheet['L2'] = f"SEMANA: {str_fecha}"
-        sheet['L2'].alignment = Alignment(horizontal='right', vertical='center')
-        sheet['L2'].font = Font(bold=True, size=11)
 
         # Save to temp file
         with NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
