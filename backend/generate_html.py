@@ -2,7 +2,11 @@ import openpyxl
 
 def excel_to_html(wb):
     ws = wb.active
-    html = '<table border="1" style="border-collapse: collapse; width: 100%; font-family: sans-serif; font-size: 10px; text-align: center;">\n'
+    html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<style>\n'
+    html += '    @page {\n        size: letter landscape;\n        margin: 1cm;\n    }\n'
+    html += '    body {\n        font-family: sans-serif;\n    }\n'
+    html += '</style>\n</head>\n<body>\n'
+    html += '<table style="border-collapse: collapse; width: 100%; font-family: sans-serif; font-size: 10px; text-align: center;">\n'
     
     merged_cells = ws.merged_cells.ranges
     skip_cells = set()
@@ -27,18 +31,52 @@ def excel_to_html(wb):
                     break
                     
             val = cell.value if cell.value is not None else ''
+            # Handle newlines in val
+            val = str(val).replace('\n', '<br>')
             
-            bg_color = ''
+            style = []
+            
+            # Background Color
             if cell.fill and cell.fill.start_color and hasattr(cell.fill.start_color, 'rgb') and type(cell.fill.start_color.rgb) == str:
                 rgb = cell.fill.start_color.rgb
                 if rgb != '00000000':
-                    bg_color = f'background-color: #{rgb[2:]};'
+                    style.append(f'background-color: #{rgb[2:]}')
                     
-            font_weight = 'bold' if cell.font and cell.font.bold else 'normal'
+            # Font
+            if cell.font:
+                if cell.font.bold: style.append('font-weight: bold')
+                if cell.font.size: style.append(f'font-size: {int(cell.font.size)}px')
+                if cell.font.name: style.append(f'font-family: "{cell.font.name}", sans-serif')
             
-            html += f'    <td colspan="{colspan}" rowspan="{rowspan}" style="{bg_color} font-weight: {font_weight}; padding: 2px;">{val}</td>\n'
+            # Alignment
+            if cell.alignment:
+                if cell.alignment.horizontal: style.append(f'text-align: {cell.alignment.horizontal}')
+                if cell.alignment.vertical:
+                    v_align = cell.alignment.vertical
+                    if v_align == 'center': v_align = 'middle'
+                    style.append(f'vertical-align: {v_align}')
+            else:
+                style.append('text-align: center')
+                style.append('vertical-align: middle')
+                
+            # Borders
+            b_style = '1px solid black'
+            if cell.border:
+                if cell.border.top and cell.border.top.style: style.append(f'border-top: {b_style}')
+                if cell.border.bottom and cell.border.bottom.style: style.append(f'border-bottom: {b_style}')
+                if cell.border.left and cell.border.left.style: style.append(f'border-left: {b_style}')
+                if cell.border.right and cell.border.right.style: style.append(f'border-right: {b_style}')
+            else:
+                # Default border if none specified just so it looks like a grid
+                style.append(f'border: {b_style}')
+                
+            style.append('padding: 2px')
+            
+            style_str = '; '.join(style) + ';'
+            html += f'    <td colspan="{colspan}" rowspan="{rowspan}" style="{style_str}">{val}</td>\n'
+            
         html += '  </tr>\n'
-    html += '</table>'
+    html += '</table>\n</body>\n</html>'
     return html
 
 wb = openpyxl.load_workbook(r'C:\Autrotransportes\backend\logistica\plantillas\FORMATO CEDIS Y TRANSPORTES FINAL.xlsx')
