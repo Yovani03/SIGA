@@ -90,7 +90,11 @@ const Bitacoras = () => {
   };
 
   const downloadBitacora = (archivoUrl) => {
-    window.open(`http://localhost:8000${archivoUrl}`, '_blank');
+    if (archivoUrl.startsWith('http')) {
+      window.open(archivoUrl, '_blank');
+    } else {
+      window.open(`http://localhost:8000${archivoUrl}`, '_blank');
+    }
   };
 
   if (loading) {
