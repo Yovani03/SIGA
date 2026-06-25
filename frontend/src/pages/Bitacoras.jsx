@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye, CheckCircle2 } from 'lucide-react';
+import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye, CheckCircle2, Filter } from 'lucide-react';
 
 const Bitacoras = () => {
   const [bitacoras, setBitacoras] = useState([]);
@@ -14,6 +14,10 @@ const Bitacoras = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [modalSearchFocus, setModalSearchFocus] = useState(false);
 
@@ -122,16 +126,30 @@ const Bitacoras = () => {
           <p className="text-sm text-slate-500">Historial y generación de formatos semanales (Viernes a Jueves)</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
               placeholder="Buscar unidad o folio..." 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
+          </div>
+          <div className="relative w-full sm:w-auto">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <select
+              value={filterDate}
+              onChange={(e) => { setFilterDate(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-auto pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Todas las fechas</option>
+              {/* Extract unique months/years from bitacoras */}
+              {Array.from(new Set(bitacoras.map(b => b.fecha_inicio.substring(0, 7)))).sort().reverse().map(date => (
+                <option key={date} value={date}>{date}</option>
+              ))}
+            </select>
           </div>
           <button 
             onClick={openModal}
@@ -156,20 +174,28 @@ const Bitacoras = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {bitacoras.filter(b => 
-                b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                b.folio.toString().includes(searchTerm) ||
-                b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase())
-              ).length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-500 italic">No se encontraron bitácoras.</td>
-                </tr>
-              ) : (
-                bitacoras.filter(b => 
-                  b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  b.folio.toString().includes(searchTerm) ||
-                  b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase())
-                ).map((b) => (
+              {(() => {
+                const filtered = bitacoras.filter(b => {
+                  const matchesSearch = b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        b.folio.toString().includes(searchTerm) ||
+                                        b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesDate = filterDate ? b.fecha_inicio.startsWith(filterDate) : true;
+                  return matchesSearch && matchesDate;
+                });
+                
+                const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const currentItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+                if (currentItems.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan="5" className="p-8 text-center text-slate-500 italic">No se encontraron bitácoras.</td>
+                    </tr>
+                  );
+                }
+
+                return currentItems.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="p-4 font-bold text-slate-900 dark:text-white">#{b.folio.toString().padStart(3, '0')}</td>
                     <td className="p-4">
@@ -200,11 +226,52 @@ const Bitacoras = () => {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
+                ));
+              })()}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {(() => {
+          const filtered = bitacoras.filter(b => {
+            const matchesSearch = b.vehiculo_detalle?.numero_economico?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                  b.folio.toString().includes(searchTerm) ||
+                                  b.vehiculo_detalle?.placas?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesDate = filterDate ? b.fecha_inicio.startsWith(filterDate) : true;
+            return matchesSearch && matchesDate;
+          });
+          const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+          
+          if (filtered.length === 0) return null;
+
+          return (
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length} bitácoras
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="p-2 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {isModalOpen && (
