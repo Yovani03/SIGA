@@ -161,11 +161,11 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             return Response(BitacoraSerializer(existing).data)
 
         # Excel Manipulation
-        template_path = os.path.join(settings.BASE_DIR, '..', 'formato bitacora', 'FORMATO CEDIS Y TRANSPORTES FINAL.xlsx')
-        if not os.path.exists(template_path):
-            return Response({'error': 'Template de Excel no encontrado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        template_path = settings.BASE_DIR.parent / 'formato bitacora' / 'FORMATO CEDIS Y TRANSPORTES FINAL.xlsx'
+        if not template_path.exists():
+            return Response({'error': f'Template de Excel no encontrado: {template_path}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        wb = openpyxl.load_workbook(template_path)
+        wb = openpyxl.load_workbook(str(template_path))
         sheet = wb.active
         sheet.title = vehiculo.numero_economico or "Bitacora"
 
