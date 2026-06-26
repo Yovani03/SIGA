@@ -437,7 +437,7 @@ const Logistica = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmitSalida} className="p-6 space-y-5">
+            <form onSubmit={handleSubmitSalida} className="p-6 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2 relative">
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Operador</label>
