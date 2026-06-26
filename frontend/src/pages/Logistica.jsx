@@ -62,6 +62,8 @@ const Logistica = () => {
   });
   const [hasAyudante, setHasAyudante] = useState(false);
   const [esTransporte, setEsTransporte] = useState(false);
+  const [selectedHorarios, setSelectedHorarios] = useState([]);
+  const transportHorarios = ["07:00", "08:00", "08:30", "09:00", "17:30", "18:30", "19:00"];
   const [arrivalData, setArrivalData] = useState({
     fecha_llegada: ''
   });
@@ -112,6 +114,7 @@ const Logistica = () => {
     });
     setHasAyudante(false);
     setEsTransporte(false);
+    setSelectedHorarios([]);
     setOpSearch('');
     setVehSearch('');
     setTiendaSearch('');
@@ -131,14 +134,28 @@ const Logistica = () => {
   const handleSubmitSalida = async (e) => {
     e.preventDefault();
     try {
-      const dataToSend = {
-        ...formData,
-        fecha_salida: formatWithCurrentDate(formData.fecha_salida),
-        ayudante: hasAyudante ? formData.ayudante : null,
-        tienda: formData.tienda === '' ? null : formData.tienda,
-        destino: formData.destino || null
-      };
-      await api.post('viajes/', dataToSend);
+      if (esTransporte && selectedHorarios.length > 0) {
+        const promises = selectedHorarios.map(time => {
+          const dataToSend = {
+            ...formData,
+            fecha_salida: formatWithCurrentDate(time),
+            ayudante: hasAyudante ? formData.ayudante : null,
+            tienda: formData.tienda === '' ? null : formData.tienda,
+            destino: formData.destino || null
+          };
+          return api.post('viajes/', dataToSend);
+        });
+        await Promise.all(promises);
+      } else {
+        const dataToSend = {
+          ...formData,
+          fecha_salida: formatWithCurrentDate(formData.fecha_salida),
+          ayudante: hasAyudante ? formData.ayudante : null,
+          tienda: formData.tienda === '' ? null : formData.tienda,
+          destino: formData.destino || null
+        };
+        await api.post('viajes/', dataToSend);
+      }
       fetchData();
       closeModal();
     } catch (err) {
@@ -579,24 +596,40 @@ const Logistica = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Hora de Salida</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-600" size={16} />
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">
+                    {esTransporte ? 'Horarios de Salida' : 'Hora de Salida'}
+                  </label>
+                  <div className={esTransporte ? "" : "relative"}>
+                    {!esTransporte && <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-600" size={16} />}
                     {esTransporte ? (
-                      <select
-                        required
-                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner cursor-pointer appearance-none"
-                        value={formData.fecha_salida}
-                        onChange={(e) => setFormData({...formData, fecha_salida: e.target.value})}
-                      >
-                        <option value="07:00">07:00</option>
-                        <option value="08:00">08:00</option>
-                        <option value="08:30">08:30</option>
-                        <option value="09:00">09:00</option>
-                        <option value="17:30">17:30</option>
-                        <option value="18:30">18:30</option>
-                        <option value="19:00">19:00</option>
-                      </select>
+                      <div className="flex flex-wrap gap-2">
+                        {transportHorarios.map(time => {
+                          const isSelected = selectedHorarios.includes(time);
+                          return (
+                            <button
+                              key={time}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedHorarios(selectedHorarios.filter(h => h !== time));
+                                } else {
+                                  setSelectedHorarios([...selectedHorarios, time]);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                                isSelected 
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' 
+                                  : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-500/50 hover:text-slate-900 dark:hover:text-white'
+                              }`}
+                            >
+                              {time}
+                            </button>
+                          );
+                        })}
+                        {selectedHorarios.length === 0 && (
+                          <input type="text" required value="" className="opacity-0 absolute w-0 h-0" onChange={()=>{}} onInvalid={(e) => e.target.setCustomValidity('Seleccione al menos un horario')} onInput={(e) => e.target.setCustomValidity('')} />
+                        )}
+                      </div>
                     ) : (
                       <input 
                         type="time"
