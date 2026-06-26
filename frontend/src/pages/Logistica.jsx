@@ -138,29 +138,27 @@ const Logistica = () => {
     e.preventDefault();
     try {
       if (esTransporte && selectedHorarios.length > 0) {
-        const promises = selectedHorarios.map(time => {
-          const dataToSend = {
-            ...formData,
-            fecha_salida: formatWithCurrentDate(time),
-            ayudante: hasAyudante ? formData.ayudante : null,
-            tienda: formData.tienda === '' ? null : formData.tienda,
-            destino: formData.destino || null
-          };
-          return api.post('viajes/', dataToSend);
-        });
-        await Promise.all(promises);
+        const sortedHorarios = [...selectedHorarios].sort();
+        const destinosStr = `Transporte de Personal: ${sortedHorarios.join(', ')}`;
+        const dataToSend = {
+          ...formData,
+          fecha_salida: formatWithCurrentDate(sortedHorarios[0]),
+          ayudante: hasAyudante ? formData.ayudante : null,
+          tienda: null,
+          destino: destinosStr
+        };
+        await api.post('viajes/', dataToSend);
       } else if (!esTransporte && selectedDestinations.length > 0) {
-        const promises = selectedDestinations.map(dest => {
-          const dataToSend = {
-            ...formData,
-            fecha_salida: formatWithCurrentDate(formData.fecha_salida),
-            ayudante: hasAyudante ? formData.ayudante : null,
-            tienda: dest.isTienda ? dest.id : null,
-            destino: dest.isTienda ? null : dest.id
-          };
-          return api.post('viajes/', dataToSend);
-        });
-        await Promise.all(promises);
+        const isSingleTienda = selectedDestinations.length === 1 && selectedDestinations[0].isTienda;
+        const destinosStr = selectedDestinations.map(d => d.label).join(', ');
+        const dataToSend = {
+          ...formData,
+          fecha_salida: formatWithCurrentDate(formData.fecha_salida),
+          ayudante: hasAyudante ? formData.ayudante : null,
+          tienda: isSingleTienda ? selectedDestinations[0].id : null,
+          destino: isSingleTienda ? null : destinosStr
+        };
+        await api.post('viajes/', dataToSend);
       } else {
         const dataToSend = {
           ...formData,
