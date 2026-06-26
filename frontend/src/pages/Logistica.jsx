@@ -48,6 +48,8 @@ const Logistica = () => {
   const [opSearch, setOpSearch] = useState('');
   const [vehSearch, setVehSearch] = useState('');
   const [tiendaSearch, setTiendaSearch] = useState('');
+  const [opSearchFocus, setOpSearchFocus] = useState(false);
+  const [vehSearchFocus, setVehSearchFocus] = useState(false);
   
   const [formData, setFormData] = useState({
     operador: '',
@@ -484,67 +486,110 @@ const Logistica = () => {
             
             <form onSubmit={handleSubmitSalida} className="p-6 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Operador</label>
-                  <div className="relative group">
-                    <Search className="absolute left-3 top-3 text-slate-400 dark:text-slate-600 group-focus-within:text-blue-500 transition-colors" size={14} />
-                    <input 
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input
                       type="text"
-                      placeholder="Filtrar..."
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-t-xl pl-9 pr-4 py-2 text-[10px] text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none border-b-0"
+                      required={!formData.operador}
+                      placeholder="Buscar operador..."
                       value={opSearch}
-                      onChange={(e) => setOpSearch(e.target.value)}
+                      onChange={(e) => {
+                        setOpSearch(e.target.value);
+                        if (formData.operador) setFormData({...formData, operador: ''});
+                      }}
+                      onFocus={() => setOpSearchFocus(true)}
+                      onBlur={() => setTimeout(() => setOpSearchFocus(false), 200)}
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     />
-                    <select 
-                      required
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-b-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none outline-none cursor-pointer"
-                      value={formData.operador}
-                      onChange={(e) => setFormData({...formData, operador: e.target.value})}
-                    >
-                      <option value="" className="bg-white dark:bg-slate-900">Seleccionar Operador</option>
-                      {filteredOps.map(op => (
-                        <option key={op.id} value={op.id}>{op.nombre} {op.apellido}</option>
-                      ))}
-                    </select>
+                    {formData.operador && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle2 size={18} className="text-green-500" />
+                      </div>
+                    )}
+                    
+                    {(opSearchFocus || opSearch) && !formData.operador && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scrollbar">
+                        {filteredOps.length > 0 ? (
+                          filteredOps.map(op => (
+                            <button 
+                              key={op.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData({...formData, operador: op.id});
+                                setOpSearch(`${op.nombre} ${op.apellido}`);
+                                setOpSearchFocus(false);
+                              }}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors"
+                            >
+                              <div className="text-sm text-slate-900 dark:text-white font-bold">{op.nombre} {op.apellido}</div>
+                              <Plus size={16} className="text-slate-400" />
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-slate-500 text-sm text-center">No se encontraron operadores</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Unidad</label>
-                  <div className="relative group">
-                    <Search className="absolute left-3 top-3 text-slate-400 dark:text-slate-600 group-focus-within:text-blue-500 transition-colors" size={14} />
-                    <input 
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input
                       type="text"
-                      placeholder="Filtrar..."
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-t-xl pl-9 pr-4 py-2 text-[10px] text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none border-b-0"
+                      required={!formData.vehiculo}
+                      placeholder="Buscar unidad..."
                       value={vehSearch}
-                      onChange={(e) => setVehSearch(e.target.value)}
-                    />
-                    <select 
-                      required
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-b-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none outline-none cursor-pointer"
-                      value={formData.vehiculo}
                       onChange={(e) => {
-                        const selectedId = parseInt(e.target.value);
-                        const vehiculo = vehiculos.find(v => v.id === selectedId);
-                        const isLigero = vehiculo?.capacidad === 0.0 || vehiculo?.capacidad === "0.0";
-                        const isTrailer = parseFloat(vehiculo?.capacidad) >= 30.0;
-                        
-                        setFormData({
-                          ...formData, 
-                          vehiculo: e.target.value,
-                          tienda: (isLigero || isTrailer) ? '' : formData.tienda,
-                          destino: isTrailer ? formData.destino : ''
-                        });
+                        setVehSearch(e.target.value);
+                        if (formData.vehiculo) setFormData({...formData, vehiculo: '', tienda: '', destino: ''});
                       }}
-                    >
-                      <option value="">Seleccionar Unidad</option>
-                      {filteredVehs.map(v => (
-                        <option key={v.id} value={v.id}>
-                          {v.numero_economico} {v.capacidad === "0.0" || v.capacidad === 0.0 ? '(Ligero)' : `(${v.capacidad}T)`}
-                        </option>
-                      ))}
-                    </select>
+                      onFocus={() => setVehSearchFocus(true)}
+                      onBlur={() => setTimeout(() => setVehSearchFocus(false), 200)}
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                    {formData.vehiculo && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle2 size={18} className="text-green-500" />
+                      </div>
+                    )}
+                    
+                    {(vehSearchFocus || vehSearch) && !formData.vehiculo && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scrollbar">
+                        {filteredVehs.length > 0 ? (
+                          filteredVehs.map(v => (
+                            <button 
+                              key={v.id}
+                              type="button"
+                              onClick={() => {
+                                const isLigero = v.capacidad === 0.0 || v.capacidad === "0.0";
+                                const isTrailer = parseFloat(v.capacidad) >= 30.0;
+                                setFormData({
+                                  ...formData, 
+                                  vehiculo: v.id,
+                                  tienda: (isLigero || isTrailer) ? '' : formData.tienda,
+                                  destino: isTrailer ? formData.destino : ''
+                                });
+                                setVehSearch(`${v.numero_economico} ${isLigero ? '(Ligero)' : `(${v.capacidad}T)`}`);
+                                setVehSearchFocus(false);
+                              }}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors"
+                            >
+                              <div className="text-sm text-slate-900 dark:text-white font-bold">
+                                {v.numero_economico} <span className="text-xs text-slate-500 font-normal">{v.capacidad === "0.0" || v.capacidad === 0.0 ? '(Ligero)' : `(${v.capacidad}T)`}</span>
+                              </div>
+                              <Plus size={16} className="text-slate-400" />
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-slate-500 text-sm text-center">No se encontraron unidades</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
