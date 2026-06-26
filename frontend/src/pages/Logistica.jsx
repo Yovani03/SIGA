@@ -61,6 +61,7 @@ const Logistica = () => {
     observaciones: ''
   });
   const [hasAyudante, setHasAyudante] = useState(false);
+  const [esTransporte, setEsTransporte] = useState(false);
   const [arrivalData, setArrivalData] = useState({
     fecha_llegada: ''
   });
@@ -110,6 +111,7 @@ const Logistica = () => {
       observaciones: ''
     });
     setHasAyudante(false);
+    setEsTransporte(false);
     setOpSearch('');
     setVehSearch('');
     setTiendaSearch('');
@@ -521,12 +523,15 @@ const Logistica = () => {
                               onClick={() => {
                                 const isLigero = v.capacidad === 0.0 || v.capacidad === "0.0";
                                 const isTrailer = parseFloat(v.capacidad) >= 30.0;
+                                const isTransportUnit = v.numero_economico === 'D-041' || v.numero_economico === 'F-097';
+                                
                                 setFormData({
                                   ...formData, 
                                   vehiculo: v.id,
-                                  tienda: (isLigero || isTrailer) ? '' : formData.tienda,
-                                  destino: isTrailer ? formData.destino : ''
+                                  tienda: (isLigero || isTrailer || isTransportUnit) ? '' : formData.tienda,
+                                  destino: isTrailer ? formData.destino : (isTransportUnit ? 'Transporte de Personal' : '')
                                 });
+                                setEsTransporte(isTransportUnit);
                                 setVehSearch(`${v.numero_economico} ${isLigero ? '(Ligero)' : `(${v.capacidad}T)`}`);
                                 setVehSearchFocus(false);
                               }}
@@ -545,6 +550,31 @@ const Logistica = () => {
                     )}
                   </div>
                 </div>
+
+                <div className="col-span-full">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={esTransporte}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEsTransporte(checked);
+                        if (checked) {
+                          setFormData(prev => ({...prev, destino: 'Transporte de Personal', tienda: '', fecha_salida: '07:00'}));
+                        } else {
+                          const now = new Date();
+                          const currentTime = now.toLocaleTimeString('en-US', {hour12: false, hour: "numeric", minute: "numeric"});
+                          setFormData(prev => ({...prev, destino: '', fecha_salida: currentTime}));
+                        }
+                      }}
+                      className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">Es ruta de transporte</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Habilitar selección de horarios fijos. No genera bono.</span>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -552,13 +582,30 @@ const Logistica = () => {
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Hora de Salida</label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-600" size={16} />
-                    <input 
-                      type="time"
-                      required
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner"
-                      value={formData.fecha_salida}
-                      onChange={(e) => setFormData({...formData, fecha_salida: e.target.value})}
-                    />
+                    {esTransporte ? (
+                      <select
+                        required
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner cursor-pointer appearance-none"
+                        value={formData.fecha_salida}
+                        onChange={(e) => setFormData({...formData, fecha_salida: e.target.value})}
+                      >
+                        <option value="07:00">07:00</option>
+                        <option value="08:00">08:00</option>
+                        <option value="08:30">08:30</option>
+                        <option value="09:00">09:00</option>
+                        <option value="17:30">17:30</option>
+                        <option value="18:30">18:30</option>
+                        <option value="19:00">19:00</option>
+                      </select>
+                    ) : (
+                      <input 
+                        type="time"
+                        required
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner"
+                        value={formData.fecha_salida}
+                        onChange={(e) => setFormData({...formData, fecha_salida: e.target.value})}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -566,6 +613,7 @@ const Logistica = () => {
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">
                     {(() => {
                       const vehiculo = vehiculos.find(v => v.id === parseInt(formData.vehiculo));
+                      if (esTransporte) return 'Destino';
                       if (!vehiculo) return 'Destino';
                       if (vehiculo.capacidad === 0.0 || vehiculo.capacidad === "0.0") return 'Tipo de Salida';
                       if (parseFloat(vehiculo.capacidad) >= 30.0) return 'Destino (Trailer)';
@@ -580,6 +628,14 @@ const Logistica = () => {
                       </div>
                     );
                     
+                    if (esTransporte) {
+                      return (
+                        <div className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3 text-indigo-500 font-bold text-sm">
+                          Transporte de Personal
+                        </div>
+                      );
+                    }
+
                     if (vehiculo.capacidad === 0.0 || vehiculo.capacidad === "0.0") {
                       return (
                         <div className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-purple-400 font-bold text-sm">

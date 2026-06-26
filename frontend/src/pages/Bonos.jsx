@@ -141,6 +141,7 @@ const Bonos = () => {
   const getStatsForOperador = (opId) => {
     const asMainDriver = viajes.filter(v => {
       if (v.operador !== opId || !v.completado || !v.fecha_llegada) return false;
+      if (v.destino && v.destino === 'Transporte de Personal') return false;
       const vehiculo = vehiculos.find(veh => veh.id === v.vehiculo);
       if (vehiculo?.capacidad === 0.0 || vehiculo?.capacidad === "0.0") return false;
       const completionDate = new Date(v.fecha_llegada);
@@ -149,6 +150,7 @@ const Bonos = () => {
 
     const asHelper = viajes.filter(v => {
       if (v.ayudante !== opId || !v.completado || !v.fecha_llegada) return false;
+      if (v.destino && v.destino === 'Transporte de Personal') return false;
       const vehiculo = vehiculos.find(veh => veh.id === v.vehiculo);
       if (vehiculo?.capacidad === 0.0 || vehiculo?.capacidad === "0.0") return false;
       const completionDate = new Date(v.fecha_llegada);
@@ -199,6 +201,7 @@ const Bonos = () => {
 
   // Function to calculate theoretical trip bonus (without sanction check)
   const calculateTheoreticalTripBonus = (viaje, role) => {
+    if (viaje.destino && viaje.destino === 'Transporte de Personal') return 0;
     const vehiculo = vehiculos.find(v => v.id === viaje.vehiculo);
     const capacidad = vehiculo ? parseFloat(vehiculo.capacidad) : 10.0;
     const baseBono = getBaseBono(capacidad);
@@ -211,6 +214,7 @@ const Bonos = () => {
 
   // Helper function to calculate single trip bonus
   const calculateTripBonus = (viaje, role) => {
+    if (viaje.destino && viaje.destino === 'Transporte de Personal') return 0;
     const vehiculo = vehiculos.find(v => v.id === viaje.vehiculo);
     const capacidad = vehiculo ? parseFloat(vehiculo.capacidad) : 10.0;
     const baseBono = getBaseBono(capacidad);
