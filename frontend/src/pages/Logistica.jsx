@@ -315,27 +315,7 @@ const Logistica = () => {
 
       {activeTab === 'monitor' && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-              <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Unidades Operativas</p>
-              <div className="flex items-center gap-4">
-                <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-500">
-                  <Truck size={20} />
-                </div>
-                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{operativas.length}</h3>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-              <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">En Mantenimiento</p>
-              <div className="flex items-center gap-4">
-                <div className="bg-rose-500/10 p-2.5 rounded-xl text-rose-600 dark:text-rose-500">
-                  <Wrench size={20} />
-                </div>
-                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{enTaller.length}</h3>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
               <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Viajes en Curso</p>
               <div className="flex items-center gap-4">
@@ -357,9 +337,9 @@ const Logistica = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 gap-6 lg:gap-8">
             {/* Tr fico Activo */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col">
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Clock size={22} className="text-blue-600 dark:text-blue-500" />
@@ -433,33 +413,6 @@ const Logistica = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Unidades en Taller */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6 flex flex-col h-fit">
-              <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 text-lg">
-                <Wrench className="text-amber-600 dark:text-amber-500" size={20} />
-                Unidades en Taller
-              </h3>
-              <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-                {enTaller.length === 0 ? (
-                  <p className="text-slate-400 text-sm italic">No hay unidades en taller.</p>
-                ) : (
-                  enTaller.map(v => {
-                    const infoTaller = getTallerForVehiculo(v);
-                    return (
-                      <div key={v.id} className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2 shadow-sm dark:shadow-none">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-slate-900 dark:text-white text-lg">{v.numero_economico}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-full uppercase">Mantenimiento</span>
-                        </div>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs">Taller: <strong className="text-slate-700 dark:text-slate-300">{infoTaller.nombre}</strong></p>
-                        <p className="text-slate-400 dark:text-slate-500 text-[10px] italic line-clamp-1">{infoTaller.reporte}</p>
-                      </div>
-                    )
-                  })
-                )}
               </div>
             </div>
           </div>
