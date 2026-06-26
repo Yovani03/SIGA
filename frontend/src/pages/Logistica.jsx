@@ -243,7 +243,8 @@ const Logistica = () => {
     ...tiendas.map(t => ({ id: t.toString(), label: `Tienda ${t}`, isTienda: true })),
     { id: 'Especial Pagado', label: 'Especial Pagado', isTienda: false },
     { id: 'Especial No Pagado', label: 'Especial No Pagado', isTienda: false },
-    { id: 'Taller', label: 'Taller', isTienda: false }
+    { id: 'Taller', label: 'Taller', isTienda: false },
+    { id: 'Reparto de Quesos', label: 'Reparto de Quesos', isTienda: false }
   ];
 
   const filteredTiendasOptions = combinedTiendaOptions.filter(t => 
