@@ -64,6 +64,7 @@ const Logistica = () => {
   const [hasAyudante, setHasAyudante] = useState(false);
   const [esTransporte, setEsTransporte] = useState(false);
   const [selectedHorarios, setSelectedHorarios] = useState([]);
+  const [selectedDestinations, setSelectedDestinations] = useState([]);
   const transportHorarios = ["07:00", "08:00", "08:30", "09:00", "17:30", "18:30", "19:00"];
   const [arrivalData, setArrivalData] = useState({
     fecha_llegada: ''
@@ -116,6 +117,7 @@ const Logistica = () => {
     setHasAyudante(false);
     setEsTransporte(false);
     setSelectedHorarios([]);
+    setSelectedDestinations([]);
     setOpSearch('');
     setVehSearch('');
     setTiendaSearch('');
@@ -143,6 +145,18 @@ const Logistica = () => {
             ayudante: hasAyudante ? formData.ayudante : null,
             tienda: formData.tienda === '' ? null : formData.tienda,
             destino: formData.destino || null
+          };
+          return api.post('viajes/', dataToSend);
+        });
+        await Promise.all(promises);
+      } else if (!esTransporte && selectedDestinations.length > 0) {
+        const promises = selectedDestinations.map(dest => {
+          const dataToSend = {
+            ...formData,
+            fecha_salida: formatWithCurrentDate(formData.fecha_salida),
+            ayudante: hasAyudante ? formData.ayudante : null,
+            tienda: dest.isTienda ? dest.id : null,
+            destino: dest.isTienda ? null : dest.id
           };
           return api.post('viajes/', dataToSend);
         });
@@ -703,10 +717,10 @@ const Logistica = () => {
 
                     return (
                       <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <Search className="absolute left-4 top-4 text-slate-500" size={18} />
                         <input
                           type="text"
-                          required={!formData.tienda && !formData.destino}
+                          required={!formData.tienda && !formData.destino && selectedDestinations.length === 0}
                           placeholder="Buscar tienda o destino especial..."
                           value={tiendaSearch}
                           onChange={(e) => {
@@ -719,26 +733,38 @@ const Logistica = () => {
                           onBlur={() => setTimeout(() => setTiendaSearchFocus(false), 200)}
                           className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
-                        {(formData.tienda || (formData.destino && ['Especial Pagado', 'Especial No Pagado', 'Taller'].includes(formData.destino))) && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {(formData.tienda || (formData.destino && ['Especial Pagado', 'Especial No Pagado', 'Taller'].includes(formData.destino))) && selectedDestinations.length === 0 && (
+                          <div className="absolute right-3 top-4">
                             <CheckCircle2 size={18} className="text-green-500" />
                           </div>
                         )}
                         
-                        {(tiendaSearchFocus || tiendaSearch) && !formData.tienda && !['Especial Pagado', 'Especial No Pagado', 'Taller'].includes(formData.destino) && (
-                          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scrollbar">
+                        {selectedDestinations.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                            {selectedDestinations.map(d => (
+                              <div key={d.id} className="flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                                {d.label}
+                                <button type="button" onClick={() => setSelectedDestinations(selectedDestinations.filter(x => x.id !== d.id))} className="hover:bg-blue-200 dark:hover:bg-blue-800 p-0.5 rounded-full transition-colors">
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {(tiendaSearchFocus || tiendaSearch) && (
+                          <div className="absolute top-12 left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scrollbar">
                             {filteredTiendasOptions.length > 0 ? (
                               filteredTiendasOptions.map(t => (
                                 <button 
                                   key={t.id}
                                   type="button"
                                   onClick={() => {
-                                    if (t.isTienda) {
-                                      setFormData({...formData, tienda: t.id, destino: ''});
-                                    } else {
-                                      setFormData({...formData, tienda: '', destino: t.id});
+                                    if (!selectedDestinations.find(x => x.id === t.id)) {
+                                      setSelectedDestinations([...selectedDestinations, t]);
                                     }
-                                    setTiendaSearch(t.label);
+                                    setFormData({...formData, tienda: '', destino: ''});
+                                    setTiendaSearch('');
                                     setTiendaSearchFocus(false);
                                   }}
                                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors"
