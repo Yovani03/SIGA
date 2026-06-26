@@ -142,7 +142,7 @@ const Bonos = () => {
     if (!destino) return false;
     if (['Transporte de Personal', 'Especial No Pagado', 'Taller'].includes(destino)) return true;
     if (destino.startsWith('Transporte de Personal:')) return true;
-    const hasBonusDest = destino.includes('Tienda') || destino.includes('Especial Pagado');
+    const hasBonusDest = destino.includes('Tienda') || destino.includes('Especial Pagado') || destino.includes('Reparto de Quesos');
     const hasNoBonusDest = destino.includes('Especial No Pagado') || destino.includes('Taller');
     if (hasNoBonusDest && !hasBonusDest) return true;
     return false;
@@ -216,25 +216,49 @@ const Bonos = () => {
     const capacidad = vehiculo ? parseFloat(vehiculo.capacidad) : 10.0;
     const baseBono = getBaseBono(capacidad);
 
-    if (role === 'Chofer') {
-      return viaje.ayudante ? baseBono * 0.7 : baseBono;
+    const isOnlyReparto = viaje.destino === 'Reparto de Quesos';
+    const hasReparto = viaje.destino && viaje.destino.includes('Reparto de Quesos');
+    
+    if (isOnlyReparto) {
+      return role === 'Chofer' ? 40 : 0;
     }
-    return baseBono * 0.3;
+
+    let normalBonus = role === 'Chofer' 
+      ? (viaje.ayudante ? baseBono * 0.7 : baseBono) 
+      : (baseBono * 0.3);
+
+    if (hasReparto && role === 'Chofer') {
+      return normalBonus + 40;
+    }
+    
+    return normalBonus;
   };
 
   // Helper function to calculate single trip bonus
   const calculateTripBonus = (viaje, role) => {
     if (isViajeSinBono(viaje.destino)) return 0;
+    if (viaje.bono_sancionado) return 0;
+
     const vehiculo = vehiculos.find(v => v.id === viaje.vehiculo);
     const capacidad = vehiculo ? parseFloat(vehiculo.capacidad) : 10.0;
     const baseBono = getBaseBono(capacidad);
 
-    if (viaje.bono_sancionado) return 0;
-
-    if (role === 'Chofer') {
-      return viaje.ayudante ? baseBono * 0.7 : baseBono;
+    const isOnlyReparto = viaje.destino === 'Reparto de Quesos';
+    const hasReparto = viaje.destino && viaje.destino.includes('Reparto de Quesos');
+    
+    if (isOnlyReparto) {
+      return role === 'Chofer' ? 40 : 0;
     }
-    return baseBono * 0.3;
+
+    let normalBonus = role === 'Chofer' 
+      ? (viaje.ayudante ? baseBono * 0.7 : baseBono) 
+      : (baseBono * 0.3);
+
+    if (hasReparto && role === 'Chofer') {
+      return normalBonus + 40;
+    }
+    
+    return normalBonus;
   };
 
   const handleApplySancion = async () => {

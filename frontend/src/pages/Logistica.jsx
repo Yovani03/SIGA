@@ -731,7 +731,7 @@ const Logistica = () => {
                           onBlur={() => setTimeout(() => setTiendaSearchFocus(false), 200)}
                           className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
-                        {(formData.tienda || (formData.destino && ['Especial Pagado', 'Especial No Pagado', 'Taller'].includes(formData.destino))) && selectedDestinations.length === 0 && (
+                        {(formData.tienda || (formData.destino && ['Especial Pagado', 'Especial No Pagado', 'Taller', 'Reparto de Quesos'].includes(formData.destino))) && selectedDestinations.length === 0 && (
                           <div className="absolute right-3 top-4">
                             <CheckCircle2 size={18} className="text-green-500" />
                           </div>
