@@ -141,6 +141,14 @@ const Logistica = () => {
   const [selectedViajeForAyudante, setSelectedViajeForAyudante] = useState(null);
   const [newAyudante, setNewAyudante] = useState('');
 
+  // Edit Dates
+  const [isEditDateModalOpen, setIsEditDateModalOpen] = useState(false);
+  const [selectedViajeForEditDate, setSelectedViajeForEditDate] = useState(null);
+  const [editDateData, setEditDateData] = useState({
+    fecha_salida: '',
+    fecha_llegada: ''
+  });
+
   const tiendas = Array.from({ length: 39 }, (_, i) => (i + 1) * 10);
 
   useEffect(() => {
@@ -307,6 +315,49 @@ const Logistica = () => {
       alert("Error al actualizar ayudante");
     }
   };
+
+  const formatForDatetimeLocal = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const offset = date.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 16);
+    return localISOTime;
+  };
+
+  const openEditDateModal = (viaje) => {
+    setSelectedViajeForEditDate(viaje);
+    setEditDateData({
+      fecha_salida: formatForDatetimeLocal(viaje.fecha_salida),
+      fecha_llegada: formatForDatetimeLocal(viaje.fecha_llegada)
+    });
+    setIsEditDateModalOpen(true);
+  };
+
+  const closeEditDateModal = () => {
+    setIsEditDateModalOpen(false);
+    setSelectedViajeForEditDate(null);
+    setEditDateData({ fecha_salida: '', fecha_llegada: '' });
+  };
+
+  const handleSubmitEditDate = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        fecha_salida: editDateData.fecha_salida ? new Date(editDateData.fecha_salida).toISOString() : null,
+      };
+      if (selectedViajeForEditDate.completado) {
+        payload.fecha_llegada = editDateData.fecha_llegada ? new Date(editDateData.fecha_llegada).toISOString() : null;
+      }
+      
+      await api.patch(`viajes/${selectedViajeForEditDate.id}/`, payload);
+      fetchData();
+      closeEditDateModal();
+    } catch (err) {
+      console.error("Error updating dates", err);
+      alert("Error al actualizar las fechas");
+    }
+  };
+
 
   if (loading) {
     return (
@@ -580,6 +631,13 @@ const Logistica = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => openEditDateModal(v)}
+                            className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 p-1.5 rounded-lg transition-colors"
+                            title="Editar Fechas"
+                          >
+                            <Calendar size={14} />
+                          </button>
                           <button 
                             onClick={() => openAyudanteModal(v)}
                             className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 p-1.5 rounded-lg transition-colors"
@@ -1112,6 +1170,68 @@ const Logistica = () => {
 
               <div className="pt-2 flex gap-3">
                 <button type="button" onClick={closeAyudanteModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl">Cancelar</button>
+                <button type="submit" className="flex-[2] bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/20">Guardar Cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Fechas */}
+      {isEditDateModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Calendar size={22} className="text-blue-600 dark:text-blue-500" />
+                Editar Fechas
+              </h2>
+              <button onClick={closeEditDateModal} className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitEditDate} className="p-6 space-y-6">
+              <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl">
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Viaje</p>
+                <p className="text-slate-900 dark:text-white font-bold text-lg">Unidad {selectedViajeForEditDate?.vehiculo_detalle?.numero_economico}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Destino: {selectedViajeForEditDate?.destino || `Tienda ${selectedViajeForEditDate?.tienda}`}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Fecha y Hora de Salida</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-600" size={16} />
+                    <input 
+                      type="datetime-local"
+                      required
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner"
+                      value={editDateData.fecha_salida}
+                      onChange={(e) => setEditDateData({...editDateData, fecha_salida: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                {selectedViajeForEditDate?.completado && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Fecha y Hora de Llegada</label>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-600" size={16} />
+                      <input 
+                        type="datetime-local"
+                        required
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none shadow-inner"
+                        value={editDateData.fecha_llegada}
+                        onChange={(e) => setEditDateData({...editDateData, fecha_llegada: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={closeEditDateModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl">Cancelar</button>
                 <button type="submit" className="flex-[2] bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/20">Guardar Cambios</button>
               </div>
             </form>
