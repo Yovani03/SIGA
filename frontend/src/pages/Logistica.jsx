@@ -136,6 +136,11 @@ const Logistica = () => {
     fecha_llegada: ''
   });
 
+  // Retroactive Ayudante Assignment
+  const [isAyudanteModalOpen, setIsAyudanteModalOpen] = useState(false);
+  const [selectedViajeForAyudante, setSelectedViajeForAyudante] = useState(null);
+  const [newAyudante, setNewAyudante] = useState('');
+
   const tiendas = Array.from({ length: 39 }, (_, i) => (i + 1) * 10);
 
   useEffect(() => {
@@ -274,6 +279,32 @@ const Logistica = () => {
     } catch (err) {
       console.error("Error reporting arrival", err);
       alert("Error al registrar la llegada");
+    }
+  };
+
+  const openAyudanteModal = (viaje) => {
+    setSelectedViajeForAyudante(viaje);
+    setNewAyudante(viaje.ayudante || '');
+    setIsAyudanteModalOpen(true);
+  };
+
+  const closeAyudanteModal = () => {
+    setIsAyudanteModalOpen(false);
+    setSelectedViajeForAyudante(null);
+    setNewAyudante('');
+  };
+
+  const handleSubmitAyudante = async (e) => {
+    e.preventDefault();
+    try {
+      await api.patch(`viajes/${selectedViajeForAyudante.id}/`, {
+        ayudante: newAyudante || null
+      });
+      fetchData();
+      closeAyudanteModal();
+    } catch (err) {
+      console.error("Error updating ayudante", err);
+      alert("Error al actualizar ayudante");
     }
   };
 
@@ -548,8 +579,17 @@ const Logistica = () => {
                             <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{v.vehiculo_detalle?.placas}</p>
                           </div>
                         </div>
-                        <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.completado ? 'bg-slate-500/10 text-slate-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                          {v.completado ? 'COMPLETADO' : 'EN RUTA'}
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => openAyudanteModal(v)}
+                            className="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 p-1.5 rounded-lg transition-colors"
+                            title="Asignar/Cambiar Ayudante"
+                          >
+                            <UserPlus size={14} />
+                          </button>
+                          <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.completado ? 'bg-slate-500/10 text-slate-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                            {v.completado ? 'COMPLETADO' : 'EN RUTA'}
+                          </div>
                         </div>
                       </div>
 
@@ -1022,6 +1062,57 @@ const Logistica = () => {
               <div className="pt-2 flex gap-3">
                 <button type="button" onClick={closeArrivalModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl">Cancelar</button>
                 <button type="submit" className="flex-[2] bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-900/20">Registrar Viaje</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Asignar Ayudante */}
+      {isAyudanteModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus size={22} className="text-blue-600 dark:text-blue-500" />
+                Asignar Ayudante
+              </h2>
+              <button onClick={closeAyudanteModal} className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitAyudante} className="p-6 space-y-6">
+              <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl">
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Viaje Actual</p>
+                <p className="text-slate-900 dark:text-white font-bold text-lg">Unidad {selectedViajeForAyudante?.vehiculo_detalle?.numero_economico}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Destino: {selectedViajeForAyudante?.destino || `Tienda ${selectedViajeForAyudante?.tienda}`}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Seleccionar Ayudante</label>
+                <select 
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500/50 outline-none cursor-pointer shadow-inner"
+                  value={newAyudante}
+                  onChange={(e) => setNewAyudante(e.target.value)}
+                >
+                  <option value="" className="bg-white dark:bg-slate-900">Ninguno (Quitar Ayudante)</option>
+                  {operadores
+                    .filter(op => op.id !== selectedViajeForAyudante?.operador)
+                    .filter(op => op.estatus === 'patio' || op.id === selectedViajeForAyudante?.ayudante)
+                    .map(op => (
+                      <option key={op.id} value={op.id}>{op.nombre} {op.apellido}</option>
+                    ))
+                  }
+                </select>
+                <p className="text-[10px] text-slate-500 mt-2 px-1 italic">
+                  * Si seleccionas "Ninguno", el viaje quedará solo con el chofer y él recibirá el 100% del bono.
+                </p>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={closeAyudanteModal} className="flex-1 bg-slate-800 text-white font-bold py-3.5 rounded-xl">Cancelar</button>
+                <button type="submit" className="flex-[2] bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/20">Guardar Cambios</button>
               </div>
             </form>
           </div>
