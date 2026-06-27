@@ -23,7 +23,9 @@ import {
   Building2,
   UserPlus,
   Calendar,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Combustibles from './Combustibles';
 import Bonos from './Bonos';
@@ -38,6 +40,70 @@ const Logistica = () => {
   const [viajes, setViajes] = useState([]);
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // --- Retroactive Date Navigation ---
+  const getWeekRange = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diffToFriday = (day + 2) % 7;
+    const start = new Date(d);
+    start.setDate(d.getDate() - diffToFriday);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const [referenceDate, setReferenceDate] = useState(new Date());
+  const period = getWeekRange(referenceDate);
+  const startDate = period.start.toISOString().split('T')[0];
+  const endDate = period.end.toISOString().split('T')[0];
+
+  const handlePrevWeek = () => {
+    const newDate = new Date(referenceDate);
+    newDate.setDate(referenceDate.getDate() - 7);
+    setReferenceDate(newDate);
+  };
+
+  const handleNextWeek = () => {
+    const newDate = new Date(referenceDate);
+    newDate.setDate(referenceDate.getDate() + 7);
+    setReferenceDate(newDate);
+  };
+
+  // The specific day selected within the week (defaults to today if today is within the week, else the start of the week)
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+
+  // Automatically adjust selectedDay when changing weeks
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (today >= period.start && today <= period.end) {
+      setSelectedDay(today);
+    } else {
+      setSelectedDay(period.start);
+    }
+  }, [referenceDate]);
+
+  // Generate an array of date objects for the current selected week
+  const getDaysInWeek = () => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(period.start);
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  };
+  const weekDays = getDaysInWeek();
+  // ------------------------------------
+
   const [activeTab, setActiveTab] = useState('monitor'); // 'monitor', 'combustible', or 'bonos'
 
   // States from Monitoreo
@@ -102,9 +168,14 @@ const Logistica = () => {
   };
 
   const openModal = () => {
+    // We use selectedDay instead of new Date(), so retro-active additions use the selected date
+    const dateToUse = new Date(selectedDay);
+    
+    // Set time to current time
     const now = new Date();
     const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
+    // Keep it just as a time string for the form input
+    
     setFormData({
       operador: '',
       vehiculo: '',
@@ -128,10 +199,10 @@ const Logistica = () => {
 
   const formatWithCurrentDate = (timeStr) => {
     if (!timeStr) return null;
-    const now = new Date();
+    const targetDate = new Date(selectedDay); // use the currently selected day
     const [hours, minutes] = timeStr.split(':');
-    now.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    return now.toISOString();
+    targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return targetDate.toISOString();
   };
 
   const handleSubmitSalida = async (e) => {
@@ -217,7 +288,18 @@ const Logistica = () => {
 
   const operativas = vehiculos.filter(v => !v.estado || v.estado === 'operativa');
   const enTaller = vehiculos.filter(v => v.estado && v.estado !== 'operativa');
-  const viajesActivos = viajes.filter(v => !v.completado);
+  const viajesDelDiaSeleccionado = viajes.filter(v => {
+    if (!v.fecha_salida) return false;
+    const salida = new Date(v.fecha_salida);
+    salida.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDay);
+    selected.setHours(0, 0, 0, 0);
+    return salida.getTime() === selected.getTime();
+  });
+  
+  // We use the trips of the selected day for the UI, but active trips across the system for other checks
+  const viajesActivos = viajesDelDiaSeleccionado;
+  const viajesActivosGlobales = viajes.filter(v => !v.completado);
   
   const filteredActivos = viajesActivos.filter(v => 
     v.operador_detalle?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -226,7 +308,7 @@ const Logistica = () => {
   );
 
   const operadoresDisponibles = operadores.filter(op => op.estatus === 'patio');
-  const vehiculosEnViaje = viajesActivos.map(v => v.vehiculo);
+  const vehiculosEnViaje = viajesActivosGlobales.map(v => v.vehiculo);
   const vehiculosDisponibles = vehiculos.filter(v => 
     v.estado === 'operativa' && !vehiculosEnViaje.includes(v.id)
   );
@@ -355,6 +437,61 @@ const Logistica = () => {
 
       {activeTab === 'monitor' && (
         <>
+          {/* Week & Day Navigation */}
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase mb-1">
+                  SEMANA OPERATIVA (VIE - JUE)
+                </span>
+                <div className="flex items-center bg-slate-900 dark:bg-slate-950 rounded-2xl p-1.5 border border-slate-800 shadow-xl max-w-fit">
+                  <button onClick={handlePrevWeek} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="px-4 py-1.5 flex flex-col items-center min-w-[140px]">
+                    <div className="flex items-center gap-2 text-blue-500 mb-0.5">
+                      <Calendar size={14} />
+                      <span className="text-[10px] font-bold tracking-wider">PERIODO ACTUAL</span>
+                    </div>
+                    <span className="text-sm font-bold text-white">
+                      {new Date(startDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} - {new Date(endDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                  <button onClick={handleNextWeek} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+              {weekDays.map((date, i) => {
+                const isSelected = selectedDay.getTime() === date.getTime();
+                const isToday = new Date().setHours(0, 0, 0, 0) === date.getTime();
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedDay(date)}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center py-2 px-4 rounded-xl border transition-all ${
+                      isSelected 
+                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/30' 
+                        : isToday
+                          ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isSelected ? 'text-blue-100' : 'opacity-70'}`}>
+                      {date.toLocaleDateString('es-MX', { weekday: 'short' })}
+                    </span>
+                    <span className="text-lg font-bold">
+                      {date.getDate()}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
               <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Viajes en Curso</p>
@@ -411,8 +548,8 @@ const Logistica = () => {
                             <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{v.vehiculo_detalle?.placas}</p>
                           </div>
                         </div>
-                        <div className="bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                          EN RUTA
+                        <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.completado ? 'bg-slate-500/10 text-slate-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                          {v.completado ? 'COMPLETADO' : 'EN RUTA'}
                         </div>
                       </div>
 
@@ -437,19 +574,26 @@ const Logistica = () => {
                         </div>
                       </div>
 
-                      <button 
-                        onClick={() => openArrivalModal(v)}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20"
-                      >
-                        <Building2 size={18} />
-                        Reportar Llegada a CEDIS
-                      </button>
+                      {!v.completado ? (
+                        <button 
+                          onClick={() => openArrivalModal(v)}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20"
+                        >
+                          <Building2 size={18} />
+                          Reportar Llegada a CEDIS
+                        </button>
+                      ) : (
+                        <div className="w-full bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-800">
+                          <CheckCircle2 size={18} />
+                          Viaje Finalizado
+                        </div>
+                      )}
                     </div>
                   ))}
                   {filteredActivos.length === 0 && (
                     <div className="col-span-full py-12 text-center">
                       <Navigation className="mx-auto text-slate-800 mb-3 opacity-20" size={48} />
-                      <p className="text-slate-500 text-sm italic">No hay viajes activos en este momento.</p>
+                      <p className="text-slate-500 text-sm italic">No hay viajes registrados para este día.</p>
                     </div>
                   )}
                 </div>
