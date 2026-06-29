@@ -363,7 +363,7 @@ const Combustibles = () => {
           unidad: c.is_variado ? null : c.unidad,
           unidad_variada: c.is_variado ? c.unidad : null,
           tipo_combustible: c.tipo_combustible,
-          litros: Number(parseFloat(c.litros).toFixed(2)),
+          litros: Number(parseFloat(c.litros).toFixed(3)),
           kilometraje: c.ignorar_kilometraje ? null : parseInt(c.kilometraje),
           ignorar_kilometraje: c.ignorar_kilometraje,
           km_equivocado: c.km_equivocado || false
@@ -436,7 +436,7 @@ const Combustibles = () => {
           fecha: carga.fecha,
           tipo_combustible: carga.tipo_combustible,
           precio_unitario: parseFloat(carga.precio_unitario),
-          litros: Number(parseFloat(carga.litros).toFixed(2)),
+          litros: Number(parseFloat(carga.litros).toFixed(3)),
           kilometraje: carga.ignorar_kilometraje ? null : parseInt(carga.kilometraje),
           ignorar_kilometraje: carga.ignorar_kilometraje,
           es_especial: true,
@@ -650,11 +650,12 @@ const Combustibles = () => {
                         <td className="px-6 py-4">
                           <div className="relative">
                             <input 
-                              type="number" 
+                              type="number"
+                              step="0.001"
                               value={carga.litros}
                               onChange={(e) => updateCarga(idx, 'litros', e.target.value)}
                               className="w-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
-                              placeholder="0.0"
+                              placeholder="0.000"
                             />
                             <span className="ml-2 text-slate-500 text-xs">L</span>
                           </div>
@@ -876,11 +877,11 @@ const Combustibles = () => {
                   <input 
                     type="number" 
                     required
-                    step="0.01"
+                    step="0.001"
                     value={cargaEspecial.litros}
                     onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
                     className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                    placeholder="0.00"
+                    placeholder="0.000"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">L</span>
                 </div>
