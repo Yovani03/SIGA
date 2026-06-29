@@ -363,7 +363,7 @@ const Combustibles = () => {
     }
 
     for (let carga of cargas) {
-      if (!carga.litros || (!carga.ignorar_kilometraje && !carga.kilometraje)) {
+      if (!carga.litros || (!carga.ignorar_kilometraje && !carga.km_equivocado && !carga.kilometraje)) {
         notify.error(`Faltan datos en la unidad ${carga.numero_economico}`);
         return;
       }
@@ -384,7 +384,7 @@ const Combustibles = () => {
           unidad_variada: c.is_variado ? c.unidad : null,
           tipo_combustible: c.tipo_combustible,
           litros: Number(parseFloat(c.litros).toFixed(3)),
-          kilometraje: c.ignorar_kilometraje ? null : parseInt(c.kilometraje),
+          kilometraje: c.ignorar_kilometraje ? null : (parseInt(c.kilometraje) || 0),
           ignorar_kilometraje: c.ignorar_kilometraje,
           km_equivocado: c.km_equivocado || false
         }))
@@ -428,7 +428,7 @@ const Combustibles = () => {
 
   const handleAddEspecialToList = (e) => {
     e.preventDefault();
-    if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.kilometraje)) {
+    if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.km_equivocado && !cargaEspecial.kilometraje)) {
       notify.info("Completa todos los campos requeridos.");
       return;
     }
@@ -482,7 +482,7 @@ const Combustibles = () => {
           tipo_combustible: carga.tipo_combustible,
           precio_unitario: parseFloat(carga.precio_unitario),
           litros: Number(parseFloat(carga.litros).toFixed(3)),
-          kilometraje: carga.ignorar_kilometraje ? null : parseInt(carga.kilometraje),
+          kilometraje: carga.ignorar_kilometraje ? null : (parseInt(carga.kilometraje) || 0),
           ignorar_kilometraje: carga.ignorar_kilometraje,
           es_especial: true,
           km_equivocado: carga.km_equivocado || false
