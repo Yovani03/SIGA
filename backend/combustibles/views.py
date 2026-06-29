@@ -119,3 +119,9 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
 
         km_anterior = carga.kilometraje if carga else 0
         return Response({"km_anterior": km_anterior})
+
+    @action(detail=False, methods=['get'])
+    def historial_especiales(self, request):
+        limit = int(request.query_params.get('limit', 100))
+        cargas = CargaCombustible.objects.filter(es_especial=True).order_by('-fecha_registro')[:limit]
+        return Response(CargaCombustibleSerializer(cargas, many=True).data)

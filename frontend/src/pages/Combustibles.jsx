@@ -45,6 +45,8 @@ const Combustibles = () => {
   const [busquedaEspecial, setBusquedaEspecial] = useState('');
   const [busquedaEspecialFocus, setBusquedaEspecialFocus] = useState(false);
   const [activeTab, setActiveTab] = useState(isLector ? 'historial' : 'nuevo'); // 'nuevo', 'especial' o 'historial'
+  const [historialTipo, setHistorialTipo] = useState('normal');
+  const [historialEspecial, setHistorialEspecial] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split('T')[0]);
@@ -74,9 +76,13 @@ const Combustibles = () => {
 
   useEffect(() => {
     if (activeTab === 'historial') {
-      fetchHistorial();
+      if (historialTipo === 'normal') {
+        fetchHistorial();
+      } else {
+        fetchHistorialEspecial();
+      }
     }
-  }, [activeTab, fechaHistorial]);
+  }, [activeTab, fechaHistorial, historialTipo]);
 
   useEffect(() => {
     const fetchKmAnterior = async () => {
@@ -137,6 +143,19 @@ const Combustibles = () => {
     } catch (err) {
       console.error("Error fetching history", err);
       setHistorial([]);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
+  const fetchHistorialEspecial = async () => {
+    try {
+      setLoadingHistorial(true);
+      const res = await api.get('cargas-combustible/historial_especiales/');
+      setHistorialEspecial(res.data);
+    } catch (err) {
+      console.error("Error fetching special history", err);
+      setHistorialEspecial([]);
     } finally {
       setLoadingHistorial(false);
     }
@@ -1063,7 +1082,22 @@ const Combustibles = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              {historial.length > 0 && (
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+                <button
+                  onClick={() => setHistorialTipo('normal')}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${historialTipo === 'normal' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  Diarias
+                </button>
+                <button
+                  onClick={() => setHistorialTipo('especial')}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${historialTipo === 'especial' ? 'bg-white dark:bg-slate-700 text-amber-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  Especiales
+                </button>
+              </div>
+
+              {historialTipo === 'normal' && historial.length > 0 && (
                 <button 
                   onClick={exportHistorialToPDF}
                   className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-5 py-3 rounded-2xl transition-all shadow-md text-sm font-bold active:scale-95"
@@ -1072,15 +1106,17 @@ const Combustibles = () => {
                   Descargar PDF
                 </button>
               )}
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <Filter className="text-blue-500 dark:text-blue-400 ml-2" size={20} />
-                <input 
-                  type="date" 
-                  value={fechaHistorial}
-                  onChange={(e) => setFechaHistorial(e.target.value)}
-                  className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium outline-none"
-                />
-              </div>
+              {historialTipo === 'normal' && (
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <Filter className="text-blue-500 dark:text-blue-400 ml-2" size={20} />
+                  <input 
+                    type="date" 
+                    value={fechaHistorial}
+                    onChange={(e) => setFechaHistorial(e.target.value)}
+                    className="bg-transparent border-none text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-2 font-medium outline-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1090,7 +1126,8 @@ const Combustibles = () => {
                 <div className="h-12 w-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
                 <p className="text-slate-400 font-medium">Cargando registros...</p>
               </div>
-            ) : historial.length > 0 ? (
+            ) : historialTipo === 'normal' ? (
+              historial.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -1165,7 +1202,68 @@ const Combustibles = () => {
                 <h3 className="text-xl font-bold text-white mb-2">Sin registros para esta fecha</h3>
                 <p className="text-slate-500 max-w-xs text-center">No se encontraron cargas de combustible para el día seleccionado.</p>
               </div>
-            )}
+            )
+            ) : (
+              historialEspecial.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950/50 text-amber-500 dark:text-amber-500/80 text-xs uppercase tracking-widest font-bold">
+                      <th className="px-8 py-5">Unidad</th>
+                      <th className="px-8 py-5">Fecha Carga</th>
+                      <th className="px-8 py-5">Detalles</th>
+                      <th className="px-8 py-5">Kilometraje</th>
+                      <th className="px-8 py-5 text-right">Monto Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {historialEspecial.map((carga, idx) => (
+                      <tr key={idx} className="group hover:bg-amber-600/5 transition-colors">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all">
+                              <Truck size={20} />
+                            </div>
+                            <div>
+                              <p className="text-slate-900 dark:text-white font-bold">{carga.unidad_obj ? carga.unidad_obj.numero_economico : carga.unidad_variada_obj?.numero_economico}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <p className="text-slate-900 dark:text-slate-300 font-medium">{carga.fecha}</p>
+                          <p className="text-slate-500 text-[10px]">Registro: {new Date(carga.fecha_registro).toLocaleDateString()}</p>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-slate-300 font-medium uppercase">{carga.tipo_combustible}</span>
+                            <span className="text-xs text-slate-500">{carga.litros}L a ${carga.precio_unitario}/L</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex flex-col gap-1 text-xs">
+                            <span className="text-slate-500">Km Act: <strong className="text-white">{carga.ignorar_kilometraje ? '---' : carga.kilometraje}</strong></span>
+                            {carga.km_equivocado && <span className="text-amber-500 font-bold">KM Equivocado</span>}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <p className="text-amber-500 font-black font-mono text-lg">
+                            ${parseFloat(carga.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-32 text-slate-500">
+                <div className="bg-slate-800/30 p-8 rounded-full mb-6">
+                  <Activity size={64} className="text-slate-700" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Sin cargas especiales</h3>
+                <p className="text-slate-500 max-w-xs text-center">No se han registrado cargas especiales recientemente.</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
