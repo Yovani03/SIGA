@@ -1602,6 +1602,12 @@ const ListaVehiculos = () => {
                          </div>
                          
                          <div className="pt-3 border-t border-slate-800/50">
+                            {fuelHistory[index + 1]?.kilometraje != null && (
+                              <div className="flex justify-between items-center text-[11px] mb-1.5">
+                                <span className="text-slate-500 font-bold">KM ANTERIOR</span>
+                                <span className="text-slate-400 font-mono">{String(fuelHistory[index + 1].kilometraje)} km</span>
+                              </div>
+                            )}
                             <div className="flex justify-between items-center text-[11px]">
                               <span className="text-slate-500 font-bold">KM ACTUAL</span>
                               <span className="text-slate-300 font-mono">{carga.kilometraje != null ? String(carga.kilometraje) : '---'} km</span>
