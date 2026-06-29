@@ -17,7 +17,8 @@ import {
   Clock,
   ChevronRight,
   Filter,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { jsPDF } from 'jspdf';
