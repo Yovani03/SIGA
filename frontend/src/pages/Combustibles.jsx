@@ -96,8 +96,8 @@ const Combustibles = () => {
   const getStartOfWeek = (d) => {
     const date = new Date(d);
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    return new Date(date.setDate(diff));
+    const offset = (day + 2) % 7; // Friday is 5. offset from Friday
+    return new Date(date.setDate(date.getDate() - offset));
   };
   const getEndOfWeek = (d) => {
     const date = new Date(getStartOfWeek(d));
