@@ -18,7 +18,11 @@ import {
   ChevronRight,
   Filter,
   Download,
-  Loader2
+  Loader2,
+  Edit2,
+  Check,
+  XCircle,
+  PlusCircle
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { jsPDF } from 'jspdf';
@@ -68,6 +72,21 @@ const Combustibles = () => {
   // State for Block Details Modal
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [isEditingBlock, setIsEditingBlock] = useState(false);
+
+  // State for adding/editing loads inside a block
+  const [editingCargaId, setEditingCargaId] = useState(null);
+  const [editCargaData, setEditCargaData] = useState({});
+  const [showAddCarga, setShowAddCarga] = useState(false);
+  const [newCargaData, setNewCargaData] = useState({
+    unidad: '',
+    fecha: new Date().toISOString().split('T')[0],
+    tipo_combustible: 'diesel',
+    litros: '',
+    precio_unitario: '',
+    kilometraje: '',
+    ignorar_kilometraje: false,
+    km_equivocado: false
+  });
 
   useEffect(() => {
     fetchUnidades();
@@ -504,12 +523,104 @@ const Combustibles = () => {
     u.placas?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
+  const handleAddNewCargaToBlock = async () => {
+    if(!newCargaData.unidad || !newCargaData.litros || !newCargaData.precio_unitario || (!newCargaData.ignorar_kilometraje && !newCargaData.km_equivocado && !newCargaData.kilometraje)){
+      notify.info("Completa los campos obligatorios");
+      return;
+    }
+    try {
+      const is_variado = newCargaData.unidad.startsWith('v-');
+      const unidadId = parseInt(newCargaData.unidad.split('-')[1]);
+      
+      const payload = {
+        bloque: selectedBlock.id,
+        unidad: is_variado ? null : unidadId,
+        unidad_variada: is_variado ? unidadId : null,
+        fecha: newCargaData.fecha,
+        tipo_combustible: newCargaData.tipo_combustible,
+        precio_unitario: parseFloat(newCargaData.precio_unitario),
+        litros: parseFloat(newCargaData.litros),
+        ignorar_kilometraje: newCargaData.ignorar_kilometraje,
+        km_equivocado: newCargaData.km_equivocado,
+        kilometraje: newCargaData.ignorar_kilometraje ? null : (parseInt(newCargaData.kilometraje) || 0),
+        es_especial: selectedBlock.es_especial || false
+      };
+      
+      await api.post('cargas-combustible/', payload);
+      notify.success("Carga agregada al bloque");
+      setShowAddCarga(false);
+      refreshSelectedBlock();
+    } catch(err) {
+      notify.error("Error al agregar carga");
+    }
+  };
+
+  const refreshSelectedBlock = async () => {
+    if (!selectedBlock) return;
+    try {
+      if (historialTipo === 'normal') {
+        await fetchHistorial();
+      } else {
+        await fetchHistorialEspecial();
+      }
+      const blocksEndpoint = selectedBlock.es_especial ? `cargas-combustible/historial_especiales/?limit=50` : `cargas-combustible/historial_bloques/?fecha=${fechaHistorial}`;
+      const res = await api.get(blocksEndpoint);
+      const updatedBlock = res.data.find(b => b.id === selectedBlock.id);
+      if(updatedBlock){
+        setSelectedBlock(updatedBlock);
+      } else {
+        setSelectedBlock(null);
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditClick = (carga) => {
+    setEditingCargaId(carga.id);
+    setEditCargaData({
+      litros: carga.litros,
+      precio_unitario: carga.precio_unitario,
+      kilometraje: carga.kilometraje || '',
+      ignorar_kilometraje: carga.ignorar_kilometraje,
+      km_equivocado: carga.km_equivocado
+    });
+  };
+
+  const handleSaveEdit = async (cargaId) => {
+    try {
+      const payload = {
+        litros: parseFloat(editCargaData.litros),
+        precio_unitario: parseFloat(editCargaData.precio_unitario),
+        ignorar_kilometraje: editCargaData.ignorar_kilometraje,
+        km_equivocado: editCargaData.km_equivocado,
+        kilometraje: editCargaData.ignorar_kilometraje ? null : (parseInt(editCargaData.kilometraje) || 0)
+      };
+      await api.patch(`cargas-combustible/${cargaId}/`, payload);
+      notify.success("Carga actualizada");
+      setEditingCargaId(null);
+      refreshSelectedBlock();
+    } catch(err) {
+      notify.error("Error al actualizar carga");
+    }
+  };
+
+  const handleDeleteCargaInBlock = async (cargaId) => {
+    if(!window.confirm("¿Seguro que deseas eliminar esta carga?")) return;
+    try {
+      await api.delete(`cargas-combustible/${cargaId}/`);
+      notify.success("Carga eliminada");
+      refreshSelectedBlock();
+    } catch(err) {
+      notify.error("Error al eliminar carga");
+    }
+  };
+
   const filteredUnidadesEspecial = unidades.filter(u => 
     u.numero_economico.toLowerCase().includes(busquedaEspecial.toLowerCase()) || 
     u.placas?.toLowerCase().includes(busquedaEspecial.toLowerCase())
   );
 
-  return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex bg-white dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-sm dark:shadow-inner">
         {!isLector && (
@@ -1325,41 +1436,172 @@ const Combustibles = () => {
                       <th className="px-4 py-3 font-semibold text-right">Precio/L</th>
                       <th className="px-4 py-3 font-semibold text-right">Total</th>
                       <th className="px-4 py-3 font-semibold text-right">Kilometraje</th>
+                      <th className="px-4 py-3 font-semibold text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                     {selectedBlock.cargas?.map((carga, i) => (
                       <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                          {carga.unidad_detalle || `Eco ${carga.unidad || carga.unidad_variada}`}
-                          {carga.es_especial && <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full uppercase font-bold">Especial</span>}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
-                        <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">{parseFloat(carga.litros).toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">${parseFloat(carga.precio_unitario).toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
-                          ${parseFloat(carga.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {carga.ignorar_kilometraje ? (
-                            <span className="text-slate-400 italic">No reg.</span>
-                          ) : (
-                            <span className={`font-mono ${carga.km_equivocado ? 'text-amber-500' : 'text-slate-600 dark:text-slate-300'}`}>
-                              {carga.kilometraje}
-                            </span>
-                          )}
-                        </td>
+                        {editingCargaId === carga.id ? (
+                          <>
+                            <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                              {carga.unidad_detalle || `Eco ${carga.unidad || carga.unidad_variada}`}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
+                            <td className="px-4 py-3 text-right">
+                              <input 
+                                type="number" 
+                                className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white"
+                                value={editCargaData.litros} 
+                                onChange={e => setEditCargaData({...editCargaData, litros: e.target.value})} 
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input 
+                                type="number" 
+                                className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white"
+                                value={editCargaData.precio_unitario} 
+                                onChange={e => setEditCargaData({...editCargaData, precio_unitario: e.target.value})} 
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
+                              ${(parseFloat(editCargaData.litros || 0) * parseFloat(editCargaData.precio_unitario || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input 
+                                type="number" 
+                                className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white mb-1"
+                                value={editCargaData.kilometraje} 
+                                onChange={e => setEditCargaData({...editCargaData, kilometraje: e.target.value})}
+                                disabled={editCargaData.ignorar_kilometraje || editCargaData.km_equivocado}
+                              />
+                              <div className="flex justify-end gap-2">
+                                <label className="text-[10px] flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                  <input type="checkbox" checked={editCargaData.km_equivocado} onChange={e=>setEditCargaData({...editCargaData, km_equivocado: e.target.checked})} /> Mal
+                                </label>
+                                <label className="text-[10px] flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                  <input type="checkbox" checked={editCargaData.ignorar_kilometraje} onChange={e=>setEditCargaData({...editCargaData, ignorar_kilometraje: e.target.checked})} /> Ign
+                                </label>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center flex justify-center gap-2">
+                              <button onClick={() => handleSaveEdit(carga.id)} className="text-emerald-500 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-1.5 rounded-lg"><Check size={18} /></button>
+                              <button onClick={() => setEditingCargaId(null)} className="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg"><XCircle size={18} /></button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                              {carga.unidad_detalle || `Eco ${carga.unidad || carga.unidad_variada}`}
+                              {carga.es_especial && <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full uppercase font-bold">Especial</span>}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">{parseFloat(carga.litros).toFixed(2)} L</td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">${parseFloat(carga.precio_unitario).toFixed(2)}</td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
+                              ${parseFloat(carga.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {carga.ignorar_kilometraje ? (
+                                <span className="text-slate-400 text-xs italic">Ignorado</span>
+                              ) : carga.km_equivocado ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-amber-500 font-bold text-[10px] uppercase">Mal</span>
+                                  <span className="font-mono text-amber-500">{carga.kilometraje}</span>
+                                </div>
+                              ) : (
+                                <span className="font-mono text-slate-600 dark:text-slate-300">
+                                  {carga.kilometraje}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center flex justify-center gap-1.5">
+                              <button onClick={() => handleEditClick(carga)} className="text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded-lg transition-colors" title="Editar carga">
+                                <Edit2 size={16} />
+                              </button>
+                              <button onClick={() => handleDeleteCargaInBlock(carga.id)} className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg transition-colors" title="Eliminar carga">
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                     {(!selectedBlock.cargas || selectedBlock.cargas.length === 0) && (
                       <tr>
-                        <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                           No hay detalles disponibles para este bloque.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Add New Carga to Block Form */}
+              <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+                {!showAddCarga ? (
+                  <button onClick={() => setShowAddCarga(true)} className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 w-full border border-dashed border-blue-200 dark:border-blue-900/50 font-bold px-4 py-4 rounded-xl transition-all">
+                    <PlusCircle size={20} /> Agregar carga olvidada a este bloque
+                  </button>
+                ) : (
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-blue-200 dark:border-blue-900/50">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2"><PlusCircle size={20} className="text-blue-500" /> Nueva Carga para Bloque #{selectedBlock.id}</h4>
+                      <button onClick={() => setShowAddCarga(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X size={20} /></button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Unidad</label>
+                        <select className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.unidad} onChange={e => setNewCargaData({...newCargaData, unidad: e.target.value})}>
+                          <option value="">Selecciona unidad</option>
+                          {unidades.map(u => (
+                            <option key={`${u.is_variado?'v':'t'}-${u.id}`} value={`${u.is_variado?'v':'t'}-${u.id}`}>{u.numero_economico}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Fecha</label>
+                        <input type="date" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.fecha} onChange={e => setNewCargaData({...newCargaData, fecha: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Combustible</label>
+                        <select className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.tipo_combustible} onChange={e => setNewCargaData({...newCargaData, tipo_combustible: e.target.value})}>
+                          <option value="magna">Magna</option>
+                          <option value="premium">Premium</option>
+                          <option value="diesel">Diesel</option>
+                          <option value="electrico">Eléctrico</option>
+                          <option value="gas_lp">Gas LP</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Precio Unit.</label>
+                        <input type="number" step="0.01" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.precio_unitario} onChange={e => setNewCargaData({...newCargaData, precio_unitario: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Litros</label>
+                        <input type="number" step="0.001" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.litros} onChange={e => setNewCargaData({...newCargaData, litros: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Kilometraje</label>
+                        <input type="number" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white disabled:opacity-50" value={newCargaData.kilometraje} onChange={e => setNewCargaData({...newCargaData, kilometraje: e.target.value})} disabled={newCargaData.ignorar_kilometraje || newCargaData.km_equivocado} />
+                      </div>
+                      <div className="flex flex-col justify-center gap-2">
+                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium cursor-pointer">
+                          <input type="checkbox" checked={newCargaData.km_equivocado} onChange={e=>setNewCargaData({...newCargaData, km_equivocado: e.target.checked})} className="rounded text-blue-500 w-4 h-4" /> KM Equivocado
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium cursor-pointer">
+                          <input type="checkbox" checked={newCargaData.ignorar_kilometraje} onChange={e=>setNewCargaData({...newCargaData, ignorar_kilometraje: e.target.checked})} className="rounded text-blue-500 w-4 h-4" /> Ignorar KM
+                        </label>
+                      </div>
+                      <div className="flex items-end">
+                        <button onClick={handleAddNewCargaToBlock} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded-xl transition-colors shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
+                          <Save size={18} /> Guardar Carga
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

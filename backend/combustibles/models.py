@@ -142,3 +142,16 @@ class CargaCombustible(models.Model):
     def __str__(self):
         num_eco = self.unidad.numero_economico if self.unidad else (self.unidad_variada.numero_economico if self.unidad_variada else 'UNK')
         return f"{num_eco} - {self.fecha} - {self.litros}L"
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+@receiver(post_save, sender=CargaCombustible)
+def update_bloque_totals_on_save(sender, instance, **kwargs):
+    if instance.bloque:
+        instance.bloque.update_totals()
+
+@receiver(post_delete, sender=CargaCombustible)
+def update_bloque_totals_on_delete(sender, instance, **kwargs):
+    if instance.bloque:
+        instance.bloque.update_totals()
