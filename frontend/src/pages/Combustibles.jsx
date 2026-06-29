@@ -383,6 +383,29 @@ const Combustibles = () => {
     }
   };
 
+  const recalculateEspecialList = (list) => {
+    const groups = {};
+    for (let c of list) {
+       const key = `${c.is_variado?'v':'t'}-${c.unidad}`;
+       if(!groups[key]) groups[key] = [];
+       groups[key].push({...c});
+    }
+    
+    let finalList = [];
+    Object.values(groups).forEach(group => {
+       group.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+       for(let i = 1; i < group.length; i++) {
+           if(group[i-1].kilometraje && !group[i-1].ignorar_kilometraje) {
+               group[i].ultimo_kilometraje = group[i-1].kilometraje;
+           }
+       }
+       finalList.push(...group);
+    });
+    
+    finalList.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    return finalList;
+  };
+
   const handleAddEspecialToList = (e) => {
     e.preventDefault();
     if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.kilometraje)) {
@@ -395,13 +418,15 @@ const Combustibles = () => {
     const unidadObj = unidades.find(u => u.id === unidadId && u.is_variado === is_variado);
     if (!unidadObj) return;
 
-    setCargasEspecialesList([...cargasEspecialesList, {
+    const newItem = {
       ...cargaEspecial,
       unidad: unidadId,
       is_variado: is_variado,
       numero_economico: unidadObj.numero_economico,
       placas: unidadObj.placas
-    }]);
+    };
+
+    setCargasEspecialesList(recalculateEspecialList([...cargasEspecialesList, newItem]));
 
     setCargaEspecial(prev => ({
       ...prev,
@@ -418,7 +443,7 @@ const Combustibles = () => {
   const handleRemoveEspecial = (index) => {
     const newList = [...cargasEspecialesList];
     newList.splice(index, 1);
-    setCargasEspecialesList(newList);
+    setCargasEspecialesList(recalculateEspecialList(newList));
   };
 
   const handleSubmitEspecial = async () => {
@@ -957,6 +982,7 @@ const Combustibles = () => {
                     <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-widest font-bold">
                       <th className="px-6 py-4">Unidad</th>
                       <th className="px-6 py-4">Detalles</th>
+                      <th className="px-6 py-4">Kilometraje</th>
                       <th className="px-6 py-4 text-right">Monto Calculado</th>
                       <th className="px-6 py-4 w-10"></th>
                     </tr>
@@ -979,6 +1005,12 @@ const Combustibles = () => {
                           <div className="flex flex-col">
                             <span className="text-sm text-slate-300 font-medium uppercase">{carga.tipo_combustible}</span>
                             <span className="text-xs text-slate-500">{carga.litros}L a ${carga.precio_unitario}/L</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1 text-xs">
+                            <span className="text-slate-500">Ant: <strong className="text-slate-400">{carga.ultimo_kilometraje}</strong></span>
+                            <span className="text-slate-500">Act: <strong className="text-white">{carga.ignorar_kilometraje ? '---' : carga.kilometraje}</strong></span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
