@@ -23,6 +23,7 @@ class BloqueCargaCombustible(models.Model):
     fecha_registro = models.DateTimeField(auto_now_add=True)
     total_litros = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_monto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    es_especial = models.BooleanField(default=False, verbose_name="¿Es Bloque Especial?")
 
     class Meta:
         verbose_name = "Bloque de Carga"

@@ -122,6 +122,29 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def historial_especiales(self, request):
-        limit = int(request.query_params.get('limit', 100))
-        cargas = CargaCombustible.objects.filter(es_especial=True).order_by('-fecha_registro')[:limit]
-        return Response(CargaCombustibleSerializer(cargas, many=True).data)
+        limit = int(request.query_params.get('limit', 50))
+        bloques = list(BloqueCargaCombustible.objects.filter(es_especial=True).order_by('-fecha_registro')[:limit])
+        return Response(BloqueCargaCombustibleSerializer(bloques, many=True).data)
+
+    @action(detail=False, methods=['post'])
+    def registro_especial(self, request):
+        cargas_data = request.data
+        if not isinstance(cargas_data, list) or not cargas_data:
+            return Response({"error": "Debe enviar una lista de cargas"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        import datetime
+        bloque = BloqueCargaCombustible.objects.create(
+            fecha=datetime.date.today(),
+            es_especial=True
+        )
+
+        for carga_data in cargas_data:
+            carga_data['bloque'] = bloque.id
+            serializer = CargaCombustibleSerializer(data=carga_data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        bloque.update_totals()
+        return Response(status=status.HTTP_201_CREATED)

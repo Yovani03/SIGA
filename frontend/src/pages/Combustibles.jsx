@@ -474,23 +474,20 @@ const Combustibles = () => {
 
     setLoading(true);
     try {
-      const promises = cargasEspecialesList.map(carga => {
-        const mappedEspecial = {
-          unidad: carga.is_variado ? null : parseInt(carga.unidad),
-          unidad_variada: carga.is_variado ? parseInt(carga.unidad) : null,
-          fecha: carga.fecha,
-          tipo_combustible: carga.tipo_combustible,
-          precio_unitario: parseFloat(carga.precio_unitario),
-          litros: Number(parseFloat(carga.litros).toFixed(3)),
-          kilometraje: carga.ignorar_kilometraje ? null : (parseInt(carga.kilometraje) || 0),
-          ignorar_kilometraje: carga.ignorar_kilometraje,
-          es_especial: true,
-          km_equivocado: carga.km_equivocado || false
-        };
-        return api.post('cargas-combustible/', mappedEspecial);
-      });
+      const payload = cargasEspecialesList.map(carga => ({
+        unidad: carga.is_variado ? null : parseInt(carga.unidad),
+        unidad_variada: carga.is_variado ? parseInt(carga.unidad) : null,
+        fecha: carga.fecha,
+        tipo_combustible: carga.tipo_combustible,
+        precio_unitario: parseFloat(carga.precio_unitario),
+        litros: Number(parseFloat(carga.litros).toFixed(3)),
+        kilometraje: carga.ignorar_kilometraje ? null : (parseInt(carga.kilometraje) || 0),
+        ignorar_kilometraje: carga.ignorar_kilometraje,
+        es_especial: true,
+        km_equivocado: carga.km_equivocado || false
+      }));
       
-      await Promise.all(promises);
+      await api.post('cargas-combustible/registro_especial/', payload);
       
       notify.success("Cargas especiales guardadas");
       setCargasEspecialesList([]);
@@ -1209,49 +1206,59 @@ const Combustibles = () => {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-950/50 text-amber-500 dark:text-amber-500/80 text-xs uppercase tracking-widest font-bold">
-                      <th className="px-8 py-5">Unidad</th>
-                      <th className="px-8 py-5">Fecha Carga</th>
-                      <th className="px-8 py-5">Detalles</th>
-                      <th className="px-8 py-5">Kilometraje</th>
+                      <th className="px-8 py-5">Bloque Especial</th>
+                      <th className="px-8 py-5">Rango de Fechas</th>
+                      <th className="px-8 py-5 text-right">Cant. Cargas</th>
+                      <th className="px-8 py-5 text-right">Total Litros</th>
                       <th className="px-8 py-5 text-right">Monto Total</th>
+                      <th className="px-8 py-5 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
-                    {historialEspecial.map((carga, idx) => (
+                    {historialEspecial.map((bloque, idx) => {
+                      const fechas = bloque.cargas?.map(c => new Date(c.fecha).getTime()) || [];
+                      const minDate = fechas.length > 0 ? new Date(Math.min(...fechas)).toLocaleDateString() : 'N/A';
+                      const maxDate = fechas.length > 0 ? new Date(Math.max(...fechas)).toLocaleDateString() : 'N/A';
+                      const rangoFechas = minDate === maxDate ? minDate : `${minDate} - ${maxDate}`;
+                      return (
                       <tr key={idx} className="group hover:bg-amber-600/5 transition-colors">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all">
-                              <Truck size={20} />
+                              <History size={20} />
                             </div>
                             <div>
-                              <p className="text-slate-900 dark:text-white font-bold">{carga.unidad_obj ? carga.unidad_obj.numero_economico : carga.unidad_variada_obj?.numero_economico}</p>
+                              <p className="text-slate-900 dark:text-white font-bold">Bloque #{bloque.id}</p>
+                              <p className="text-slate-500 text-[10px]">Guardado: {new Date(bloque.fecha_registro).toLocaleString()}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-8 py-5">
-                          <p className="text-slate-900 dark:text-slate-300 font-medium">{carga.fecha}</p>
-                          <p className="text-slate-500 text-[10px]">Registro: {new Date(carga.fecha_registro).toLocaleDateString()}</p>
+                          <p className="text-slate-900 dark:text-slate-300 font-medium">{rangoFechas}</p>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="flex flex-col">
-                            <span className="text-sm text-slate-300 font-medium uppercase">{carga.tipo_combustible}</span>
-                            <span className="text-xs text-slate-500">{carga.litros}L a ${carga.precio_unitario}/L</span>
-                          </div>
+                        <td className="px-8 py-5 text-right">
+                          <p className="text-slate-900 dark:text-slate-300 font-bold">{bloque.cargas?.length || 0} unid.</p>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="flex flex-col gap-1 text-xs">
-                            <span className="text-slate-500">Km Act: <strong className="text-white">{carga.ignorar_kilometraje ? '---' : carga.kilometraje}</strong></span>
-                            {carga.km_equivocado && <span className="text-amber-500 font-bold">KM Equivocado</span>}
-                          </div>
+                        <td className="px-8 py-5 text-right">
+                          <p className="text-slate-900 dark:text-slate-300 font-bold font-mono">
+                            {parseFloat(bloque.total_litros).toFixed(2)} L
+                          </p>
                         </td>
                         <td className="px-8 py-5 text-right">
                           <p className="text-amber-500 font-black font-mono text-lg">
-                            ${parseFloat(carga.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            ${parseFloat(bloque.total_monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                           </p>
                         </td>
+                        <td className="px-8 py-5 text-center">
+                          <button 
+                            onClick={() => setSelectedBlock(bloque)}
+                            className="bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white text-amber-500 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
+                          >
+                            Ver Detalles
+                          </button>
+                        </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
