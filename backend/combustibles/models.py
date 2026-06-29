@@ -75,61 +75,66 @@ class CargaCombustible(models.Model):
         if not self.monto_total and self.litros and self.precio_unitario:
             self.monto_total = self.litros * self.precio_unitario
         
-        # Rendimiento calculation logic
-        if not self.ignorar_kilometraje and self.kilometraje and self.litros and (self.unidad or self.unidad_variada):
-            # Get previous load to calculate distance
-            if self.unidad:
-                ultima_carga = CargaCombustible.objects.filter(
-                    unidad=self.unidad, 
-                    fecha__lte=self.fecha,
-                    ignorar_kilometraje=False
-                ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
-            else:
-                ultima_carga = CargaCombustible.objects.filter(
-                    unidad_variada=self.unidad_variada, 
-                    fecha__lte=self.fecha,
-                    ignorar_kilometraje=False
-                ).exclude(id=self.id).order_by('-fecha', '-fecha_registro').first()
-            
-            if ultima_carga and ultima_carga.kilometraje is not None and self.kilometraje is not None:
-                distancia = self.kilometraje - ultima_carga.kilometraje
-                if distancia > 0:
-                    self.rendimiento = distancia / self.litros
-        
+        # Guardamos la carga sin calcular rendimiento para luego recalcular toda la cadena
         super().save(*args, **kwargs)
         
-        # Update unit's info
-        if self.unidad:
-            self.unidad.fecha_ultima_carga = self.fecha
-            
-            if not self.ignorar_kilometraje and self.kilometraje is not None:
-                self.unidad.ultimo_kilometraje = self.kilometraje
-                # Si es la primera carga con kilometraje de la unidad, o nunca se ha reiniciado el mantenimiento,
-                # tomamos este kilometraje como el punto inicial para empezar a calcular el próximo mantenimiento.
-                if self.unidad.ultimo_kilometraje_mantenimiento == 0:
-                    self.unidad.ultimo_kilometraje_mantenimiento = self.kilometraje
-            
-            # Para camionetas (o cualquier unidad) que no tenga una fecha de último mantenimiento registrada,
-            # inicializamos la fecha del último mantenimiento con la fecha de este primer registro de combustible.
-            # Esto permite empezar a calcular el tiempo transcurrido desde este punto de partida real.
-            if not self.unidad.fecha_ultimo_mantenimiento:
-                self.unidad.fecha_ultimo_mantenimiento = self.fecha
+        unidad_actual = self.unidad or self.unidad_variada
+        
+        if unidad_actual:
+            # Traemos TODAS las cargas de la unidad para recalcular en orden cronológico
+            if self.unidad:
+                cargas = list(CargaCombustible.objects.filter(unidad=self.unidad, ignorar_kilometraje=False).order_by('fecha', 'fecha_registro'))
+            else:
+                cargas = list(CargaCombustible.objects.filter(unidad_variada=self.unidad_variada, ignorar_kilometraje=False).order_by('fecha', 'fecha_registro'))
 
-            if self.rendimiento is not None:
-                self.unidad.ultimo_rendimiento = self.rendimiento
+            ultimo_km_previo = None
+
+            # Recorremos cronológicamente para recalcular
+            for carga in cargas:
+                nuevo_rendimiento = None
+                if ultimo_km_previo is not None and carga.kilometraje is not None:
+                    distancia = carga.kilometraje - ultimo_km_previo
+                    if distancia > 0 and carga.litros and float(carga.litros) > 0:
+                        nuevo_rendimiento = round(float(distancia) / float(carga.litros), 2)
                 
-            self.unidad.save()
-            
-        elif self.unidad_variada:
-            self.unidad_variada.fecha_ultima_carga = self.fecha
-            
-            if not self.ignorar_kilometraje and self.kilometraje is not None:
-                self.unidad_variada.ultimo_kilometraje = self.kilometraje
+                rendimiento_actual = float(carga.rendimiento) if carga.rendimiento is not None else None
                 
-            if self.rendimiento is not None:
-                self.unidad_variada.ultimo_rendimiento = self.rendimiento
+                # Actualizar si hubo cambio real
+                if rendimiento_actual != nuevo_rendimiento:
+                    # Usamos update para no disparar recursividad con .save()
+                    CargaCombustible.objects.filter(id=carga.id).update(rendimiento=nuevo_rendimiento)
+                    if carga.id == self.id:
+                        self.rendimiento = nuevo_rendimiento
                 
-            self.unidad_variada.save()
+                # Actualizar el km previo para la siguiente iteración
+                if carga.kilometraje is not None:
+                    ultimo_km_previo = carga.kilometraje
+
+            # Finalmente, actualizar la información del vehículo tomando la última carga registrada (cronológicamente)
+            if cargas:
+                ultima_carga = cargas[-1]
+                # Necesitamos refrescar ultima_carga de la DB si su rendimiento fue actualizado y no es self
+                if ultima_carga.id != self.id:
+                    ultima_carga.refresh_from_db()
+                elif ultima_carga.id == self.id:
+                    ultima_carga.rendimiento = self.rendimiento
+
+                unidad_actual.fecha_ultima_carga = ultima_carga.fecha
+                if ultima_carga.kilometraje is not None:
+                    unidad_actual.ultimo_kilometraje = ultima_carga.kilometraje
+                
+                # Actualizar siempre al rendimiento cronológico más reciente, incluso si es None
+                unidad_actual.ultimo_rendimiento = ultima_carga.rendimiento
+                
+                # Lógicas específicas de UnidadTractocamion
+                if self.unidad:
+                    if getattr(unidad_actual, 'ultimo_kilometraje_mantenimiento', None) == 0 and cargas[0].kilometraje is not None:
+                        unidad_actual.ultimo_kilometraje_mantenimiento = cargas[0].kilometraje
+                    
+                    if not getattr(unidad_actual, 'fecha_ultimo_mantenimiento', True):
+                        unidad_actual.fecha_ultimo_mantenimiento = cargas[0].fecha
+                
+                unidad_actual.save()
 
 
 
