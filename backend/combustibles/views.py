@@ -121,6 +121,46 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
         return Response({"km_anterior": km_anterior})
 
     @action(detail=False, methods=['get'])
+    def totalizador_unidades(self, request):
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+        
+        if not fecha_inicio or not fecha_fin:
+            return Response({"error": "fecha_inicio y fecha_fin son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        cargas = CargaCombustible.objects.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin)
+        
+        # Agrupar manualmente en Python para combinar Tractocamiones y Vehículos Variados uniformemente
+        resultados = {}
+        for c in cargas:
+            if c.unidad:
+                key = f"t-{c.unidad.id}"
+                nombre = c.unidad.numero_economico
+            elif c.unidad_variada:
+                key = f"v-{c.unidad_variada.id}"
+                nombre = c.unidad_variada.numero_economico
+            else:
+                continue
+            
+            if key not in resultados:
+                resultados[key] = {
+                    "id_key": key,
+                    "unidad_nombre": nombre,
+                    "total_litros": 0,
+                    "total_monto": 0,
+                    "cantidad_cargas": 0
+                }
+            resultados[key]["total_litros"] += float(c.litros) if c.litros else 0
+            resultados[key]["total_monto"] += float(c.monto_total) if c.monto_total else 0
+            resultados[key]["cantidad_cargas"] += 1
+            
+        lista_resultados = list(resultados.values())
+        # Ordenar por total_litros descendente
+        lista_resultados.sort(key=lambda x: x['total_litros'], reverse=True)
+        
+        return Response(lista_resultados)
+
+    @action(detail=False, methods=['get'])
     def historial_especiales(self, request):
         limit = int(request.query_params.get('limit', 50))
         bloques = list(BloqueCargaCombustible.objects.filter(es_especial=True).order_by('-fecha_registro')[:limit])
