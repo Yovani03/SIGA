@@ -41,6 +41,8 @@ const Combustibles = () => {
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [busquedaFocus, setBusquedaFocus] = useState(false);
+  const [busquedaEspecial, setBusquedaEspecial] = useState('');
+  const [busquedaEspecialFocus, setBusquedaEspecialFocus] = useState(false);
   const [activeTab, setActiveTab] = useState(isLector ? 'historial' : 'nuevo'); // 'nuevo', 'especial' o 'historial'
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
@@ -359,6 +361,7 @@ const Combustibles = () => {
       km_equivocado: false,
       ultimo_kilometraje: 0
     }));
+    setBusquedaEspecial('');
   };
 
   const handleRemoveEspecial = (index) => {
@@ -406,6 +409,11 @@ const Combustibles = () => {
   const filteredUnidades = unidades.filter(u => 
     u.numero_economico.toLowerCase().includes(busqueda.toLowerCase()) || 
     u.placas?.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  const filteredUnidadesEspecial = unidades.filter(u => 
+    u.numero_economico.toLowerCase().includes(busquedaEspecial.toLowerCase()) || 
+    u.placas?.toLowerCase().includes(busquedaEspecial.toLowerCase())
   );
 
   return (
@@ -715,36 +723,58 @@ const Combustibles = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Unidad</label>
-                <select 
-                  required
-                  value={cargaEspecial.unidad}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val) {
-                      setCargaEspecial({ ...cargaEspecial, unidad: val, ultimo_kilometraje: 0, kilometraje: '', km_equivocado: false });
-                      return;
-                    }
-                    const is_variado = val.startsWith('v-');
-                    const unidadId = parseInt(val.split('-')[1]);
-                    const unit = unidades.find(u => u.id === unidadId && u.is_variado === is_variado);
-                    setCargaEspecial({
-                      ...cargaEspecial,
-                      unidad: val,
-                      is_variado: unit ? unit.is_variado : false,
-                      ultimo_kilometraje: unit ? (unit.ultimo_kilometraje || 0) : 0,
-                      kilometraje: unit ? (unit.ultimo_kilometraje || '') : '',
-                      km_equivocado: false
-                    });
-                  }}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                >
-                  <option value="">Seleccionar Unidad...</option>
-                  {unidades.map(u => (
-                    <option key={`${u.is_variado ? 'v' : 't'}-${u.id}`} value={`${u.is_variado ? 'v' : 't'}-${u.id}`}>
-                      {u.numero_economico} {u.placas ? `- ${u.placas}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Buscar unidad por económico o placa..."
+                    value={busquedaEspecial}
+                    onChange={(e) => {
+                      setBusquedaEspecial(e.target.value);
+                      if (cargaEspecial.unidad) {
+                        setCargaEspecial({ ...cargaEspecial, unidad: '', ultimo_kilometraje: 0, kilometraje: '', km_equivocado: false });
+                      }
+                    }}
+                    onFocus={() => setBusquedaEspecialFocus(true)}
+                    onBlur={() => setTimeout(() => setBusquedaEspecialFocus(false), 200)}
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                  />
+                  {(busquedaEspecialFocus || busquedaEspecial) && !cargaEspecial.unidad && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
+                      {filteredUnidadesEspecial.length > 0 ? (
+                        filteredUnidadesEspecial.map(u => (
+                          <button 
+                            key={`${u.is_variado ? 'v' : 't'}-${u.id}`}
+                            type="button"
+                            onClick={() => {
+                              const val = `${u.is_variado ? 'v' : 't'}-${u.id}`;
+                              setCargaEspecial({
+                                ...cargaEspecial,
+                                unidad: val,
+                                is_variado: u.is_variado,
+                                ultimo_kilometraje: u.ultimo_kilometraje || 0,
+                                kilometraje: u.ultimo_kilometraje || '',
+                                km_equivocado: false
+                              });
+                              setBusquedaEspecial(u.numero_economico);
+                              setBusquedaEspecialFocus(false);
+                            }}
+                            className="w-full flex items-center justify-between px-6 py-4 hover:bg-amber-500/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                          >
+                            <div>
+                              <div className="text-slate-900 dark:text-white font-bold group-hover:text-amber-500">{u.numero_economico}</div>
+                              <div className="text-xs text-slate-500">{u.placas ? `${u.placas} - ` : ''}{u.marca}</div>
+                            </div>
+                            <CheckCircle2 size={18} className="text-slate-400 group-hover:text-amber-500" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-slate-500 text-center text-sm">No se encontraron unidades</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
