@@ -86,7 +86,22 @@ const Combustibles = () => {
       
       try {
         const res = await api.get(`cargas-combustible/km_anterior/?unidad_id=${unidadId}&is_variado=${is_variado}&fecha=${cargaEspecial.fecha}`);
-        const km = res.data.km_anterior || 0;
+        let km = res.data.km_anterior || 0;
+        
+        // Revisar si ya hay cargas de esta unidad en la lista local (aún no guardadas en BD)
+        const cargasLocales = cargasEspecialesList.filter(c => 
+          c.unidad === unidadId && 
+          c.is_variado === is_variado && 
+          new Date(c.fecha) <= new Date(cargaEspecial.fecha) &&
+          !c.ignorar_kilometraje &&
+          c.kilometraje
+        );
+
+        if (cargasLocales.length > 0) {
+          // Ordenar cronológicamente descendente para agarrar la más cercana a la fecha seleccionada
+          cargasLocales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+          km = parseInt(cargasLocales[0].kilometraje);
+        }
         
         setCargaEspecial(prev => {
           // Evitar bucles infinitos si no cambia
@@ -111,7 +126,7 @@ const Combustibles = () => {
     };
     
     fetchKmAnterior();
-  }, [cargaEspecial.unidad, cargaEspecial.fecha]);
+  }, [cargaEspecial.unidad, cargaEspecial.fecha, cargasEspecialesList]);
 
   const fetchHistorial = async () => {
     try {
