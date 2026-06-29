@@ -123,8 +123,8 @@ class CargaCombustible(models.Model):
                 if ultima_carga.kilometraje is not None:
                     unidad_actual.ultimo_kilometraje = ultima_carga.kilometraje
                 
-                # Actualizar siempre al rendimiento cronológico más reciente, incluso si es None
-                unidad_actual.ultimo_rendimiento = ultima_carga.rendimiento
+                # Actualizar siempre al rendimiento cronológico más reciente, evitando null
+                unidad_actual.ultimo_rendimiento = ultima_carga.rendimiento if ultima_carga.rendimiento is not None else 0
                 
                 # Lógicas específicas de UnidadTractocamion
                 if self.unidad:

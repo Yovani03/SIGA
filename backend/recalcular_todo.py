@@ -38,7 +38,7 @@ def recalcular_todo():
         unidad.fecha_ultima_carga = ultima_carga.fecha
         if ultima_carga.kilometraje is not None:
             unidad.ultimo_kilometraje = ultima_carga.kilometraje
-        unidad.ultimo_rendimiento = ultima_carga.rendimiento
+        unidad.ultimo_rendimiento = ultima_carga.rendimiento if ultima_carga.rendimiento is not None else 0
         unidad.save()
         print(f"Unidad {unidad.numero_economico} actualizada. Último rendimiento: {unidad.ultimo_rendimiento}")
 
@@ -70,7 +70,7 @@ def recalcular_todo():
         unidad.fecha_ultima_carga = ultima_carga.fecha
         if ultima_carga.kilometraje is not None:
             unidad.ultimo_kilometraje = ultima_carga.kilometraje
-        unidad.ultimo_rendimiento = ultima_carga.rendimiento
+        unidad.ultimo_rendimiento = ultima_carga.rendimiento if ultima_carga.rendimiento is not None else 0
         unidad.save()
         print(f"Vehículo Variado {unidad.numero_economico} actualizado. Último rendimiento: {unidad.ultimo_rendimiento}")
 
