@@ -92,3 +92,30 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
         
         cargas = CargaCombustible.objects.filter(fecha=fecha).order_by('id')
         return Response(CargaCombustibleSerializer(cargas, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def km_anterior(self, request):
+        unidad_id = request.query_params.get('unidad_id')
+        is_variado = request.query_params.get('is_variado', 'false').lower() == 'true'
+        fecha = request.query_params.get('fecha')
+
+        if not unidad_id or not fecha:
+            return Response({"error": "unidad_id y fecha son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if is_variado:
+            carga = CargaCombustible.objects.filter(
+                unidad_variada_id=unidad_id, 
+                fecha__lte=fecha, 
+                ignorar_kilometraje=False,
+                kilometraje__isnull=False
+            ).order_by('-fecha', '-fecha_registro').first()
+        else:
+            carga = CargaCombustible.objects.filter(
+                unidad_id=unidad_id, 
+                fecha__lte=fecha, 
+                ignorar_kilometraje=False,
+                kilometraje__isnull=False
+            ).order_by('-fecha', '-fecha_registro').first()
+
+        km_anterior = carga.kilometraje if carga else 0
+        return Response({"km_anterior": km_anterior})

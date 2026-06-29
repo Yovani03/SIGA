@@ -77,6 +77,42 @@ const Combustibles = () => {
     }
   }, [activeTab, fechaHistorial]);
 
+  useEffect(() => {
+    const fetchKmAnterior = async () => {
+      if (!cargaEspecial.unidad || !cargaEspecial.fecha) return;
+      
+      const is_variado = cargaEspecial.unidad.startsWith('v-');
+      const unidadId = parseInt(cargaEspecial.unidad.split('-')[1]);
+      
+      try {
+        const res = await api.get(`cargas-combustible/km_anterior/?unidad_id=${unidadId}&is_variado=${is_variado}&fecha=${cargaEspecial.fecha}`);
+        const km = res.data.km_anterior || 0;
+        
+        setCargaEspecial(prev => {
+          // Evitar bucles infinitos si no cambia
+          if (prev.ultimo_kilometraje === km) return prev;
+          
+          // Si el kilometraje actual está vacío o era el default global de la unidad, lo sobreescribimos
+          const unitGlobalKm = prev.is_variado 
+            ? (unidades.find(u => `v-${u.id}` === prev.unidad)?.ultimo_kilometraje || 0)
+            : (unidades.find(u => `t-${u.id}` === prev.unidad)?.ultimo_kilometraje || 0);
+            
+          const shouldUpdateInput = prev.km_equivocado || prev.kilometraje === '' || prev.kilometraje === unitGlobalKm;
+          
+          return {
+            ...prev,
+            ultimo_kilometraje: km,
+            kilometraje: shouldUpdateInput ? km : prev.kilometraje
+          };
+        });
+      } catch (err) {
+        console.error("Error fetching km anterior", err);
+      }
+    };
+    
+    fetchKmAnterior();
+  }, [cargaEspecial.unidad, cargaEspecial.fecha]);
+
   const fetchHistorial = async () => {
     try {
       setLoadingHistorial(true);
