@@ -621,6 +621,7 @@ const Combustibles = () => {
     u.placas?.toLowerCase().includes(busquedaEspecial.toLowerCase())
   );
 
+  return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex bg-white dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-max mb-2 backdrop-blur-xl shadow-sm dark:shadow-inner">
         {!isLector && (
