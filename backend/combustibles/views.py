@@ -128,7 +128,7 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
         if not fecha_inicio or not fecha_fin:
             return Response({"error": "fecha_inicio y fecha_fin son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
         
-        cargas = CargaCombustible.objects.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin)
+        cargas = CargaCombustible.objects.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin).order_by('fecha', 'id')
         
         # Agrupar manualmente en Python para combinar Tractocamiones y Vehículos Variados uniformemente
         resultados = {}
@@ -148,11 +148,14 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
                     "unidad_nombre": nombre,
                     "total_litros": 0,
                     "total_monto": 0,
-                    "cantidad_cargas": 0
+                    "cantidad_cargas": 0,
+                    "ultimo_km": 0
                 }
             resultados[key]["total_litros"] += float(c.litros) if c.litros else 0
             resultados[key]["total_monto"] += float(c.monto_total) if c.monto_total else 0
             resultados[key]["cantidad_cargas"] += 1
+            if c.kilometraje:
+                resultados[key]["ultimo_km"] = c.kilometraje
             
         lista_resultados = list(resultados.values())
         # Ordenar por total_litros descendente

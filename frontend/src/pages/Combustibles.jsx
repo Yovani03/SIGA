@@ -250,6 +250,7 @@ const Combustibles = () => {
 
     const tableBody = totalizadorData.map(item => [
       item.unidad_nombre,
+      item.ultimo_km ? item.ultimo_km.toLocaleString('en-US') : "-",
       item.cantidad_cargas,
       parseFloat(item.total_litros).toFixed(3) + " L",
       "$" + parseFloat(item.total_monto).toLocaleString('es-MX', {minimumFractionDigits:2})
@@ -260,6 +261,7 @@ const Combustibles = () => {
 
     tableBody.push([
       "GRAN TOTAL",
+      "-",
       totalizadorData.reduce((acc, curr) => acc + curr.cantidad_cargas, 0),
       granTotalLitros.toFixed(3) + " L",
       "$" + granTotalMonto.toLocaleString('es-MX', {minimumFractionDigits:2})
@@ -267,7 +269,7 @@ const Combustibles = () => {
 
     autoTable(doc, {
       startY: 40,
-      head: [['Unidad', 'Total Cargas', 'Total Litros', 'Monto Total']],
+      head: [['Unidad', 'Último KM', 'Total Cargas', 'Total Litros', 'Monto Total']],
       body: tableBody,
       theme: 'grid',
       headStyles: { fillColor: [30, 58, 138] }, // bg-blue-900
@@ -1377,6 +1379,7 @@ const Combustibles = () => {
                         <thead className="bg-slate-800/50 text-slate-400 border-b border-slate-700">
                           <tr>
                             <th className="px-6 py-4 font-bold text-slate-300 uppercase text-xs tracking-wider">Unidad</th>
+                            <th className="px-6 py-4 font-bold text-slate-300 uppercase text-xs tracking-wider text-center">Último KM</th>
                             <th className="px-6 py-4 font-bold text-center uppercase text-xs tracking-wider">Total Cargas</th>
                             <th className="px-6 py-4 font-bold text-right text-blue-400 uppercase text-xs tracking-wider">Total Litros</th>
                             <th className="px-6 py-4 font-bold text-right text-emerald-400 uppercase text-xs tracking-wider">Monto Total</th>
@@ -1402,6 +1405,9 @@ const Combustibles = () => {
                                 <tr key={item.id_key} className="hover:bg-slate-800/30 transition-colors group">
                                   <td className="px-6 py-4 text-white font-bold text-base group-hover:text-emerald-400 transition-colors">{item.unidad_nombre}</td>
                                   <td className="px-6 py-4 text-center text-slate-300 font-medium">
+                                    <span className="bg-slate-800/80 px-3 py-1 rounded-lg text-xs font-mono border border-slate-700 text-slate-300">{item.ultimo_km ? item.ultimo_km.toLocaleString('en-US') : "-"}</span>
+                                  </td>
+                                  <td className="px-6 py-4 text-center text-slate-300 font-medium">
                                     <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-bold border border-slate-700 group-hover:border-emerald-500/50 transition-colors">{item.cantidad_cargas}</span>
                                   </td>
                                   <td className="px-6 py-4 text-right font-mono text-blue-300 font-bold text-base">
@@ -1415,6 +1421,7 @@ const Combustibles = () => {
                               {/* Gran Total Footer */}
                               <tr className="bg-slate-800/90 border-t-2 border-emerald-500/30">
                                 <td className="px-6 py-5 text-white font-black text-lg uppercase tracking-wider">Gran Total</td>
+                                <td className="px-6 py-5 text-center text-slate-500 font-bold text-lg">-</td>
                                 <td className="px-6 py-5 text-center text-white font-bold text-lg">
                                   {totalizadorData.reduce((acc, curr) => acc + curr.cantidad_cargas, 0)}
                                 </td>
