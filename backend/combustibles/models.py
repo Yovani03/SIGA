@@ -21,7 +21,7 @@ class PrecioCombustible(models.Model):
 class BloqueCargaCombustible(models.Model):
     fecha = models.DateField(verbose_name="Fecha de Registro")
     fecha_registro = models.DateTimeField(auto_now_add=True)
-    total_litros = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_litros = models.DecimalField(max_digits=12, decimal_places=3, default=0)
     total_monto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     es_especial = models.BooleanField(default=False, verbose_name="¿Es Bloque Especial?")
 
@@ -53,7 +53,7 @@ class CargaCombustible(models.Model):
     fecha = models.DateField(verbose_name="Fecha de Carga")
     tipo_combustible = models.CharField(max_length=20, choices=TIPO_CHOICES)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio por Litro")
-    litros = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Litros Cargados")
+    litros = models.DecimalField(max_digits=10, decimal_places=3, verbose_name="Litros Cargados")
     monto_total = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto Total")
     kilometraje = models.IntegerField(null=True, blank=True, verbose_name="Kilometraje")
     ignorar_kilometraje = models.BooleanField(default=False, verbose_name="Ignorar Kilometraje")
