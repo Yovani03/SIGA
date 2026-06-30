@@ -251,7 +251,7 @@ const Combustibles = () => {
     const tableBody = totalizadorData.map(item => [
       item.unidad_nombre,
       item.cantidad_cargas,
-      parseFloat(item.total_litros).toFixed(2) + " L",
+      parseFloat(item.total_litros).toFixed(3) + " L",
       "$" + parseFloat(item.total_monto).toLocaleString('es-MX', {minimumFractionDigits:2})
     ]);
 
@@ -261,7 +261,7 @@ const Combustibles = () => {
     tableBody.push([
       "GRAN TOTAL",
       totalizadorData.reduce((acc, curr) => acc + curr.cantidad_cargas, 0),
-      granTotalLitros.toFixed(2) + " L",
+      granTotalLitros.toFixed(3) + " L",
       "$" + granTotalMonto.toLocaleString('es-MX', {minimumFractionDigits:2})
     ]);
 
@@ -1405,7 +1405,7 @@ const Combustibles = () => {
                                     <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-bold border border-slate-700 group-hover:border-emerald-500/50 transition-colors">{item.cantidad_cargas}</span>
                                   </td>
                                   <td className="px-6 py-4 text-right font-mono text-blue-300 font-bold text-base">
-                                    {parseFloat(item.total_litros).toFixed(2)} L
+                                    {parseFloat(item.total_litros).toFixed(3)} L
                                   </td>
                                   <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold text-base">
                                     ${parseFloat(item.total_monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
@@ -1419,7 +1419,7 @@ const Combustibles = () => {
                                   {totalizadorData.reduce((acc, curr) => acc + curr.cantidad_cargas, 0)}
                                 </td>
                                 <td className="px-6 py-5 text-right font-mono text-blue-400 font-black text-lg">
-                                  {totalizadorData.reduce((acc, curr) => acc + parseFloat(curr.total_litros), 0).toFixed(2)} L
+                                  {totalizadorData.reduce((acc, curr) => acc + parseFloat(curr.total_litros), 0).toFixed(3)} L
                                 </td>
                                 <td className="px-6 py-5 text-right font-mono text-emerald-400 font-black text-lg">
                                   ${totalizadorData.reduce((acc, curr) => acc + parseFloat(curr.total_monto), 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
