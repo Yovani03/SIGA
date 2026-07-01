@@ -49,10 +49,23 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
             # Extraemos las unidades primarias o del arreglo
             unidades_a_reiniciar = set()
-            if factura.unidad:
-                unidades_a_reiniciar.add(factura.unidad)
-            for u in factura.unidades.all():
-                unidades_a_reiniciar.add(u)
+            
+            unidades_mantenimiento_raw = self.request.data.get('unidades_mantenimiento')
+            if unidades_mantenimiento_raw:
+                import json
+                try:
+                    selected_ids = set(json.loads(unidades_mantenimiento_raw))
+                    from vehiculos.models import UnidadTractocamion
+                    for u in UnidadTractocamion.objects.filter(id__in=selected_ids):
+                        unidades_a_reiniciar.add(u)
+                except Exception:
+                    pass
+            
+            if not unidades_a_reiniciar:
+                if factura.unidad:
+                    unidades_a_reiniciar.add(factura.unidad)
+                for u in factura.unidades.all():
+                    unidades_a_reiniciar.add(u)
 
             # Las cajas y variados no tienen ultimo_kilometraje_mantenimiento en sus modelos base
             for unidad in unidades_a_reiniciar:

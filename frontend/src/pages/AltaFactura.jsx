@@ -62,6 +62,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [esPreventivo, setEsPreventivo] = useState(false);
   const [usaFechaDiferente, setUsaFechaDiferente] = useState(false);
   const [fechaServicio, setFechaServicio] = useState('');
+  const [unidadesMantenimiento, setUnidadesMantenimiento] = useState([]);
   const [ivaIncluido, setIvaIncluido] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
@@ -151,6 +152,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setUsaFechaDiferente(!!factura.fecha_servicio && factura.fecha_servicio !== factura.fecha);
       setFechaServicio(factura.fecha_servicio || factura.fecha || '');
       setIvaIncluido(factura.iva_aplicado || false);
+      setUnidadesMantenimiento(factura.unidades_mantenimiento || []);
     }
   }, [factura]);
 
@@ -571,6 +573,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     if (esPreventivo) {
       data.append('es_preventivo', true);
       data.append('fecha_servicio', usaFechaDiferente ? fechaServicio : formData.fecha);
+      if (unidadesMantenimiento.length > 0) {
+        data.append('unidades_mantenimiento', JSON.stringify(unidadesMantenimiento));
+      }
     }
     
     if (scannedFiles.length > 0) {
@@ -621,6 +626,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setEsPreventivo(false);
       setUsaFechaDiferente(false);
       setFechaServicio('');
+      setUnidadesMantenimiento([]);
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -1137,8 +1143,13 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     if (!e.target.checked) {
                       setUsaFechaDiferente(false);
                       setFechaServicio('');
-                    } else if (!fechaServicio && formData.fecha) {
-                      setFechaServicio(formData.fecha);
+                      setUnidadesMantenimiento([]);
+                    } else {
+                      if (!fechaServicio && formData.fecha) {
+                        setFechaServicio(formData.fecha);
+                      }
+                      // Por defecto seleccionar todas las unidades actuales
+                      setUnidadesMantenimiento(formData.unidades);
                     }
                   }}
                   className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -1179,6 +1190,44 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                         onChange={(e) => setFechaServicio(e.target.value)}
                         className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
                       />
+                    </div>
+                  )}
+
+                  {formData.unidades.length > 1 && (
+                    <div className="mt-4 animate-in slide-in-from-left-2 duration-300">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        ¿A qué unidades se les aplicará este mantenimiento?
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.unidades.map(uId => {
+                          const v = vehiculos.find(veh => veh.id === uId);
+                          const isSelected = unidadesMantenimiento.includes(uId);
+                          return v ? (
+                            <label
+                              key={`mantenimiento-unidad-${uId}`}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'bg-blue-600/10 border-blue-500/30 text-blue-600 dark:text-blue-400' 
+                                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setUnidadesMantenimiento(prev => [...prev, uId]);
+                                  } else {
+                                    setUnidadesMantenimiento(prev => prev.filter(id => id !== uId));
+                                  }
+                                }}
+                                className="hidden"
+                              />
+                              {v.numero_economico}
+                            </label>
+                          ) : null;
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
