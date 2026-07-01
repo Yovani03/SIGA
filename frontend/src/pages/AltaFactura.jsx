@@ -59,6 +59,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     variados: [],
     detalles_unidades: []
   });
+  const [esPreventivo, setEsPreventivo] = useState(false);
+  const [usaFechaDiferente, setUsaFechaDiferente] = useState(false);
+  const [fechaServicio, setFechaServicio] = useState('');
   const [ivaIncluido, setIvaIncluido] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
@@ -144,6 +147,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
           monto: d.monto 
         })) || []
       });
+      setEsPreventivo(factura.es_preventivo || false);
+      setUsaFechaDiferente(!!factura.fecha_servicio && factura.fecha_servicio !== factura.fecha);
+      setFechaServicio(factura.fecha_servicio || factura.fecha || '');
       setIvaIncluido(factura.iva_aplicado || false);
     }
   }, [factura]);
@@ -562,6 +568,11 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     if (formData.rfc_emisor) data.append('rfc_emisor', formData.rfc_emisor);
     if (formData.razon_social_emisor) data.append('razon_social_emisor', formData.razon_social_emisor);
     
+    if (esPreventivo) {
+      data.append('es_preventivo', true);
+      data.append('fecha_servicio', usaFechaDiferente ? fechaServicio : formData.fecha);
+    }
+    
     if (scannedFiles.length > 0) {
       if (scannedFiles.length === 1) {
         data.append('archivo_escaneado', scannedFiles[0]);
@@ -607,6 +618,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
         setTimeout(() => onSuccess(), 1500);
       }
       setFormData({ fecha: '', monto: '', folio: '', unidad: '', caja: '', variado: '', producto: '', ticket: '', taller: '', proveedor: '', descripcion: '', archivo_escaneado: null, rfc_emisor: '', razon_social_emisor: '', categoria: 'Otro', unidades: [], cajas: [], variados: [], detalles_unidades: [] });
+      setEsPreventivo(false);
+      setUsaFechaDiferente(false);
+      setFechaServicio('');
       setScannedFiles([]);
       setBusquedaTicket('');
       setBusquedaUnidad('');
@@ -1111,6 +1125,64 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
               </div>
 
 
+            </div>
+
+            <div className="mt-6 bg-slate-50 dark:bg-slate-950/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-inner">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={esPreventivo}
+                  onChange={(e) => {
+                    setEsPreventivo(e.target.checked);
+                    if (!e.target.checked) {
+                      setUsaFechaDiferente(false);
+                      setFechaServicio('');
+                    } else if (!fechaServicio && formData.fecha) {
+                      setFechaServicio(formData.fecha);
+                    }
+                  }}
+                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  ¿Es Mantenimiento Preventivo? (Reinicia los contadores de las unidades)
+                </span>
+              </label>
+
+              {esPreventivo && (
+                <div className="mt-4 pl-8 space-y-4 border-l-2 border-blue-500/20">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={usaFechaDiferente}
+                      onChange={(e) => {
+                        setUsaFechaDiferente(e.target.checked);
+                        if (e.target.checked && !fechaServicio) {
+                          setFechaServicio(formData.fecha);
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      Usar fecha de servicio diferente a la factura
+                    </span>
+                  </label>
+
+                  {usaFechaDiferente && (
+                    <div className="max-w-xs animate-in slide-in-from-left-2 duration-300">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                        Fecha del Servicio Realizado
+                      </label>
+                      <input
+                        required={usaFechaDiferente}
+                        type="date"
+                        value={fechaServicio}
+                        onChange={(e) => setFechaServicio(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {totalSelectedAssets > 1 && (

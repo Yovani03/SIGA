@@ -37,6 +37,29 @@ class FacturaViewSet(viewsets.ModelViewSet):
             detalles=f"Se ha dado de alta la factura con folio {factura.folio}."
         )
 
+        es_preventivo = self.request.data.get('es_preventivo') == 'true' or self.request.data.get('es_preventivo') is True
+        if es_preventivo:
+            fecha_servicio = self.request.data.get('fecha_servicio')
+            if not fecha_servicio:
+                fecha_servicio = factura.fecha
+
+            from django.utils.dateparse import parse_date
+            if isinstance(fecha_servicio, str):
+                fecha_servicio = parse_date(fecha_servicio)
+
+            # Extraemos las unidades primarias o del arreglo
+            unidades_a_reiniciar = set()
+            if factura.unidad:
+                unidades_a_reiniciar.add(factura.unidad)
+            for u in factura.unidades.all():
+                unidades_a_reiniciar.add(u)
+
+            # Las cajas y variados no tienen ultimo_kilometraje_mantenimiento en sus modelos base
+            for unidad in unidades_a_reiniciar:
+                unidad.ultimo_kilometraje_mantenimiento = unidad.ultimo_kilometraje
+                unidad.fecha_ultimo_mantenimiento = fecha_servicio
+                unidad.save()
+
     def update(self, request, *args, **kwargs):
         user = request.user
         try:

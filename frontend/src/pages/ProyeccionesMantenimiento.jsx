@@ -29,19 +29,7 @@ const ProyeccionesMantenimiento = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const handleReset = async (id) => {
-    if (!window.confirm("¿Confirmas que se le hizo el mantenimiento a esta unidad HOY? Esto reiniciará sus contadores.")) return;
-    setResettingId(id);
-    try {
-      await api.post(`vehiculos/${id}/reset_mantenimiento/`);
-      await fetchProyecciones();
-    } catch (err) {
-      console.error("Error resetting mantenimiento:", err);
-      alert("Hubo un error al reiniciar los contadores.");
-    } finally {
-      setResettingId(null);
-    }
-  };
+
 
   const getVehicleIcon = (tipo) => {
     if (tipo.includes('Coche')) return <Car size={20} />;
@@ -182,18 +170,7 @@ const ProyeccionesMantenimiento = () => {
               </div>
             )}
 
-            <button 
-              onClick={() => handleReset(p.id)}
-              disabled={resettingId === p.id}
-              className={`mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors font-bold text-sm ${
-                p.estado_alerta === 'sin_iniciar' 
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20' 
-                  : 'bg-slate-800 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {resettingId === p.id ? <RefreshCw className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-              {p.estado_alerta === 'sin_iniciar' ? 'Iniciar Ciclo Hoy' : 'Registrar Mantenimiento Hoy'}
-            </button>
+
           </div>
         ))}
         </div>
