@@ -41,6 +41,7 @@ const Mantenimiento = () => {
   const [activeTab, setActiveTab] = useState('todos');
   const { user } = useContext(AuthContext);
   const isLector = user?.rol === 'lector_gastos';
+  const isCapturista = user?.rol === 'capturista';
   
   const [formData, setFormData] = useState({
     unidad: '',
@@ -61,6 +62,12 @@ const Mantenimiento = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (isCapturista) {
+      setActiveTab('proyecciones');
+    }
+  }, [isCapturista]);
 
   const fetchData = async () => {
     try {
@@ -165,7 +172,7 @@ const Mantenimiento = () => {
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 lg:mt-2 text-sm">Gestiona órdenes de trabajo y servicios.</p>
         </div>
-        {!isLector && (
+        {!isLector && !isCapturista && (
           <button 
             onClick={() => setShowModal(true)}
             className="bg-blue-600 hover:bg-blue-500 text-white px-5 lg:px-6 py-3 rounded-xl lg:rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
@@ -176,6 +183,7 @@ const Mantenimiento = () => {
       </div>
 
       {/* Stats Grid */}
+      {!isCapturista && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Órdenes', value: stats.total, icon: <Hash className="text-blue-600 dark:text-blue-400" /> },
@@ -192,8 +200,10 @@ const Mantenimiento = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Top Filters */}
+      {!isCapturista && (
       <div className="flex bg-slate-200/50 dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-full sm:w-max overflow-x-auto custom-scrollbar whitespace-nowrap backdrop-blur-xl shadow-inner">
         {[
           { id: 'todos', label: 'TODOS', count: stats.total },
@@ -225,6 +235,7 @@ const Mantenimiento = () => {
           </button>
         ))}
       </div>
+      )}
 
       {/* Cards List or Proyecciones */}
       {activeTab === 'proyecciones' ? (
