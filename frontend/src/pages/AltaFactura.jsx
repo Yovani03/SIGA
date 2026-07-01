@@ -1205,10 +1205,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                           return v ? (
                             <label
                               key={`mantenimiento-unidad-${uId}`}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
                                 isSelected 
-                                  ? 'bg-blue-600/10 border-blue-500/30 text-blue-600 dark:text-blue-400' 
-                                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' 
+                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
                               }`}
                             >
                               <input
@@ -1223,6 +1223,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                                 }}
                                 className="hidden"
                               />
+                              {isSelected && <CheckCircle size={14} className="text-white" />}
+                              {!isSelected && <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600" />}
                               {v.numero_economico}
                             </label>
                           ) : null;
