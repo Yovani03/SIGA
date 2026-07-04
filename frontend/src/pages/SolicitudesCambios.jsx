@@ -9,9 +9,11 @@ import {
   Hash, 
   ChevronDown, 
   ChevronUp,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from 'lucide-react';
 import notify from '../utils/notifications';
+import { formatMediaUrl } from '../utils/media';
 
 const SolicitudesCambios = () => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -276,6 +278,27 @@ const SolicitudesCambios = () => {
                   <div className="mb-8">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Detalle de Cambios</h4>
                     {renderChanges(solicitud)}
+                    {solicitud.nuevo_archivo_escaneado && (
+                      <div className="mt-4 p-4 rounded-xl border bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 p-2 rounded-lg">
+                            <FileEdit size={16} />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold uppercase text-blue-600 dark:text-blue-400">Nuevo Archivo Adjunto</span>
+                            <p className="text-xs text-slate-500 mt-0.5">El capturista adjuntó un nuevo documento escaneado.</p>
+                          </div>
+                        </div>
+                        <a 
+                          href={formatMediaUrl(solicitud.nuevo_archivo_escaneado)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-md transition-colors flex items-center gap-2"
+                        >
+                          <Eye size={14} /> Ver Documento
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {solicitud.estado === 'Pendiente' && (

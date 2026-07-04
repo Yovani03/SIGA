@@ -15,10 +15,14 @@ import {
   Store,
   Info,
   Search,
-  Archive
+  Archive,
+  Eye,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { PDFDocument } from 'pdf-lib';
+import { formatMediaUrl } from '../utils/media';
 
 const Spinner = () => (
   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -74,6 +78,9 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [busquedaEntidad, setBusquedaEntidad] = useState('');
   const [mostrarDropdownEntidad, setMostrarDropdownEntidad] = useState(false);
   
+  const [existingFile, setExistingFile] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
+  
   const { user } = useContext(AuthContext);
   const isCapturista = user?.rol === 'capturista';
   const [showMotivoModal, setShowMotivoModal] = useState(false);
@@ -98,24 +105,25 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     Promise.all([
       api.get('vehiculos/'),
       api.get('productos/'),
-      api.get('tickets/pendientes/'),
+      api.get('tickets/'),
       api.get('talleres/'),
       api.get('proveedores/'),
       api.get('cajas/'),
       api.get('variados/')
-    ])
-    .then(([vehiculosRes, productosRes, ticketsRes, talleresRes, proveedoresRes, cajasRes, variadosRes]) => {
-      setVehiculos(vehiculosRes.data);
-      setProductos(productosRes.data);
-      setTicketsPendientes(ticketsRes.data);
-      setTalleres(talleresRes.data);
-      setProveedores(proveedoresRes.data);
-      setCajas(cajasRes.data);
-      setVariados(variadosRes.data);
-      setEntidades([
-        ...talleresRes.data.map(t => ({ ...t, tipo: 'taller' })),
-        ...proveedoresRes.data.map(p => ({ ...p, tipo: 'proveedor' }))
-      ]);
+    ]).then(([vehRes, prodRes, tickRes, tallRes, provRes, cajRes, varRes]) => {
+      setVehiculos(vehRes.data);
+      setProductos(prodRes.data);
+      setTicketsPendientes(tickRes.data.filter(t => !t.convertido_en_factura));
+      setTalleres(tallRes.data);
+      setProveedores(provRes.data);
+      setCajas(cajRes.data);
+      setVariados(varRes.data);
+      
+      const combinedEntidades = [
+        ...tallRes.data.map(t => ({...t, tipo: 'taller'})),
+        ...provRes.data.map(p => ({...p, tipo: 'proveedor'}))
+      ];
+      setEntidades(combinedEntidades);
     })
     .catch(err => console.error("Error cargando datos:", err));
   }, []);
@@ -153,6 +161,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setFechaServicio(factura.fecha_servicio || factura.fecha || '');
       setIvaIncluido(factura.iva_aplicado || false);
       setUnidadesMantenimiento(factura.unidades_mantenimiento || []);
+      setExistingFile(factura.archivo_escaneado || null);
     }
   }, [factura]);
 
@@ -1339,13 +1348,23 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                           {file.name}
                         </p>
                       </div>
-                      <button 
-                        type="button"
-                        onClick={() => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
-                        className="text-slate-600 hover:text-rose-500 p-1 transition-colors"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center">
+                        <button 
+                          type="button"
+                          onClick={() => setPreviewFile({ url: URL.createObjectURL(file), name: file.name, isPdf: file.type === 'application/pdf' })}
+                          className="text-slate-600 hover:text-blue-500 p-1 transition-colors mr-1"
+                          title="Previsualizar"
+                        >
+                          <Eye size={14} />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-slate-600 hover:text-rose-500 p-1 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1367,6 +1386,52 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     className="text-rose-400 text-[9px] font-bold hover:underline uppercase tracking-tighter"
                   >
                     Limpiar todo
+                  </button>
+                </div>
+              </div>
+            ) : existingFile ? (
+              <div className="w-full space-y-3 relative z-20 px-2">
+                <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                  <CheckCircle size={12} /> Documento Actual
+                </p>
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-2 rounded-xl group/item hover:border-blue-500/50 transition-all">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="bg-emerald-600/10 p-1.5 rounded-lg">
+                      <FilePlus size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-300 truncate font-mono">
+                      Documento Original Guardado
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <button 
+                      type="button"
+                      onClick={() => setPreviewFile({ url: formatMediaUrl(existingFile), name: 'Documento Original', isPdf: existingFile.toLowerCase().endsWith('.pdf') })}
+                      className="text-slate-600 hover:text-blue-500 p-1 transition-colors mr-1"
+                      title="Previsualizar"
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setExistingFile(null)}
+                      className="text-slate-600 hover:text-rose-500 p-1 transition-colors"
+                      title="Quitar"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <div className="pt-2 flex flex-col gap-2">
+                  <p className="text-[10px] text-slate-500 text-center mb-1">Si subes o escaneas un archivo nuevo, reemplazará al actual.</p>
+                  <button
+                    type="button"
+                    onClick={handleScan}
+                    disabled={scanning}
+                    className="w-full py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {scanning ? <Spinner /> : <FilePlus size={14} />}
+                    <span>ESCANEAR NUEVO</span>
                   </button>
                 </div>
               </div>
@@ -1458,6 +1523,34 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
               >
                 {loading ? <Spinner /> : 'Enviar Solicitud'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col relative overflow-hidden">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Eye className="text-blue-500" />
+                Previsualización: {previewFile.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPreviewFile(null)}
+                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 hover:text-rose-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 flex items-center justify-center overflow-auto relative">
+              {previewFile.isPdf ? (
+                <iframe src={previewFile.url} className="w-full h-full rounded-xl shadow-inner border border-slate-200 dark:border-slate-800" title="PDF Preview" />
+              ) : (
+                <img src={previewFile.url} alt="Preview" className="max-w-full max-h-full object-contain rounded-xl shadow-lg" />
+              )}
             </div>
           </div>
         </div>

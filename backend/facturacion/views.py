@@ -114,7 +114,8 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 factura=factura,
                 solicitante=user,
                 motivo=motivo,
-                cambios_propuestos=cambios
+                cambios_propuestos=cambios,
+                nuevo_archivo_escaneado=request.FILES.get('archivo_escaneado')
             )
             
             HistorialAccion.objects.create(
@@ -210,6 +211,10 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
         for k, v in list(cambios.items()):
             if v == 'null' or v == 'undefined' or v == '':
                 cambios[k] = None
+
+        if solicitud.nuevo_archivo_escaneado:
+            solicitud.factura.archivo_escaneado = solicitud.nuevo_archivo_escaneado
+            solicitud.factura.save(update_fields=['archivo_escaneado'])
 
         # Usar FacturaSerializer con partial=True para validar los cambios
         serializer = FacturaSerializer(solicitud.factura, data=cambios, partial=True)

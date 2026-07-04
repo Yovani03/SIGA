@@ -320,6 +320,7 @@ class SolicitudCambioFactura(models.Model):
     motivo = models.TextField(verbose_name="Motivo del Cambio")
     cambios_propuestos = models.JSONField(verbose_name="Cambios Propuestos")
     estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente', verbose_name="Estado de la Solicitud")
+    nuevo_archivo_escaneado = models.FileField(upload_to='solicitudes_facturas/%Y/%m/', null=True, blank=True, verbose_name="Nuevo Documento Escaneado")
     fecha_solicitud = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Solicitud")
     fecha_resolucion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Resolución")
 
