@@ -114,6 +114,18 @@ const Tickets = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const getVisiblePages = (current, total, max = 6) => {
+    if (total <= max) return Array.from({ length: total }, (_, i) => i + 1);
+    let start = current - Math.floor(max / 2);
+    start = Math.max(start, 1);
+    let end = start + max - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - max + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6">
@@ -324,7 +336,7 @@ const Tickets = () => {
             <ChevronLeft size={20} />
           </button>
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+          {getVisiblePages(currentPage, totalPages).map(number => (
             <button
               key={number}
               onClick={() => paginate(number)}
