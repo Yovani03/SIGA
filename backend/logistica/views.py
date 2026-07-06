@@ -170,8 +170,8 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             import os
             from tempfile import NamedTemporaryFile
             
-            # Generar imagen de marca de agua transparente
-            img = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
+            # Generar imagen de marca de agua transparente más grande
+            img = Image.new('RGBA', (1200, 1000), (255, 255, 255, 0))
             
             font_paths = [
                 "arial.ttf",
@@ -182,7 +182,7 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             font = None
             for fp in font_paths:
                 try:
-                    font = ImageFont.truetype(fp, 90)
+                    font = ImageFont.truetype(fp, 180)
                     break
                 except IOError:
                     continue
@@ -190,20 +190,21 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             if not font:
                 font = ImageFont.load_default()
                 
-            txt = Image.new('RGBA', (600, 200), (255, 255, 255, 0))
+            txt = Image.new('RGBA', (1000, 300), (255, 255, 255, 0))
             d = ImageDraw.Draw(txt)
-            # Negro semitransparente
-            d.text((10, 10), f"COPIA {bitacora.copias_descargadas}", font=font, fill=(0, 0, 0, 90))
+            # Negro más intenso y visible
+            d.text((10, 10), f"COPIA {bitacora.copias_descargadas}", font=font, fill=(0, 0, 0, 150))
             
             txt = txt.rotate(35, expand=1)
-            img.paste(txt, (100, 150), txt)
+            img.paste(txt, (50, 150), txt)
             
             with NamedTemporaryFile(delete=False, suffix='.png') as tmp_img:
                 img.save(tmp_img.name)
                 tmp_img_path = tmp_img.name
                 
             xl_img = OpenpyxlImage(tmp_img_path)
-            sheet.add_image(xl_img, 'D10')
+            # Centrar más hacia arriba e izquierda
+            sheet.add_image(xl_img, 'C5')
             
             from django.http import HttpResponse
             import tempfile
