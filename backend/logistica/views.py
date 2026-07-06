@@ -179,8 +179,8 @@ class BitacoraViewSet(viewsets.ModelViewSet):
                 
             txt = Image.new('RGBA', (600, 200), (255, 255, 255, 0))
             d = ImageDraw.Draw(txt)
-            # Rojo semitransparente
-            d.text((10, 10), f"COPIA {bitacora.copias_descargadas}", font=font, fill=(255, 0, 0, 90))
+            # Negro semitransparente
+            d.text((10, 10), f"COPIA {bitacora.copias_descargadas}", font=font, fill=(0, 0, 0, 90))
             
             txt = txt.rotate(35, expand=1)
             img.paste(txt, (100, 150), txt)
