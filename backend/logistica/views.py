@@ -193,12 +193,19 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             sheet.add_image(xl_img, 'D10')
             
             from django.http import HttpResponse
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            response['Content-Disposition'] = f'attachment; filename="Copia_{bitacora.copias_descargadas}_Bitacora_U{bitacora.vehiculo.numero_economico}_Folio{bitacora.folio}.xlsx"'
-            wb.save(response)
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_out:
+                wb.save(tmp_out.name)
+                tmp_out_path = tmp_out.name
+                
+            with open(tmp_out_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = f'attachment; filename="Copia_{bitacora.copias_descargadas}_Bitacora_U{bitacora.vehiculo.numero_economico}_Folio{bitacora.folio}.xlsx"'
             
             try:
                 os.unlink(tmp_img_path)
+                os.unlink(tmp_out_path)
             except:
                 pass
                 
