@@ -172,9 +172,22 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             
             # Generar imagen de marca de agua transparente
             img = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
-            try:
-                font = ImageFont.truetype("arial.ttf", 90)
-            except IOError:
+            
+            font_paths = [
+                "arial.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf"
+            ]
+            font = None
+            for fp in font_paths:
+                try:
+                    font = ImageFont.truetype(fp, 90)
+                    break
+                except IOError:
+                    continue
+            
+            if not font:
                 font = ImageFont.load_default()
                 
             txt = Image.new('RGBA', (600, 200), (255, 255, 255, 0))

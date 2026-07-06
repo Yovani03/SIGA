@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     zlib1g-dev \
     netcat-openbsd \
+    fonts-dejavu \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar e instalar los requerimientos de Python y gunicorn
