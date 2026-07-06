@@ -106,7 +106,8 @@ const Bitacoras = () => {
       
       // If we need to download it immediately:
       if (res.data.archivo) {
-        downloadBitacora(res.data.archivo);
+        const cleanUrl = res.data.archivo.replace(/^https?:\/\/[^\/]+/, '');
+        window.open(cleanUrl, '_blank');
       }
       
       fetchData();
