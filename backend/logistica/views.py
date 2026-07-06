@@ -165,16 +165,43 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             wb = openpyxl.load_workbook(bitacora.archivo.path)
             sheet = wb.active
             
-            from openpyxl.styles import Font, Alignment
-            cell = sheet['F3']
-            cell.value = f"COPIA {bitacora.copias_descargadas}"
-            cell.font = Font(color="FF0000", size=24, bold=True)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            from openpyxl.drawing.image import Image as OpenpyxlImage
+            from PIL import Image, ImageDraw, ImageFont
+            import os
+            from tempfile import NamedTemporaryFile
+            
+            # Generar imagen de marca de agua transparente
+            img = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
+            try:
+                font = ImageFont.truetype("arial.ttf", 90)
+            except IOError:
+                font = ImageFont.load_default()
+                
+            txt = Image.new('RGBA', (600, 200), (255, 255, 255, 0))
+            d = ImageDraw.Draw(txt)
+            # Rojo semitransparente
+            d.text((10, 10), f"COPIA {bitacora.copias_descargadas}", font=font, fill=(255, 0, 0, 90))
+            
+            txt = txt.rotate(35, expand=1)
+            img.paste(txt, (100, 150), txt)
+            
+            with NamedTemporaryFile(delete=False, suffix='.png') as tmp_img:
+                img.save(tmp_img.name)
+                tmp_img_path = tmp_img.name
+                
+            xl_img = OpenpyxlImage(tmp_img_path)
+            sheet.add_image(xl_img, 'D10')
             
             from django.http import HttpResponse
             response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = f'attachment; filename="Copia_{bitacora.copias_descargadas}_Bitacora_U{bitacora.vehiculo.numero_economico}_Folio{bitacora.folio}.xlsx"'
             wb.save(response)
+            
+            try:
+                os.unlink(tmp_img_path)
+            except:
+                pass
+                
             return response
             
         except Exception as e:
