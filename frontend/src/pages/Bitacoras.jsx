@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye, CheckCircle2, Filter } from 'lucide-react';
+import { FileSpreadsheet, Plus, Download, Loader2, Search, X, Calendar, ChevronLeft, ChevronRight, Eye, CheckCircle2, Filter, AlertTriangle, Copy } from 'lucide-react';
 
 const Bitacoras = () => {
   const [bitacoras, setBitacoras] = useState([]);
@@ -18,10 +18,14 @@ const Bitacoras = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [selectedBitacoraToDownload, setSelectedBitacoraToDownload] = useState(null);
+  
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [modalSearchFocus, setModalSearchFocus] = useState(false);
 
   useEffect(() => {
+    setFilterDate(getCurrentWeekFriday());
     fetchData();
   }, []);
 
@@ -41,10 +45,17 @@ const Bitacoras = () => {
     }
   };
 
-  // Set next Friday as default
   const getNextFriday = () => {
     const d = new Date();
     d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7));
+    return d.toISOString().split('T')[0];
+  };
+
+  const getCurrentWeekFriday = () => {
+    const d = new Date();
+    const day = d.getDay(); // 0: Sun, ..., 5: Fri, 6: Sat
+    const diff = day >= 5 ? day - 5 : day + 2;
+    d.setDate(d.getDate() - diff);
     return d.toISOString().split('T')[0];
   };
 
@@ -108,11 +119,25 @@ const Bitacoras = () => {
     }
   };
 
-  const downloadBitacora = (archivoUrl) => {
-    // Si la URL viene con el dominio del backend (ej. http://localhost:8000/media/...)
-    // extraemos solo la ruta relativa (/media/...) para que el navegador la resuelva contra el host actual.
-    const cleanUrl = archivoUrl.replace(/^https?:\/\/[^\/]+/, '');
+  const handleDownloadClick = (b) => {
+    setSelectedBitacoraToDownload(b);
+    setDownloadModalOpen(true);
+  };
+
+  const downloadOriginal = () => {
+    if (!selectedBitacoraToDownload?.archivo) return;
+    const cleanUrl = selectedBitacoraToDownload.archivo.replace(/^https?:\/\/[^\/]+/, '');
     window.open(cleanUrl, '_blank');
+    setDownloadModalOpen(false);
+  };
+
+  const downloadCopia = () => {
+    if (!selectedBitacoraToDownload) return;
+    // Call the endpoint /api/bitacoras/{id}/descargar_copia/
+    window.open(`/api/bitacoras/${selectedBitacoraToDownload.id}/descargar_copia/`, '_blank');
+    setDownloadModalOpen(false);
+    // Reload data to update copy count (optional but good)
+    setTimeout(() => fetchData(), 1500);
   };
 
   // PDF view logic removed at user request
@@ -173,7 +198,7 @@ const Bitacoras = () => {
             </div>
           ) : (
             <button 
-              onClick={() => { setFilterDate(getNextFriday()); setCurrentPage(1); }}
+              onClick={() => { setFilterDate(getCurrentWeekFriday()); setCurrentPage(1); }}
               className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white focus:ring-2 focus:ring-blue-500 outline-none flex items-center justify-center gap-2 transition-all"
             >
               <Calendar size={18} />
@@ -243,7 +268,7 @@ const Bitacoras = () => {
                       <div className="flex justify-end gap-2">
                         {b.archivo ? (
                           <button 
-                            onClick={() => downloadBitacora(b.archivo)}
+                            onClick={() => handleDownloadClick(b)}
                             className="text-slate-500 hover:text-green-600 transition-colors bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg p-2"
                             title="Descargar Excel"
                           >
@@ -408,6 +433,61 @@ const Bitacoras = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {downloadModalOpen && selectedBitacoraToDownload && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in duration-200 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Download className="text-blue-500" size={20} />
+                Opciones de Descarga
+              </h3>
+              <button onClick={() => setDownloadModalOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            
+            {selectedBitacoraToDownload.fecha_inicio < getCurrentWeekFriday() && (
+              <div className="mb-5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 flex gap-3 items-start">
+                <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  <strong>Advertencia:</strong> Estás a punto de descargar una bitácora de una semana pasada. ¿Deseas continuar?
+                </p>
+              </div>
+            )}
+            
+            <p className="text-sm text-slate-500 mb-6">
+              Selecciona qué versión deseas descargar de la bitácora <strong>#{selectedBitacoraToDownload.folio}</strong> de la unidad <strong>{selectedBitacoraToDownload.vehiculo_detalle?.numero_economico}</strong>.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={downloadOriginal}
+                className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold rounded-xl transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet size={18} />
+                  <span>Original</span>
+                </div>
+                <span className="text-xs font-normal text-slate-400 border border-slate-300 dark:border-slate-600 px-2 py-0.5 rounded-full">Sin contador</span>
+              </button>
+              
+              <button 
+                onClick={downloadCopia}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Copy size={18} />
+                  <span>Copia de Control</span>
+                </div>
+                <span className="text-[10px] bg-blue-700 px-2 py-1 rounded text-blue-100 shadow-inner">
+                  Copia #{selectedBitacoraToDownload.copias_descargadas + 1}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -46,6 +46,7 @@ class Bitacora(models.Model):
     fecha_fin = models.DateField()
     fecha_generacion = models.DateTimeField(auto_now_add=True)
     archivo = models.FileField(upload_to='bitacoras/', null=True, blank=True)
+    copias_descargadas = models.IntegerField(default=0, help_text="Número de copias descargadas de esta bitácora")
 
     class Meta:
         verbose_name = 'Bitácora'

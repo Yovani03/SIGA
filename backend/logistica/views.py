@@ -152,6 +152,35 @@ class BitacoraViewSet(viewsets.ModelViewSet):
             return response
         return Response({'error': 'Error generating PDF'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['get'])
+    def descargar_copia(self, request, pk=None):
+        bitacora = self.get_object()
+        if not bitacora.archivo:
+            return Response({'error': 'La bitácora no tiene archivo.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        bitacora.copias_descargadas += 1
+        bitacora.save()
+        
+        try:
+            wb = openpyxl.load_workbook(bitacora.archivo.path)
+            sheet = wb.active
+            
+            from openpyxl.styles import Font, Alignment
+            cell = sheet['F3']
+            cell.value = f"COPIA {bitacora.copias_descargadas}"
+            cell.font = Font(color="FF0000", size=24, bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            from django.http import HttpResponse
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="Copia_{bitacora.copias_descargadas}_Bitacora_U{bitacora.vehiculo.numero_economico}_Folio{bitacora.folio}.xlsx"'
+            wb.save(response)
+            return response
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
     @action(detail=False, methods=['post'])
     def generar(self, request):
         vehiculo_id = request.data.get('vehiculo_id')
