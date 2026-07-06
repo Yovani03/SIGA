@@ -242,6 +242,18 @@ const Facturacion = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const getVisiblePages = (current, total, max = 6) => {
+    if (total <= max) return Array.from({ length: total }, (_, i) => i + 1);
+    let start = current - Math.floor(max / 2);
+    start = Math.max(start, 1);
+    let end = start + max - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - max + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
   const stats = {
     total: filteredFacturas.reduce((acc, curr) => curr.cancelado ? acc : acc + parseFloat(curr.monto), 0),
     count: filteredFacturas.length,
@@ -605,7 +617,7 @@ const Facturacion = () => {
             <ChevronLeft size={20} />
           </button>
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+          {getVisiblePages(currentPage, totalPages).map(number => (
             <button
               key={number}
               onClick={() => paginate(number)}
