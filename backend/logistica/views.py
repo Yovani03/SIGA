@@ -203,8 +203,8 @@ class BitacoraViewSet(viewsets.ModelViewSet):
                 tmp_img_path = tmp_img.name
                 
             xl_img = OpenpyxlImage(tmp_img_path)
-            # Centrar más hacia arriba e izquierda
-            sheet.add_image(xl_img, 'C5')
+            # Centrar más hacia la columna G (Lugar de destino)
+            sheet.add_image(xl_img, 'E5')
             
             from django.http import HttpResponse
             import tempfile
