@@ -68,6 +68,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [fechaServicio, setFechaServicio] = useState('');
   const [unidadesMantenimiento, setUnidadesMantenimiento] = useState([]);
   const [ivaIncluido, setIvaIncluido] = useState(false);
+  const [resicoAplicado, setResicoAplicado] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [mostrarDropdownUnidad, setMostrarDropdownUnidad] = useState(false);
@@ -160,6 +161,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       setUsaFechaDiferente(!!factura.fecha_servicio && factura.fecha_servicio !== factura.fecha);
       setFechaServicio(factura.fecha_servicio || factura.fecha || '');
       setIvaIncluido(factura.iva_aplicado || false);
+      setResicoAplicado(factura.resico_aplicado || false);
       setUnidadesMantenimiento(factura.unidades_mantenimiento || []);
       setExistingFile(factura.archivo_escaneado || null);
     }
@@ -504,14 +506,39 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }));
   };
 
+  const getMultiplier = (iva, resico) => {
+    let mult = 1.0;
+    if (iva) mult += 0.16;
+    if (resico) mult -= 0.0125;
+    return mult;
+  };
+
   const handleAgregarIVA = () => {
-    const nuevoEstado = !ivaIncluido;
-    setIvaIncluido(nuevoEstado);
+    const nuevoIva = !ivaIncluido;
+    const oldMult = getMultiplier(ivaIncluido, resicoAplicado);
+    const newMult = getMultiplier(nuevoIva, resicoAplicado);
+    
+    setIvaIncluido(nuevoIva);
     setFormData(prev => ({
       ...prev,
       detalles_unidades: prev.detalles_unidades.map(d => ({
         ...d,
-        monto: d.monto ? (nuevoEstado ? (parseFloat(d.monto) * 1.16) : (parseFloat(d.monto) / 1.16)).toFixed(2) : ''
+        monto: d.monto ? (parseFloat(d.monto) / oldMult * newMult).toFixed(2) : ''
+      }))
+    }));
+  };
+
+  const handleAgregarResico = () => {
+    const nuevoResico = !resicoAplicado;
+    const oldMult = getMultiplier(ivaIncluido, resicoAplicado);
+    const newMult = getMultiplier(ivaIncluido, nuevoResico);
+    
+    setResicoAplicado(nuevoResico);
+    setFormData(prev => ({
+      ...prev,
+      detalles_unidades: prev.detalles_unidades.map(d => ({
+        ...d,
+        monto: d.monto ? (parseFloat(d.monto) / oldMult * newMult).toFixed(2) : ''
       }))
     }));
   };
@@ -605,6 +632,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
     
     data.append('iva_aplicado', ivaIncluido);
+    data.append('resico_aplicado', resicoAplicado);
     
     if (totalAssets > 1) {
       data.append('detalles_unidades', JSON.stringify(formData.detalles_unidades));
@@ -1252,16 +1280,29 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     <p className="text-[12px] text-amber-600 dark:text-amber-500 font-black italic flex items-center gap-2 uppercase tracking-widest">
                       <Info size={16} /> Desglose de Gastos por Unidad
                     </p>
-                    <button
-                      type="button"
-                      onClick={handleAgregarIVA}
-                      className={`${ivaIncluido ? 'bg-emerald-500 text-white dark:text-slate-950' : 'bg-amber-500 text-white dark:text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg shadow-amber-900/10 flex items-center gap-2`}
-                    >
-                      <div className={`w-3 h-3 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center ${ivaIncluido ? 'bg-white dark:bg-slate-950' : 'bg-transparent'}`}>
-                        {ivaIncluido && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
-                      </div>
-                      {ivaIncluido ? 'IVA APLICADO (16%)' : 'AGREGAR IVA (16%)'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAgregarIVA}
+                        className={`${ivaIncluido ? 'bg-emerald-500 text-white dark:text-slate-950' : 'bg-amber-500 text-white dark:text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg shadow-amber-900/10 flex items-center gap-2`}
+                      >
+                        <div className={`w-3 h-3 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center ${ivaIncluido ? 'bg-white dark:bg-slate-950' : 'bg-transparent'}`}>
+                          {ivaIncluido && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
+                        </div>
+                        {ivaIncluido ? 'IVA APLICADO (16%)' : 'AGREGAR IVA (16%)'}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={handleAgregarResico}
+                        className={`${resicoAplicado ? 'bg-blue-500 text-white dark:text-slate-950' : 'bg-slate-400 text-white dark:text-slate-950'} text-[10px] font-black px-3 py-1 rounded-lg transition-all active:scale-95 shadow-lg flex items-center gap-2`}
+                      >
+                        <div className={`w-3 h-3 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center ${resicoAplicado ? 'bg-white dark:bg-slate-950' : 'bg-transparent'}`}>
+                          {resicoAplicado && <div className="w-1 h-1 bg-blue-500 rounded-full" />}
+                        </div>
+                        {resicoAplicado ? 'RESICO APLICADO (-1.25%)' : 'RETENCIÓN RESICO (-1.25%)'}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-slate-500 font-bold uppercase">Suma Total:</span>
