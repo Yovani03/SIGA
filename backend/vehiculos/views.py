@@ -107,6 +107,9 @@ class UnidadViewSet(viewsets.ModelViewSet):
 
         # Gasto de Mantenimiento
         from mantenimiento.models import OrdenTrabajo
+        from facturacion.models import Ticket, Factura
+        from django.db.models import Q
+        
         ordenes = OrdenTrabajo.objects.filter(
             unidad=unidad, 
             fecha_creacion__date__range=[fecha_inicio, fecha_fin]
@@ -122,6 +125,44 @@ class UnidadViewSet(viewsets.ModelViewSet):
                 'tipo': o.tipo
             })
             total_mantenimiento += (o.costo_total or 0)
+            
+        # Tickets sueltos de mantenimiento/refacciones
+        tickets_sueltos = Ticket.objects.filter(
+            Q(unidad=unidad) | Q(unidades=unidad),
+            fecha__range=[fecha_inicio, fecha_fin],
+            categoria__in=['Mantenimiento', 'Refacciones'],
+            ordenes_trabajo__isnull=True
+        ).distinct().order_by('fecha')
+
+        for t in tickets_sueltos:
+            ordenes_data.append({
+                'fecha': t.fecha,
+                'folio': t.folio_interno,
+                'costo_total': t.monto,
+                'tipo': t.categoria
+            })
+            total_mantenimiento += (t.monto or 0)
+            
+        # Facturas sueltas de mantenimiento/refacciones
+        facturas_sueltas = Factura.objects.filter(
+            Q(unidad=unidad) | Q(unidades=unidad),
+            fecha__range=[fecha_inicio, fecha_fin],
+            categoria__in=['Mantenimiento', 'Refacciones'],
+            ticket__isnull=True,
+            ordenes_trabajo__isnull=True
+        ).distinct().order_by('fecha')
+
+        for f in facturas_sueltas:
+            ordenes_data.append({
+                'fecha': f.fecha,
+                'folio': f.folio,
+                'costo_total': f.monto,
+                'tipo': f.categoria
+            })
+            total_mantenimiento += (f.monto or 0)
+            
+        # Ordenar todo por fecha
+        ordenes_data.sort(key=lambda x: x['fecha'])
 
         return Response({
             'unidad': {
