@@ -8,12 +8,13 @@ import { toast } from 'sonner';
 // Función para obtener la fecha formateada (YYYY-MM-DD)
 const formatDateStr = (date) => date.toISOString().split('T')[0];
 
-// Funciones para calcular la semana (Lunes a Domingo) de una fecha
+// Funciones para calcular la semana (Viernes a Jueves) de una fecha
 const getStartOfWeek = (date) => {
   const result = new Date(date);
   const day = result.getDay();
-  const diff = result.getDate() - day + (day === 0 ? -6 : 1); // ajusta cuando el día es domingo
-  result.setDate(diff);
+  // El viernes es el día 5. Buscamos el viernes pasado o el actual.
+  const diff = (day >= 5) ? (5 - day) : (5 - day - 7);
+  result.setDate(result.getDate() + diff);
   return result;
 };
 
