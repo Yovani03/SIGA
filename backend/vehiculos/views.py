@@ -82,14 +82,28 @@ class UnidadViewSet(viewsets.ModelViewSet):
         
         cargas_data = []
         total_combustible = 0
+        total_litros = 0
+        
         for c in cargas:
             cargas_data.append({
                 'fecha': c.fecha,
-                'litros': c.litros,
+                'litros': float(c.litros) if c.litros else 0,
                 'monto_total': c.monto_total,
                 'tipo_combustible': c.tipo_combustible
             })
             total_combustible += (c.monto_total or 0)
+            total_litros += float(c.litros or 0)
+            
+        cargas_validas_km = [c for c in cargas if c.kilometraje and not c.ignorar_kilometraje and not c.km_equivocado]
+        distancia = 0
+        if len(cargas_validas_km) >= 2:
+            min_km = min([c.kilometraje for c in cargas_validas_km])
+            max_km = max([c.kilometraje for c in cargas_validas_km])
+            distancia = max(0, max_km - min_km)
+            
+        rendimiento = 0
+        if total_litros > 0 and distancia > 0:
+            rendimiento = distancia / total_litros
 
         # Gasto de Mantenimiento
         from mantenimiento.models import OrdenTrabajo
@@ -118,7 +132,10 @@ class UnidadViewSet(viewsets.ModelViewSet):
             'resumen': {
                 'total_combustible': total_combustible,
                 'total_mantenimiento': total_mantenimiento,
-                'gran_total': total_combustible + total_mantenimiento
+                'gran_total': total_combustible + total_mantenimiento,
+                'rendimiento': rendimiento,
+                'distancia': distancia,
+                'total_litros': total_litros
             },
             'desglose': {
                 'combustible': cargas_data,

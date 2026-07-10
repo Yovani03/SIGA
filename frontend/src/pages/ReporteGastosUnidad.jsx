@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
-import { Download, Calendar, Truck, BarChart3, PieChart, Activity, Search, Plus } from 'lucide-react';
+import { Download, Calendar, Truck, BarChart3, PieChart, Activity, Search, Plus, Gauge } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -290,7 +290,7 @@ export default function ReporteGastosUnidad() {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-2xl p-6 border border-blue-100/50 dark:border-blue-800/30">
               <div className="flex justify-between items-start">
                 <div>
@@ -329,6 +329,23 @@ export default function ReporteGastosUnidad() {
                 </div>
                 <div className="p-3 bg-white/10 text-white rounded-xl backdrop-blur-sm">
                   <BarChart3 className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 rounded-2xl p-6 border border-amber-100/50 dark:border-amber-800/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Rendimiento</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                    {(reportData.resumen.rendimiento || 0).toFixed(2)} <span className="text-lg font-medium text-amber-600/70 dark:text-amber-400/70">km/l</span>
+                  </p>
+                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70 font-semibold mt-1">
+                    {(reportData.resumen.distancia || 0).toLocaleString()} km / {(reportData.resumen.total_litros || 0).toLocaleString()} L
+                  </p>
+                </div>
+                <div className="p-3 bg-amber-500 text-white rounded-xl shadow-sm shadow-amber-200 dark:shadow-none">
+                  <Gauge className="w-6 h-6" />
                 </div>
               </div>
             </div>
