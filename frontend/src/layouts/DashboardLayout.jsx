@@ -62,6 +62,7 @@ const DashboardLayout = () => {
     { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
     { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin_general', 'admin', 'capturista'] },
     { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { icon: <BarChart3 size={20} />, label: 'Reporte Proveedores', path: '/reporte-proveedores', roles: ['admin_general', 'admin', 'capturista'] },
   ];
 
   const filteredMainItems = mainItems.filter(item => !item.roles || item.roles.includes(user?.rol || 'admin'));
