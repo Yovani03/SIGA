@@ -81,12 +81,24 @@ export default function ReporteGastosUnidad() {
     
     const toastId = toast.loading('Generando PDF...');
     
+    // Guardar estado actual del tema oscuro
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    // Forzar modo claro temporalmente para ahorrar tinta al imprimir
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+    }
+    
     try {
+      // Dar un pequeño tiempo para que se apliquen las clases de light mode
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Create canvas from the report element
       const canvas = await html2canvas(reportRef.current, {
         scale: 2, // Higher resolution
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff' // Forzar fondo blanco
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -104,6 +116,11 @@ export default function ReporteGastosUnidad() {
     } catch (error) {
       console.error('Error al exportar PDF:', error);
       toast.error('Error al exportar a PDF', { id: toastId });
+    } finally {
+      // Restaurar modo oscuro si estaba activo
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      }
     }
   };
 
@@ -319,15 +336,15 @@ export default function ReporteGastosUnidad() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-800">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Gasto Total</p>
-                  <p className="text-3xl font-bold text-white mt-2">
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Gasto Total</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     {formatCurrency(reportData.resumen.gran_total)}
                   </p>
                 </div>
-                <div className="p-3 bg-white/10 text-white rounded-xl backdrop-blur-sm">
+                <div className="p-3 bg-gray-900 dark:bg-white/10 text-white rounded-xl backdrop-blur-sm shadow-sm">
                   <BarChart3 className="w-6 h-6" />
                 </div>
               </div>
