@@ -64,6 +64,69 @@ class UnidadViewSet(viewsets.ModelViewSet):
 
         return Response(data)
 
+    @action(detail=True, methods=['get'])
+    def reporte_gastos(self, request, pk=None):
+        unidad = self.get_object()
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
+        if not fecha_inicio or not fecha_fin:
+            return Response({'error': 'Faltan parámetros de fecha'}, status=400)
+
+        # Gasto de Combustible
+        from combustibles.models import CargaCombustible
+        cargas = CargaCombustible.objects.filter(
+            unidad=unidad, 
+            fecha__range=[fecha_inicio, fecha_fin]
+        ).order_by('fecha')
+        
+        cargas_data = []
+        total_combustible = 0
+        for c in cargas:
+            cargas_data.append({
+                'fecha': c.fecha,
+                'litros': c.litros,
+                'monto_total': c.monto_total,
+                'tipo_combustible': c.tipo_combustible
+            })
+            total_combustible += (c.monto_total or 0)
+
+        # Gasto de Mantenimiento
+        from mantenimiento.models import OrdenTrabajo
+        ordenes = OrdenTrabajo.objects.filter(
+            unidad=unidad, 
+            fecha_creacion__date__range=[fecha_inicio, fecha_fin]
+        ).order_by('fecha_creacion')
+
+        ordenes_data = []
+        total_mantenimiento = 0
+        for o in ordenes:
+            ordenes_data.append({
+                'fecha': o.fecha_creacion.date(),
+                'folio': o.folio,
+                'costo_total': o.costo_total,
+                'tipo': o.tipo
+            })
+            total_mantenimiento += (o.costo_total or 0)
+
+        return Response({
+            'unidad': {
+                'numero_economico': unidad.numero_economico,
+                'placas': unidad.placas,
+                'marca': unidad.marca,
+            },
+            'resumen': {
+                'total_combustible': total_combustible,
+                'total_mantenimiento': total_mantenimiento,
+                'gran_total': total_combustible + total_mantenimiento
+            },
+            'desglose': {
+                'combustible': cargas_data,
+                'mantenimiento': ordenes_data
+            }
+        })
+
+
     @action(detail=False, methods=['get'])
     def proyeccion_mantenimiento(self, request):
         unidades = self.get_queryset().order_by('numero_economico')

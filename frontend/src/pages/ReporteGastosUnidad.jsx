@@ -1,0 +1,413 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { Download, Calendar, Truck, BarChart3, PieChart, Activity } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  PieChart as RechartsPieChart, Pie, Cell, LineChart, Line
+} from 'recharts';
+import { toast } from 'sonner';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+
+export default function ReporteGastosUnidad() {
+  const [unidades, setUnidades] = useState([]);
+  const [unidadId, setUnidadId] = useState('');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  
+  const reportRef = useRef(null);
+
+  useEffect(() => {
+    fetchUnidades();
+    // Default dates (last 30 days)
+    const today = new Date();
+    const lastMonth = new Date();
+    lastMonth.setDate(today.getDate() - 30);
+    
+    setFechaFin(today.toISOString().split('T')[0]);
+    setFechaInicio(lastMonth.toISOString().split('T')[0]);
+  }, []);
+
+  const fetchUnidades = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/vehiculos/`);
+      setUnidades(response.data);
+    } catch (error) {
+      console.error('Error fetching unidades:', error);
+      toast.error('Error al cargar vehículos');
+    }
+  };
+
+  const generarReporte = async () => {
+    if (!unidadId || !fechaInicio || !fechaFin) {
+      toast.warning('Por favor selecciona unidad y rango de fechas');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/vehiculos/${unidadId}/reporte_gastos/`, {
+        params: {
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin
+        }
+      });
+      setReportData(response.data);
+      toast.success('Reporte generado correctamente');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast.error('Error al generar el reporte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportarPDF = async () => {
+    if (!reportRef.current) return;
+    
+    const toastId = toast.loading('Generando PDF...');
+    
+    try {
+      // Create canvas from the report element
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher resolution
+        useCORS: true,
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Landscape A4 PDF
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate image dimensions to fit PDF while maintaining aspect ratio
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      
+      const targetWidth = imgWidth * ratio;
+      const targetHeight = imgHeight * ratio;
+      
+      // Center image
+      const x = (pdfWidth - targetWidth) / 2;
+      const y = (pdfHeight - targetHeight) / 2;
+      
+      pdf.addImage(imgData, 'PNG', x, y, targetWidth, targetHeight);
+      pdf.save(`Reporte_Gastos_${reportData.unidad.numero_economico}_${fechaInicio}_al_${fechaFin}.pdf`);
+      
+      toast.success('PDF exportado correctamente', { id: toastId });
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      toast.error('Error al exportar a PDF', { id: toastId });
+    }
+  };
+
+  // Prepare data for charts
+  const getPieData = () => {
+    if (!reportData) return [];
+    return [
+      { name: 'Combustible', value: reportData.resumen.total_combustible },
+      { name: 'Mantenimiento', value: reportData.resumen.total_mantenimiento }
+    ].filter(d => d.value > 0);
+  };
+
+  const getTimelineData = () => {
+    if (!reportData) return [];
+    
+    // Aggregate by date
+    const dateMap = {};
+    
+    reportData.desglose.combustible.forEach(c => {
+      const d = c.fecha;
+      if (!dateMap[d]) dateMap[d] = { fecha: d, combustible: 0, mantenimiento: 0 };
+      dateMap[d].combustible += parseFloat(c.monto_total || 0);
+    });
+    
+    reportData.desglose.mantenimiento.forEach(m => {
+      const d = m.fecha;
+      if (!dateMap[d]) dateMap[d] = { fecha: d, combustible: 0, mantenimiento: 0 };
+      dateMap[d].mantenimiento += parseFloat(m.costo_total || 0);
+    });
+    
+    // Sort by date
+    return Object.values(dateMap).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(value);
+  };
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-blue-600" />
+            Reporte de Gastos por Unidad
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Analiza el gasto de combustible y mantenimiento en un periodo.
+          </p>
+        </div>
+        
+        {reportData && (
+          <button
+            onClick={exportarPDF}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Descargar PDF
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+              <Truck className="w-4 h-4" /> Unidad
+            </label>
+            <select
+              value={unidadId}
+              onChange={(e) => setUnidadId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecciona una unidad...</option>
+              {unidades.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.numero_economico} - {u.placas} ({u.marca})
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+              <Calendar className="w-4 h-4" /> Fecha Inicio
+            </label>
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+              <Calendar className="w-4 h-4" /> Fecha Fin
+            </label>
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <button
+              onClick={generarReporte}
+              disabled={loading}
+              className="w-full bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-medium py-2 rounded-lg transition-colors flex justify-center items-center gap-2"
+            >
+              {loading ? (
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              ) : (
+                <>Generar Dashboard</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Dashboard View (to be captured by html2canvas) */}
+      {reportData && (
+        <div 
+          ref={reportRef} 
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-8 space-y-8"
+          style={{ minHeight: '600px' }}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-start border-b border-gray-100 dark:border-gray-700 pb-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Análisis de Gastos: {reportData.unidad.numero_economico}
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
+                Placas: {reportData.unidad.placas} | Marca: {reportData.unidad.marca}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Período del Reporte</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+                {fechaInicio} <span className="text-gray-400 mx-1">al</span> {fechaFin}
+              </p>
+            </div>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-2xl p-6 border border-blue-100/50 dark:border-blue-800/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Combustible</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                    {formatCurrency(reportData.resumen.total_combustible)}
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm shadow-blue-200 dark:shadow-none">
+                  <Activity className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/10 rounded-2xl p-6 border border-emerald-100/50 dark:border-emerald-800/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Mantenimiento</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                    {formatCurrency(reportData.resumen.total_mantenimiento)}
+                  </p>
+                </div>
+                <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-sm shadow-emerald-200 dark:shadow-none">
+                  <PieChart className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-800">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Gasto Total</p>
+                  <p className="text-3xl font-bold text-white mt-2">
+                    {formatCurrency(reportData.resumen.gran_total)}
+                  </p>
+                </div>
+                <div className="p-3 bg-white/10 text-white rounded-xl backdrop-blur-sm">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Pie Chart */}
+            <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 text-center">Distribución del Gasto</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={getPieData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {getPieData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      formatter={(value) => formatCurrency(value)}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Timeline Bar Chart */}
+            <div className="lg:col-span-2 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Evolución de Gastos</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getTimelineData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="fecha" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickFormatter={(value) => `$${value/1000}k`}
+                    />
+                    <RechartsTooltip 
+                      formatter={(value) => formatCurrency(value)}
+                      cursor={{fill: '#f3f4f6'}}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend verticalAlign="top" height={36} iconType="circle" />
+                    <Bar dataKey="combustible" name="Combustible" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="mantenimiento" name="Mantenimiento" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+          
+          {/* Detailed Lists (Optional for PDF, but good for dashboard) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+             {/* Fuel List */}
+             <div>
+               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Top Cargas de Combustible</h4>
+               <div className="space-y-2">
+                 {reportData.desglose.combustible.slice(0, 5).map((c, i) => (
+                   <div key={i} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                     <span className="text-gray-600 dark:text-gray-400">{c.fecha}</span>
+                     <span className="font-medium text-gray-900 dark:text-gray-200">{formatCurrency(c.monto_total)}</span>
+                   </div>
+                 ))}
+                 {reportData.desglose.combustible.length === 0 && (
+                   <p className="text-sm text-gray-500 italic">No hay cargas en este periodo.</p>
+                 )}
+               </div>
+             </div>
+             
+             {/* Maint List */}
+             <div>
+               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Órdenes de Trabajo (Mantenimiento)</h4>
+               <div className="space-y-2">
+                 {reportData.desglose.mantenimiento.slice(0, 5).map((m, i) => (
+                   <div key={i} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                     <span className="text-gray-600 dark:text-gray-400">{m.fecha} - {m.folio}</span>
+                     <span className="font-medium text-gray-900 dark:text-gray-200">{formatCurrency(m.costo_total)}</span>
+                   </div>
+                 ))}
+                 {reportData.desglose.mantenimiento.length === 0 && (
+                   <p className="text-sm text-gray-500 italic">No hay mantenimientos en este periodo.</p>
+                 )}
+               </div>
+             </div>
+          </div>
+          
+          <div className="pt-8 border-t border-gray-100 dark:border-gray-700 text-center text-xs text-gray-400">
+            Reporte generado automáticamente el {new Date().toLocaleString()} - Autotransportes SIGA
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

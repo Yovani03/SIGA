@@ -25,7 +25,8 @@ import {
   ChevronDown,
   ChevronRight,
   History,
-  FileEdit
+  FileEdit,
+  BarChart3
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -49,6 +50,7 @@ const DashboardLayout = () => {
     { icon: <Shield size={20} />, label: 'Usuarios', path: '/usuarios', roles: ['admin_general'] },
     { icon: <History size={20} />, label: 'Historial', path: '/historial', roles: ['admin_general'] },
     { icon: <FileEdit size={20} />, label: 'Solicitudes', path: '/solicitudes-cambios', roles: ['admin_general', 'admin', 'jefe_logistica'] },
+    { icon: <BarChart3 size={20} />, label: 'Reporte de Gastos', path: '/reporte-gastos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
   ];
 
   const capturistaItems = [

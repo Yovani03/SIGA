@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import Historial from './pages/Historial';
 import SolicitudesCambios from './pages/SolicitudesCambios';
+import ReporteGastosUnidad from './pages/ReporteGastosUnidad';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -57,6 +58,7 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'jefe_logistica']} />}>
                   <Route path="vehiculos" element={<ListaVehiculos />} />
                   <Route path="combustible" element={<Combustibles />} />
+                  <Route path="reporte-gastos" element={<ReporteGastosUnidad />} />
                 </Route>
                 
                 {/* Rutas de Administración General */}
