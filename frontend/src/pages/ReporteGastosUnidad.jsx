@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
-import { Download, Calendar, Truck, BarChart3, PieChart, Activity } from 'lucide-react';
+import { Download, Calendar, Truck, BarChart3, PieChart, Activity, Search, Plus } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -14,11 +14,20 @@ const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
 export default function ReporteGastosUnidad() {
   const [unidades, setUnidades] = useState([]);
   const [unidadId, setUnidadId] = useState('');
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [busquedaFocus, setBusquedaFocus] = useState(false);
+  
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
+
+  const filteredUnidades = unidades.filter(u => 
+    u.numero_economico.toLowerCase().includes(busqueda.toLowerCase()) || 
+    (u.placas && u.placas.toLowerCase().includes(busqueda.toLowerCase()))
+  );
   
   const reportRef = useRef(null);
 
@@ -173,22 +182,57 @@ export default function ReporteGastosUnidad() {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
+          <div className="relative z-20">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
               <Truck className="w-4 h-4" /> Unidad
             </label>
-            <select
-              value={unidadId}
-              onChange={(e) => setUnidadId(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecciona una unidad...</option>
-              {unidades.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.numero_economico} - {u.placas} ({u.marca})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <input 
+                type="text" 
+                placeholder="Buscar por económico o placa..."
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value);
+                  if (unidadId) {
+                    setUnidadId('');
+                    setUnidadSeleccionada(null);
+                  }
+                }}
+                onFocus={() => setBusquedaFocus(true)}
+                onBlur={() => setTimeout(() => setBusquedaFocus(false), 200)}
+                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white outline-none transition-all"
+              />
+              
+              {(busquedaFocus || busqueda) && !unidadId && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                  {filteredUnidades.length > 0 ? (
+                    filteredUnidades.map(u => (
+                      <button 
+                        key={u.id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()} // Evitar blur antes del click
+                        onClick={() => {
+                          setUnidadId(u.id);
+                          setUnidadSeleccionada(u);
+                          setBusqueda(`${u.numero_economico} - ${u.placas || u.marca}`);
+                          setBusquedaFocus(false);
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-blue-600/10 text-left border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors group"
+                      >
+                        <div>
+                          <div className="text-gray-900 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">{u.numero_economico}</div>
+                          <div className="text-xs text-gray-500">{u.placas ? `${u.placas} - ` : ''}{u.marca}</div>
+                        </div>
+                        <Plus size={16} className="text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-4 text-gray-500 text-center text-sm">No se encontraron unidades</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           <div>
