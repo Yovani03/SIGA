@@ -13,6 +13,49 @@ class TallerViewSet(viewsets.ModelViewSet):
     queryset = Taller.objects.all()
     serializer_class = TallerSerializer
 
+    @action(detail=True, methods=['get'], url_path='reporte_gastos')
+    def reporte_gastos(self, request, pk=None):
+        taller = self.get_object()
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
+        if not fecha_inicio or not fecha_fin:
+            return Response({'error': 'Se requieren fecha_inicio y fecha_fin'}, status=400)
+
+        facturas = Factura.objects.filter(
+            taller=taller,
+            fecha__range=[fecha_inicio, fecha_fin],
+            cancelado=False
+        ).order_by('fecha')
+
+        desglose = []
+        gran_total = 0
+
+        for f in facturas:
+            monto_val = float(f.monto)
+            desglose.append({
+                'folio': f.folio,
+                'fecha': f.fecha,
+                'monto': monto_val,
+                'descripcion': f.descripcion,
+                'categoria': f.categoria
+            })
+            gran_total += monto_val
+
+        return Response({
+            'taller': {
+                'id': taller.id,
+                'nombre': taller.nombre,
+                'rfc': getattr(taller, 'rfc', 'N/A')
+            },
+            'rango_fechas': f"{fecha_inicio} al {fecha_fin}",
+            'resumen': {
+                'gran_total': gran_total,
+                'total_facturas': len(desglose)
+            },
+            'desglose': desglose
+        })
+
 class OrdenTrabajoViewSet(viewsets.ModelViewSet):
     queryset = OrdenTrabajo.objects.all()
     serializer_class = OrdenTrabajoSerializer
