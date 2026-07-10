@@ -325,7 +325,7 @@ export default function ReporteGastosUnidad() {
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/10 rounded-2xl p-6 border border-emerald-100/50 dark:border-emerald-800/30">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Mantenimiento</p>
+                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Mantenimiento y Refacciones</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     {formatCurrency(reportData.resumen.total_mantenimiento)}
                   </p>
@@ -435,7 +435,7 @@ export default function ReporteGastosUnidad() {
                       itemStyle={{ color: '#e5e7eb', fontWeight: 500 }}
                     />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ paddingTop: '15px' }} />
-                    <Area type="monotone" dataKey="mantenimiento" name="Mantenimiento" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorMantenimiento)" />
+                    <Area type="monotone" dataKey="mantenimiento" name="Mto y Refacciones" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorMantenimiento)" />
                     <Area type="monotone" dataKey="combustible" name="Combustible" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCombustible)" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -463,7 +463,7 @@ export default function ReporteGastosUnidad() {
              
              {/* Maint List */}
              <div>
-               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Órdenes de Trabajo (Mantenimiento)</h4>
+               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Mantenimiento y Refacciones</h4>
                <div className="space-y-2">
                  {reportData.desglose.mantenimiento.slice(0, 5).map((m, i) => (
                    <div key={i} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-800">
@@ -472,7 +472,7 @@ export default function ReporteGastosUnidad() {
                    </div>
                  ))}
                  {reportData.desglose.mantenimiento.length === 0 && (
-                   <p className="text-sm text-gray-500 italic">No hay mantenimientos en este periodo.</p>
+                   <p className="text-sm text-gray-500 italic">No hay gastos de mantenimiento en este periodo.</p>
                  )}
                </div>
              </div>
