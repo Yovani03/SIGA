@@ -43,6 +43,7 @@ export default function ReporteGastosProveedor() {
   
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const [excludedFolios, setExcludedFolios] = useState([]);
 
   const startOfWeek = getStartOfWeek(currentWeekDate);
   const endOfWeek = getEndOfWeek(currentWeekDate);
@@ -107,6 +108,7 @@ export default function ReporteGastosProveedor() {
           fecha_fin: fechaFin
         }
       });
+      setExcludedFolios([]);
       setReportData({...response.data, tipo: entidadTipo});
       toast.success('Reporte generado correctamente');
     } catch (error) {
@@ -164,6 +166,14 @@ export default function ReporteGastosProveedor() {
       style: 'currency',
       currency: 'MXN'
     }).format(value);
+  };
+
+  const activeDesglose = reportData ? reportData.desglose.filter(f => !excludedFolios.includes(f.folio)) : [];
+  const activeGranTotal = activeDesglose.reduce((acc, f) => acc + f.monto, 0);
+  const activeTotalFacturas = activeDesglose.length;
+
+  const toggleFactura = (folio) => {
+    setExcludedFolios(prev => prev.includes(folio) ? prev.filter(f => f !== folio) : [...prev, folio]);
   };
 
   return (
@@ -350,7 +360,7 @@ export default function ReporteGastosProveedor() {
                 <div>
                   <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Total Gastado</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                    {formatCurrency(reportData.resumen.gran_total)}
+                    {formatCurrency(activeGranTotal)}
                   </p>
                 </div>
                 <div className="p-3 bg-indigo-600 text-white rounded-xl shadow-sm shadow-indigo-200 dark:shadow-none">
@@ -364,7 +374,7 @@ export default function ReporteGastosProveedor() {
                 <div>
                   <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Facturas de la Semana</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                    {reportData.resumen.total_facturas}
+                    {activeTotalFacturas}
                   </p>
                 </div>
                 <div className="p-3 bg-gray-900 dark:bg-white/10 text-white rounded-xl backdrop-blur-sm shadow-sm">
@@ -379,6 +389,7 @@ export default function ReporteGastosProveedor() {
             <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
               <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-700 dark:text-gray-300">
                 <tr>
+                  <th className="px-4 py-3 font-medium w-16 text-center" data-html2canvas-ignore="true">Inc.</th>
                   <th className="px-4 py-3 font-medium">Folio</th>
                   <th className="px-4 py-3 font-medium">Fecha</th>
                   <th className="px-4 py-3 font-medium">Categoría</th>
@@ -387,24 +398,39 @@ export default function ReporteGastosProveedor() {
                 </tr>
               </thead>
               <tbody>
-                {reportData.desglose.map((factura, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{factura.folio}</td>
-                    <td className="px-4 py-3">{factura.fecha}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-1 rounded text-xs font-medium">
-                        {factura.categoria}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 max-w-xs truncate">{factura.descripcion || '-'}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(factura.monto)}
-                    </td>
-                  </tr>
-                ))}
+                {reportData.desglose.map((factura, idx) => {
+                  const isExcluded = excludedFolios.includes(factura.folio);
+                  return (
+                    <tr 
+                      key={idx} 
+                      className={`border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-opacity ${isExcluded ? 'opacity-40 grayscale' : ''}`}
+                      data-html2canvas-ignore={isExcluded ? "true" : "false"}
+                    >
+                      <td className="px-4 py-3 text-center" data-html2canvas-ignore="true">
+                        <input 
+                          type="checkbox" 
+                          checked={!isExcluded}
+                          onChange={() => toggleFactura(factura.folio)}
+                          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{factura.folio}</td>
+                      <td className="px-4 py-3">{factura.fecha}</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-1 rounded text-xs font-medium">
+                          {factura.categoria}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 max-w-xs truncate">{factura.descripcion || '-'}</td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+                        {formatCurrency(factura.monto)}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {reportData.desglose.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
                       No hay facturas registradas en esta semana para el origen seleccionado.
                     </td>
                   </tr>
