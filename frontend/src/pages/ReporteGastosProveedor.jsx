@@ -61,7 +61,7 @@ export default function ReporteGastosProveedor() {
     try {
       const [provRes, tallerRes] = await Promise.all([
         api.get('proveedores/'),
-        api.get('mantenimiento/talleres/')
+        api.get('talleres/')
       ]);
       
       const provs = provRes.data.map(p => ({ ...p, tipo: 'proveedor', tipoLabel: 'Proveedor' }));
@@ -96,7 +96,7 @@ export default function ReporteGastosProveedor() {
     if (entidadTipo === 'proveedor') {
       endpoint = `proveedores/${entidadId}/reporte_gastos/`;
     } else {
-      endpoint = `mantenimiento/talleres/${entidadId}/reporte_gastos/`;
+      endpoint = `talleres/${entidadId}/reporte_gastos/`;
     }
 
     try {
