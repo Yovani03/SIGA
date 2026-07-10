@@ -4,7 +4,7 @@ import { Download, Calendar, Truck, BarChart3, PieChart, Activity, Search, Plus 
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import { toast } from 'sonner';
@@ -376,13 +376,23 @@ export default function ReporteGastosUnidad() {
               </div>
             </div>
 
-            {/* Timeline Bar Chart */}
+            {/* Timeline Area Chart */}
             <div className="lg:col-span-2 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Evolución de Gastos</h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getTimelineData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <AreaChart data={getTimelineData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorCombustible" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorMantenimiento" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#4b5563" opacity={0.2} />
                     <XAxis 
                       dataKey="fecha" 
                       axisLine={false}
@@ -398,13 +408,13 @@ export default function ReporteGastosUnidad() {
                     />
                     <RechartsTooltip 
                       formatter={(value) => formatCurrency(value)}
-                      cursor={{fill: '#f3f4f6'}}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      contentStyle={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', borderRadius: '8px', border: '1px solid #374151', color: '#f3f4f6', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)' }}
+                      itemStyle={{ color: '#e5e7eb', fontWeight: 500 }}
                     />
-                    <Legend verticalAlign="top" height={36} iconType="circle" />
-                    <Bar dataKey="combustible" name="Combustible" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="mantenimiento" name="Mantenimiento" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ paddingTop: '15px' }} />
+                    <Area type="monotone" dataKey="mantenimiento" name="Mantenimiento" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorMantenimiento)" />
+                    <Area type="monotone" dataKey="combustible" name="Combustible" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCombustible)" />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
