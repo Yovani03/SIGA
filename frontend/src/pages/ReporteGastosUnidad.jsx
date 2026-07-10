@@ -96,19 +96,8 @@ export default function ReporteGastosUnidad() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      // Calculate image dimensions to fit PDF while maintaining aspect ratio
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      
-      const targetWidth = imgWidth * ratio;
-      const targetHeight = imgHeight * ratio;
-      
-      // Center image
-      const x = (pdfWidth - targetWidth) / 2;
-      const y = (pdfHeight - targetHeight) / 2;
-      
-      pdf.addImage(imgData, 'PNG', x, y, targetWidth, targetHeight);
+      // Abarcar toda la hoja A4 estirando levemente si es necesario
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Reporte_Gastos_${reportData.unidad.numero_economico}_${fechaInicio}_al_${fechaFin}.pdf`);
       
       toast.success('PDF exportado correctamente', { id: toastId });
