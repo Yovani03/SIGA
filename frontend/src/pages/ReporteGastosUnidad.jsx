@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Download, Calendar, Truck, BarChart3, PieChart, Activity } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -8,8 +8,6 @@ import {
   PieChart as RechartsPieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import { toast } from 'sonner';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
 
@@ -37,7 +35,7 @@ export default function ReporteGastosUnidad() {
 
   const fetchUnidades = async () => {
     try {
-      const response = await axios.get(`${API_URL}/vehiculos/`);
+      const response = await api.get('vehiculos/');
       setUnidades(response.data);
     } catch (error) {
       console.error('Error fetching unidades:', error);
@@ -53,7 +51,7 @@ export default function ReporteGastosUnidad() {
 
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/vehiculos/${unidadId}/reporte_gastos/`, {
+      const response = await api.get(`vehiculos/${unidadId}/reporte_gastos/`, {
         params: {
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin
