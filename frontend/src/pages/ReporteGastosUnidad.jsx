@@ -448,7 +448,7 @@ export default function ReporteGastosUnidad() {
              {/* Fuel List */}
              <div>
                <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Registros de Combustible</h4>
-               <div className="space-y-2">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1">
                  {reportData.desglose.combustible.map((c, i) => (
                    <div key={i} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
                      <span className="text-gray-600 dark:text-gray-400">{c.fecha} - {c.litros} L</span>
@@ -456,7 +456,7 @@ export default function ReporteGastosUnidad() {
                    </div>
                  ))}
                  {reportData.desglose.combustible.length === 0 && (
-                   <p className="text-sm text-gray-500 italic">No hay cargas en este periodo.</p>
+                   <p className="text-sm text-gray-500 italic col-span-2">No hay cargas en este periodo.</p>
                  )}
                </div>
              </div>
