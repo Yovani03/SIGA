@@ -444,35 +444,19 @@ export default function ReporteGastosUnidad() {
           </div>
           
           {/* Detailed Lists (Optional for PDF, but good for dashboard) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+          <div className="mt-4">
              {/* Fuel List */}
              <div>
-               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Top Cargas de Combustible</h4>
+               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Registros de Combustible</h4>
                <div className="space-y-2">
-                 {reportData.desglose.combustible.slice(0, 5).map((c, i) => (
-                   <div key={i} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-                     <span className="text-gray-600 dark:text-gray-400">{c.fecha}</span>
+                 {reportData.desglose.combustible.map((c, i) => (
+                   <div key={i} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                     <span className="text-gray-600 dark:text-gray-400">{c.fecha} - {c.litros} L</span>
                      <span className="font-medium text-gray-900 dark:text-gray-200">{formatCurrency(c.monto_total)}</span>
                    </div>
                  ))}
                  {reportData.desglose.combustible.length === 0 && (
                    <p className="text-sm text-gray-500 italic">No hay cargas en este periodo.</p>
-                 )}
-               </div>
-             </div>
-             
-             {/* Maint List */}
-             <div>
-               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Mantenimiento y Refacciones</h4>
-               <div className="space-y-2">
-                 {reportData.desglose.mantenimiento.slice(0, 5).map((m, i) => (
-                   <div key={i} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-                     <span className="text-gray-600 dark:text-gray-400">{m.fecha} - {m.folio}</span>
-                     <span className="font-medium text-gray-900 dark:text-gray-200">{formatCurrency(m.costo_total)}</span>
-                   </div>
-                 ))}
-                 {reportData.desglose.mantenimiento.length === 0 && (
-                   <p className="text-sm text-gray-500 italic">No hay gastos de mantenimiento en este periodo.</p>
                  )}
                </div>
              </div>
