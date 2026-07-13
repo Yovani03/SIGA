@@ -49,6 +49,17 @@ services:
     volumes:
       - ./backend/media:/app/media:ro
       - ./backend/staticfiles:/app/staticfiles:ro
+    networks:
+      # Red interna del proyecto (para hablar con el backend)
+      - default
+      # Red de Nginx Proxy Manager (para exponer el dominio con SSL)
+      - npm
 
 volumes:
   db_data:
+
+networks:
+  # Red existente de Nginx Proxy Manager, se une como externa.
+  npm:
+    external: true
+    name: nginx-proxy-manager_default
