@@ -26,12 +26,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2w%r$*7kc+!yjhxf%=x#)v1w7p+3s9m4^dal3_3d^%3p26$kvd'
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-2w%r$*7kc+!yjhxf%=x#)v1w7p+3s9m4^dal3_3d^%3p26$kvd'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv(
+        'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1'
+    ).split(',') if h.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
 
 
 # Application definition
@@ -103,7 +115,13 @@ DATABASES = {
     )
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS: si se define CORS_ALLOWED_ORIGINS (separado por comas) se restringe a esos
+# orígenes; si no, se permite todo (útil en desarrollo). En producción, al servir
+# frontend y backend bajo el mismo dominio, normalmente no se necesita abrir CORS.
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
+]
+CORS_ALLOW_ALL_ORIGINS = not CORS_ALLOWED_ORIGINS
 
 
 # Password validation
