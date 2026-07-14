@@ -858,9 +858,8 @@ const Combustibles = () => {
             <CheckCircle2 size={18} /> Evidencia Gas
           </span>
         </button>
-
-</button>
       </div>
+
 
       {activeTab === 'nuevo' ? (
         <>
