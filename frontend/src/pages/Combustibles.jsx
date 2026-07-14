@@ -1365,7 +1365,7 @@ const Combustibles = () => {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'historial' ? (
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-sm">
             <div>
@@ -1902,6 +1902,105 @@ const Combustibles = () => {
           </div>
         </div>
       )}
+      ) : activeTab === 'evidencia' ? (
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-sm">
+            <div>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                <CheckCircle2 className="text-emerald-500" size={32} />
+                Evidencia de Cargas de Gas
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Respaldo documental de facturas y tickets (No suma a gastos globales)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm backdrop-blur-xl h-max">
+              <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-6 flex items-center gap-2">
+                <Plus size={20} className="text-emerald-500"/>
+                Nueva Evidencia
+              </h3>
+              
+              <form onSubmit={handleSubmitEvidencia} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Folio Factura</label>
+                  <input type="text" required value={evidenciaForm.folio_factura} onChange={e => setEvidenciaForm({...evidenciaForm, folio_factura: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Monto</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                    <input type="number" step="0.01" required value={evidenciaForm.monto} onChange={e => setEvidenciaForm({...evidenciaForm, monto: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Fecha de Carga</label>
+                  <input type="date" required value={evidenciaForm.fecha} onChange={e => setEvidenciaForm({...evidenciaForm, fecha: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Descripción (Opcional)</label>
+                  <textarea value={evidenciaForm.descripcion} onChange={e => setEvidenciaForm({...evidenciaForm, descripcion: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none h-24" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Archivo Escaneado</label>
+                  <input type="file" accept="image/*,.pdf" onChange={handleEvidenciaFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/30 dark:file:text-emerald-400" />
+                </div>
+                
+                <button type="submit" disabled={loading} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50">
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />} Guardar Evidencia
+                </button>
+              </form>
+            </div>
+            
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm backdrop-blur-xl">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Historial de Evidencias</h3>
+                <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 py-1 px-3 rounded-full text-xs font-bold">
+                  {evidenciasGas.length} registros
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                {loadingEvidencias ? (
+                  <div className="flex items-center justify-center p-12"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
+                ) : evidenciasGas.length === 0 ? (
+                  <div className="text-center p-12 text-slate-500 dark:text-slate-400">No hay evidencias registradas.</div>
+                ) : (
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
+                      <tr>
+                        <th className="px-6 py-4 font-semibold">Folio</th>
+                        <th className="px-6 py-4 font-semibold">Fecha</th>
+                        <th className="px-6 py-4 font-semibold text-right">Monto</th>
+                        <th className="px-6 py-4 font-semibold text-center">Archivo</th>
+                        <th className="px-6 py-4 font-semibold text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {evidenciasGas.map(ev => (
+                        <tr key={ev.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{ev.folio_factura}</td>
+                          <td className="px-6 py-4 text-slate-500">{ev.fecha}</td>
+                          <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-white">${parseFloat(ev.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                          <td className="px-6 py-4 text-center">
+                            {ev.archivo_escaneado ? (
+                              <a href={ev.archivo_escaneado} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Ver</a>
+                            ) : '-'}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button onClick={() => handleDeleteEvidencia(ev.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
