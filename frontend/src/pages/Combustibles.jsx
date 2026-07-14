@@ -74,7 +74,7 @@ const Combustibles = () => {
     const [scanning, setScanning] = useState(false);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [previewFile, setPreviewFile] = useState(null);
-  const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+  const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], fecha_factura: new Date().toISOString().split('T')[0], archivo_escaneado: null });
   const [selectedEvidencias, setSelectedEvidencias] = useState([]);
 
   // State for Special Load
@@ -342,6 +342,7 @@ const Combustibles = () => {
     formData.append('folio_factura', evidenciaForm.folio_factura);
     formData.append('monto', evidenciaForm.monto);
     formData.append('fecha', evidenciaForm.fecha);
+    if(evidenciaForm.fecha_factura) formData.append('fecha_factura', evidenciaForm.fecha_factura);
     if(evidenciaForm.descripcion) formData.append('descripcion', evidenciaForm.descripcion);
     if (scannedFiles.length > 0) {
       if (scannedFiles.length === 1) {
@@ -366,7 +367,7 @@ const Combustibles = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       notify.success("Evidencia registrada");
-      setEvidenciaForm({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+      setEvidenciaForm({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], fecha_factura: new Date().toISOString().split('T')[0], archivo_escaneado: null });
       setScannedFiles([]);
       fetchEvidenciasGas();
     } catch(err) {
@@ -499,22 +500,24 @@ const Combustibles = () => {
     const tableData = selectedEvidenciasData.map((ev) => [
       ev.folio_factura,
       ev.fecha,
+      ev.fecha_factura || 'N/A',
       ev.descripcion || 'Sin descripción',
       `$${parseFloat(ev.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
     ]);
 
     autoTable(doc, {
       startY: 62,
-      head: [['Folio Factura', 'Fecha', 'Descripción', 'Monto']],
+      head: [['Folio Factura', 'Fecha Carga', 'Fecha Factura', 'Descripción', 'Monto']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
-        3: { halign: 'right' }
+        4: { halign: 'right' }
       },
       foot: [[
         'TOTAL',
+        '',
         '',
         '',
         `$${totalMontoSelected.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
@@ -1901,6 +1904,10 @@ const Combustibles = () => {
                   <input type="date" required value={evidenciaForm.fecha} onChange={e => setEvidenciaForm({...evidenciaForm, fecha: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Fecha de Factura</label>
+                  <input type="date" required value={evidenciaForm.fecha_factura} onChange={e => setEvidenciaForm({...evidenciaForm, fecha_factura: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Descripción (Opcional)</label>
                   <textarea value={evidenciaForm.descripcion} onChange={e => setEvidenciaForm({...evidenciaForm, descripcion: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none h-24" />
                 </div>
@@ -2056,7 +2063,8 @@ const Combustibles = () => {
                           />
                         </th>
                         <th className="px-4 py-4 font-semibold">Folio</th>
-                        <th className="px-4 py-4 font-semibold">Fecha</th>
+                        <th className="px-4 py-4 font-semibold">Carga</th>
+                        <th className="px-4 py-4 font-semibold">Factura</th>
                         <th className="px-4 py-4 font-semibold">Descripción</th>
                         <th className="px-6 py-4 font-semibold text-right">Monto</th>
                         <th className="px-6 py-4 font-semibold text-center">Archivo</th>
@@ -2076,6 +2084,7 @@ const Combustibles = () => {
                           </td>
                           <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">{ev.folio_factura}</td>
                           <td className="px-4 py-4 text-slate-500">{ev.fecha}</td>
+                          <td className="px-4 py-4 text-slate-500">{ev.fecha_factura || 'N/A'}</td>
                           <td className="px-4 py-4 text-slate-500 max-w-xs truncate" title={ev.descripcion}>{ev.descripcion || '-'}</td>
                           <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-white">${parseFloat(ev.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
                           <td className="px-6 py-4 text-center">

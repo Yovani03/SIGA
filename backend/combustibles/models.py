@@ -162,6 +162,7 @@ class EvidenciaGas(models.Model):
     descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
     archivo_escaneado = models.FileField(upload_to='evidencia_gas/%Y/%m/', verbose_name="Documento Escaneado", null=True, blank=True)
     fecha = models.DateField(verbose_name="Fecha de Carga")
+    fecha_factura = models.DateField(verbose_name="Fecha de Factura", null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     class Meta:
