@@ -841,6 +841,7 @@ const Combustibles = () => {
           <span className="relative z-10 flex items-center gap-2">
             <History size={18} /> Historial de Cargas
           </span>
+        </button>
         
         <button 
           onClick={() => { setActiveTab('evidencia'); }}
