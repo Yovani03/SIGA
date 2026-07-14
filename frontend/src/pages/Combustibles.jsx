@@ -1826,7 +1826,7 @@ const Combustibles = () => {
             {scannedFiles.length > 0 ? (
               <div className="w-full space-y-3 relative z-20">
                 <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                  <CheckCircle size={12} /> {scannedFiles.length}/20 {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
+                  <CheckCircle2 size={12} /> {scannedFiles.length}/20 {scannedFiles.length === 1 ? 'Documento' : 'Documentos'} Listos
                 </p>
                 
                 <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
