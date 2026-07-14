@@ -24,7 +24,8 @@ import {
   Check,
   XCircle,
   PlusCircle,
-  Upload
+  Upload,
+  FilePlus
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { jsPDF } from 'jspdf';
