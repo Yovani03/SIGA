@@ -72,8 +72,8 @@ class CargaCombustible(models.Model):
         if self.km_equivocado and self.unidad:
             self.kilometraje = self.unidad.ultimo_kilometraje
 
-        # Calculate monto_total if not provided
-        if not self.monto_total and self.litros and self.precio_unitario:
+        # Siempre recalculamos el monto_total basado en los litros y el precio unitario
+        if self.litros and self.precio_unitario:
             self.monto_total = self.litros * self.precio_unitario
         
         # Guardamos la carga sin calcular rendimiento para luego recalcular toda la cadena

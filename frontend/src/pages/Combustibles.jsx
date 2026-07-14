@@ -833,7 +833,7 @@ const Combustibles = () => {
       } else {
         await fetchHistorialEspecial();
       }
-      const blocksEndpoint = selectedBlock.es_especial ? `cargas-combustible/historial_especiales/?limit=50` : `cargas-combustible/historial_bloques/?fecha=${fechaHistorial}`;
+      const blocksEndpoint = selectedBlock.es_especial ? `cargas-combustible/historial_especiales/?limit=50` : `bloques/por_dia/?fecha=${selectedBlock.fecha}`;
       const res = await api.get(blocksEndpoint);
       const updatedBlock = res.data.find(b => b.id === selectedBlock.id);
       if(updatedBlock){
