@@ -73,7 +73,6 @@ const Combustibles = () => {
   const [scannedFiles, setScannedFiles] = useState([]);
   const [previewFile, setPreviewFile] = useState(null);
   const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
-      setScannedFiles([]);
 
   // State for Special Load
   const [cargaEspecial, setCargaEspecial] = useState({
