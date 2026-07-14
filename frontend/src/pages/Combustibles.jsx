@@ -75,6 +75,7 @@ const Combustibles = () => {
   const [scannedFiles, setScannedFiles] = useState([]);
   const [previewFile, setPreviewFile] = useState(null);
   const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+  const [selectedEvidencias, setSelectedEvidencias] = useState([]);
 
   // State for Special Load
   const [cargaEspecial, setCargaEspecial] = useState({
@@ -448,6 +449,81 @@ const Combustibles = () => {
     });
 
     doc.save(`Totalizador_Combustible_${dateStr}.pdf`);
+  };
+
+  const toggleEvidenciaSelection = (id) => {
+    setSelectedEvidencias(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
+  };
+
+  const toggleAllEvidencias = () => {
+    if (selectedEvidencias.length === evidenciasGas.length && evidenciasGas.length > 0) {
+      setSelectedEvidencias([]);
+    } else {
+      setSelectedEvidencias(evidenciasGas.map(e => e.id));
+    }
+  };
+
+  const exportarPDFEvidencias = () => {
+    const selectedEvidenciasData = evidenciasGas.filter(e => selectedEvidencias.includes(e.id));
+    if (selectedEvidenciasData.length === 0) {
+      notify.warning('Selecciona al menos una evidencia para el reporte');
+      return;
+    }
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.setFont('helvetica', 'bold');
+    doc.text("REPORTE DE EVIDENCIAS DE GAS", pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text("SIGA - Sistema de Gestión de Autotransporte", pageWidth / 2, 27, { align: 'center' });
+    doc.text(`Fecha del Reporte: ${new Date().toLocaleDateString('es-MX')}`, pageWidth / 2, 33, { align: 'center' });
+    
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.line(15, 38, pageWidth - 15, 38);
+
+    const totalMontoSelected = selectedEvidenciasData.reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
+
+    doc.setFontSize(10);
+    doc.setTextColor(51, 65, 85);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total de Evidencias: ${selectedEvidenciasData.length}`, 15, 48);
+    doc.text(`Suma Total: $${totalMontoSelected.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`, 15, 54);
+
+    const tableData = selectedEvidenciasData.map((ev) => [
+      ev.folio_factura,
+      ev.fecha,
+      ev.descripcion || 'Sin descripción',
+      `$${parseFloat(ev.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+    ]);
+
+    autoTable(doc, {
+      startY: 62,
+      head: [['Folio Factura', 'Fecha', 'Descripción', 'Monto']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        3: { halign: 'right' }
+      },
+      foot: [[
+        'TOTAL',
+        '',
+        '',
+        `$${totalMontoSelected.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+      ]],
+      footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+      margin: { left: 15, right: 15 }
+    });
+
+    doc.save(`Reporte_Evidencias_Gas_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportHistorialToPDF = () => {
@@ -1932,14 +2008,37 @@ const Combustibles = () => {
               </form>
             </div>
             
-            <div className="lg:col-span-2 bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm backdrop-blur-xl">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm backdrop-blur-xl flex flex-col">
               <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Historial de Evidencias</h3>
-                <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 py-1 px-3 rounded-full text-xs font-bold">
-                  {evidenciasGas.length} registros
-                </span>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-slate-800 dark:text-white text-lg">Historial de Evidencias</h3>
+                  <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 py-1 px-3 rounded-full text-xs font-bold">
+                    {evidenciasGas.length} registros
+                  </span>
+                </div>
+                {selectedEvidencias.length > 0 && (
+                  <button 
+                    onClick={exportarPDFEvidencias}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-md text-sm font-bold"
+                  >
+                    <Download size={16} />
+                    Generar Reporte ({selectedEvidencias.length})
+                  </button>
+                )}
               </div>
-              <div className="overflow-x-auto">
+              
+              {selectedEvidencias.length > 0 && (
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 px-6 py-3 border-b border-emerald-100 dark:border-emerald-900/50 flex justify-between items-center">
+                  <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                    Suma total seleccionada:
+                  </span>
+                  <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                    ${evidenciasGas.filter(e => selectedEvidencias.includes(e.id)).reduce((acc, curr) => acc + parseFloat(curr.monto), 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              
+              <div className="overflow-x-auto flex-1">
                 {loadingEvidencias ? (
                   <div className="flex items-center justify-center p-12"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
                 ) : evidenciasGas.length === 0 ? (
@@ -1948,8 +2047,17 @@ const Combustibles = () => {
                   <table className="w-full text-sm text-left">
                     <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
                       <tr>
-                        <th className="px-6 py-4 font-semibold">Folio</th>
-                        <th className="px-6 py-4 font-semibold">Fecha</th>
+                        <th className="px-4 py-4 w-12 text-center">
+                          <input 
+                            type="checkbox" 
+                            className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            checked={evidenciasGas.length > 0 && selectedEvidencias.length === evidenciasGas.length}
+                            onChange={toggleAllEvidencias}
+                          />
+                        </th>
+                        <th className="px-4 py-4 font-semibold">Folio</th>
+                        <th className="px-4 py-4 font-semibold">Fecha</th>
+                        <th className="px-4 py-4 font-semibold">Descripción</th>
                         <th className="px-6 py-4 font-semibold text-right">Monto</th>
                         <th className="px-6 py-4 font-semibold text-center">Archivo</th>
                         <th className="px-6 py-4 font-semibold text-center">Acciones</th>
@@ -1958,12 +2066,21 @@ const Combustibles = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {evidenciasGas.map(ev => (
                         <tr key={ev.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{ev.folio_factura}</td>
-                          <td className="px-6 py-4 text-slate-500">{ev.fecha}</td>
+                          <td className="px-4 py-4 text-center">
+                            <input 
+                              type="checkbox" 
+                              className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                              checked={selectedEvidencias.includes(ev.id)}
+                              onChange={() => toggleEvidenciaSelection(ev.id)}
+                            />
+                          </td>
+                          <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">{ev.folio_factura}</td>
+                          <td className="px-4 py-4 text-slate-500">{ev.fecha}</td>
+                          <td className="px-4 py-4 text-slate-500 max-w-xs truncate" title={ev.descripcion}>{ev.descripcion || '-'}</td>
                           <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-white">${parseFloat(ev.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
                           <td className="px-6 py-4 text-center">
                             {ev.archivo_escaneado ? (
-                              <a href={ev.archivo_escaneado} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Ver</a>
+                              <a href={ev.archivo_escaneado} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center justify-center"><Eye size={16} /></a>
                             ) : '-'}
                           </td>
                           <td className="px-6 py-4 text-center">
