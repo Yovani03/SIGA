@@ -155,3 +155,19 @@ def update_bloque_totals_on_save(sender, instance, **kwargs):
 def update_bloque_totals_on_delete(sender, instance, **kwargs):
     if instance.bloque:
         instance.bloque.update_totals()
+
+class EvidenciaGas(models.Model):
+    folio_factura = models.CharField(max_length=100, verbose_name="Folio de Factura")
+    monto = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    archivo_escaneado = models.FileField(upload_to='evidencia_gas/%Y/%m/', verbose_name="Documento Escaneado", null=True, blank=True)
+    fecha = models.DateField(verbose_name="Fecha de Carga")
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Evidencia de Gas"
+        verbose_name_plural = "Evidencias de Gas"
+        ordering = ['-fecha', '-fecha_registro']
+
+    def __str__(self):
+        return f"Evidencia {self.folio_factura} - {self.monto} MXN"

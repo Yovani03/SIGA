@@ -56,6 +56,11 @@ const Combustibles = () => {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split('T')[0]);
 
+  // State for Evidencias Gas
+  const [evidenciasGas, setEvidenciasGas] = useState([]);
+  const [loadingEvidencias, setLoadingEvidencias] = useState(false);
+  const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+
   // State for Special Load
   const [cargaEspecial, setCargaEspecial] = useState({
     unidad: '',
@@ -118,7 +123,8 @@ const Combustibles = () => {
   }, [fecha]);
 
   useEffect(() => {
-    if (activeTab === 'historial') {
+    if (activeTab === \'evidencia\') fetchEvidenciasGas();
+      if (activeTab === 'historial') {
       if (historialTipo === 'normal') {
         fetchHistorial();
       } else if (historialTipo === 'especial') {
@@ -218,6 +224,64 @@ const Combustibles = () => {
       notify.error("Error al cargar totalizador");
     } finally {
       setLoadingTotalizador(false);
+    }
+  };
+
+  const fetchEvidenciasGas = async () => {
+    setLoadingEvidencias(true);
+    try {
+      const res = await api.get('evidencias-gas/');
+      setEvidenciasGas(res.data);
+    } catch(err) {
+      console.error(err);
+      notify.error("Error al cargar evidencias de gas");
+    } finally {
+      setLoadingEvidencias(false);
+    }
+  };
+
+  const handleEvidenciaFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setEvidenciaForm({ ...evidenciaForm, archivo_escaneado: e.target.files[0] });
+    }
+  };
+
+  const handleSubmitEvidencia = async (e) => {
+    e.preventDefault();
+    if(!evidenciaForm.folio_factura || !evidenciaForm.monto || !evidenciaForm.fecha) {
+        notify.info("Completa los campos obligatorios");
+        return;
+    }
+    const formData = new FormData();
+    formData.append('folio_factura', evidenciaForm.folio_factura);
+    formData.append('monto', evidenciaForm.monto);
+    formData.append('fecha', evidenciaForm.fecha);
+    if(evidenciaForm.descripcion) formData.append('descripcion', evidenciaForm.descripcion);
+    if(evidenciaForm.archivo_escaneado) formData.append('archivo_escaneado', evidenciaForm.archivo_escaneado);
+
+    setLoading(true);
+    try {
+      await api.post('evidencias-gas/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      notify.success("Evidencia registrada");
+      setEvidenciaForm({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+      fetchEvidenciasGas();
+    } catch(err) {
+      notify.error("Error al registrar evidencia");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEvidencia = async (id) => {
+    if(!window.confirm("¿Eliminar esta evidencia?")) return;
+    try {
+      await api.delete(`evidencias-gas/${id}/`);
+      notify.success("Evidencia eliminada");
+      fetchEvidenciasGas();
+    } catch(err) {
+      notify.error("Error al eliminar evidencia");
     }
   };
 
@@ -777,7 +841,24 @@ const Combustibles = () => {
           <span className="relative z-10 flex items-center gap-2">
             <History size={18} /> Historial de Cargas
           </span>
+        
+        <button 
+          onClick={() => { setActiveTab('evidencia'); }}
+          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out overflow-hidden ${
+            activeTab === 'evidencia' 
+              ? 'text-white shadow-lg shadow-emerald-900/20' 
+              : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+          }`}
+        >
+          {activeTab === 'evidencia' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-full" />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <CheckCircle2 size={18} /> Evidencia Gas
+          </span>
         </button>
+
+</button>
       </div>
 
       {activeTab === 'nuevo' ? (

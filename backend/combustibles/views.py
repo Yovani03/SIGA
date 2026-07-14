@@ -191,3 +191,10 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
         
         bloque.update_totals()
         return Response(status=status.HTTP_201_CREATED)
+
+from .models import EvidenciaGas
+from .serializers import EvidenciaGasSerializer
+
+class EvidenciaGasViewSet(viewsets.ModelViewSet):
+    queryset = EvidenciaGas.objects.all()
+    serializer_class = EvidenciaGasSerializer

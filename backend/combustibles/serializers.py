@@ -85,3 +85,10 @@ class BulkCargaCombustibleSerializer(serializers.Serializer):
         bloque.update_totals()
             
         return {'fecha': fecha, 'bloque_id': bloque.id, 'cargas': cargas_created}
+
+from .models import EvidenciaGas
+
+class EvidenciaGasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvidenciaGas
+        fields = '__all__'
