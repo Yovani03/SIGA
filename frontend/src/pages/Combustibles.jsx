@@ -76,6 +76,7 @@ const Combustibles = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [evidenciaForm, setEvidenciaForm] = useState({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], fecha_factura: new Date().toISOString().split('T')[0], archivo_escaneado: null });
   const [selectedEvidencias, setSelectedEvidencias] = useState([]);
+  const [editingEvidenciaId, setEditingEvidenciaId] = useState(null);
 
   // State for Special Load
   const [cargaEspecial, setCargaEspecial] = useState({
@@ -357,24 +358,50 @@ const Combustibles = () => {
           return;
         }
       }
-    } else if (evidenciaForm.archivo_escaneado) {
+    } else if (evidenciaForm.archivo_escaneado && typeof evidenciaForm.archivo_escaneado !== 'string') {
        formData.append('archivo_escaneado', evidenciaForm.archivo_escaneado);
     }
 
     setLoading(true);
     try {
-      await api.post('evidencias-gas/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      notify.success("Evidencia registrada");
-      setEvidenciaForm({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], fecha_factura: new Date().toISOString().split('T')[0], archivo_escaneado: null });
-      setScannedFiles([]);
+      if (editingEvidenciaId) {
+        await api.patch(`evidencias-gas/${editingEvidenciaId}/`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        notify.success("Evidencia actualizada");
+      } else {
+        await api.post('evidencias-gas/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        notify.success("Evidencia registrada");
+      }
+      handleCancelEditEvidencia();
       fetchEvidenciasGas();
     } catch(err) {
-      notify.error("Error al registrar evidencia");
+      notify.error(editingEvidenciaId ? "Error al actualizar evidencia" : "Error al registrar evidencia");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditEvidencia = (ev) => {
+    setEditingEvidenciaId(ev.id);
+    setEvidenciaForm({
+      folio_factura: ev.folio_factura,
+      monto: ev.monto,
+      descripcion: ev.descripcion || '',
+      fecha: ev.fecha,
+      fecha_factura: ev.fecha_factura || new Date().toISOString().split('T')[0],
+      archivo_escaneado: ev.archivo_escaneado
+    });
+    setScannedFiles([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEditEvidencia = () => {
+    setEditingEvidenciaId(null);
+    setEvidenciaForm({ folio_factura: '', monto: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], fecha_factura: new Date().toISOString().split('T')[0], archivo_escaneado: null });
+    setScannedFiles([]);
   };
 
   const handleDeleteEvidencia = async (id) => {
@@ -2009,9 +2036,16 @@ const Combustibles = () => {
           </div>
                 </div>
                 
-                <button type="submit" disabled={loading} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50">
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />} Guardar Evidencia
-                </button>
+                <div className="flex gap-3 mt-4">
+                  <button type="submit" disabled={loading} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50">
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />} {editingEvidenciaId ? 'Actualizar Evidencia' : 'Guardar Evidencia'}
+                  </button>
+                  {editingEvidenciaId && (
+                    <button type="button" onClick={handleCancelEditEvidencia} className="px-6 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl transition-all">
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
             
@@ -2093,6 +2127,9 @@ const Combustibles = () => {
                             ) : '-'}
                           </td>
                           <td className="px-6 py-4 text-center">
+                            <button onClick={() => handleEditEvidencia(ev)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors mr-1">
+                              <Edit2 size={16} />
+                            </button>
                             <button onClick={() => handleDeleteEvidencia(ev.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                               <Trash2 size={16} />
                             </button>
