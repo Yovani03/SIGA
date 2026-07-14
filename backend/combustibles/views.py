@@ -51,6 +51,29 @@ class BloqueCargaCombustibleViewSet(viewsets.ModelViewSet):
 
         return Response(data)
 
+    @action(detail=True, methods=['post'])
+    def cambiar_fecha(self, request, pk=None):
+        bloque = self.get_object()
+        nueva_fecha = request.data.get('fecha')
+        
+        if not nueva_fecha:
+            return Response({"error": "Se requiere la nueva fecha"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            bloque.fecha = nueva_fecha
+            bloque.save(update_fields=['fecha'])
+            
+            # Change date for all associated loads
+            cargas = bloque.cargas.all()
+            for carga in cargas:
+                carga.fecha = nueva_fecha
+                # By calling save, we trigger the update of units and recalculation
+                carga.save()
+                
+            return Response({"detail": "Fecha cambiada exitosamente"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class CargaCombustibleViewSet(viewsets.ModelViewSet):
     queryset = CargaCombustible.objects.all()
     serializer_class = CargaCombustibleSerializer

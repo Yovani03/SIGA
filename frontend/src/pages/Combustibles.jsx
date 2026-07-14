@@ -93,6 +93,8 @@ const Combustibles = () => {
   // State for Block Details Modal
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [isEditingBlock, setIsEditingBlock] = useState(false);
+  const [isEditingBlockDate, setIsEditingBlockDate] = useState(false);
+  const [editBlockDate, setEditBlockDate] = useState('');
 
   // State for adding/editing loads inside a block
   const [editingCargaId, setEditingCargaId] = useState(null);
@@ -881,6 +883,23 @@ const Combustibles = () => {
       refreshSelectedBlock();
     } catch(err) {
       notify.error("Error al eliminar carga");
+    }
+  };
+
+  const handleSaveBlockDate = async () => {
+    if (!editBlockDate) return;
+    try {
+      await api.post(`bloques/${selectedBlock.id}/cambiar_fecha/`, { fecha: editBlockDate });
+      notify.success("Fecha del bloque actualizada");
+      setIsEditingBlockDate(false);
+      setSelectedBlock(null);
+      if (historialTipo === 'normal') {
+        fetchHistorial();
+      } else {
+        fetchHistorialEspecial();
+      }
+    } catch (err) {
+      notify.error("Error al actualizar la fecha del bloque");
     }
   };
 
@@ -1970,10 +1989,27 @@ const Combustibles = () => {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-4">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <History className="text-blue-500" />
-                  Detalles del Bloque
-                </h3>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <History className="text-blue-500" />
+                    Detalles del Bloque
+                  </h3>
+                  {!isEditingBlockDate ? (
+                    <button onClick={() => { setEditBlockDate(selectedBlock.fecha); setIsEditingBlockDate(true); }} className="text-xs bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                      <Edit2 size={14} /> Fecha: {selectedBlock.fecha}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input type="date" value={editBlockDate} onChange={e => setEditBlockDate(e.target.value)} className="text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white" />
+                      <button onClick={handleSaveBlockDate} className="text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 p-1.5 rounded-lg transition-colors">
+                        <Check size={16} />
+                      </button>
+                      <button onClick={() => setIsEditingBlockDate(false)} className="text-slate-600 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 p-1.5 rounded-lg transition-colors">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                   ID: {selectedBlock.id} | Fecha Registro: {new Date(selectedBlock.fecha_registro).toLocaleString()}
                 </p>
