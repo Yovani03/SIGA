@@ -123,7 +123,7 @@ const Combustibles = () => {
   }, [fecha]);
 
   useEffect(() => {
-    if (activeTab === \'evidencia\') fetchEvidenciasGas();
+    if (activeTab === 'evidencia') fetchEvidenciasGas();
       if (activeTab === 'historial') {
       if (historialTipo === 'normal') {
         fetchHistorial();
