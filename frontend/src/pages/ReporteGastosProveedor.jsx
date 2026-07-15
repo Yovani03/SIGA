@@ -185,6 +185,8 @@ export default function ReporteGastosProveedor() {
 
   const activeDesglose = reportData ? reportData.desglose.filter(f => !excludedFolios.includes(f.folio)) : [];
   const activeGranTotal = activeDesglose.reduce((acc, f) => acc + f.monto, 0);
+  const activeSubtotal = activeGranTotal / 1.16;
+  const activeIva = activeGranTotal - activeSubtotal;
   const activeTotalFacturas = activeDesglose.length;
 
   const toggleFactura = (folio) => {
@@ -392,9 +394,19 @@ export default function ReporteGastosProveedor() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Total Gastado</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2 mb-3">
                     {formatCurrency(activeGranTotal)}
                   </p>
+                  <div className="flex gap-6 text-sm font-medium text-indigo-800 dark:text-indigo-200 border-t border-indigo-200 dark:border-indigo-700/50 pt-3">
+                    <div className="flex flex-col">
+                      <span className="uppercase tracking-wide text-[10px] opacity-70">Subtotal</span>
+                      <span>{formatCurrency(activeSubtotal)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="uppercase tracking-wide text-[10px] opacity-70">IVA (16%)</span>
+                      <span>{formatCurrency(activeIva)}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-3 bg-indigo-600 text-white rounded-xl shadow-sm shadow-indigo-200 dark:shadow-none">
                   <BarChart3 className="w-6 h-6" />
