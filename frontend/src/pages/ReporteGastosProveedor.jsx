@@ -54,10 +54,19 @@ export default function ReporteGastosProveedor() {
   const startOfWeek = getStartOfWeek(currentWeekDate);
   const endOfWeek = getEndOfWeek(currentWeekDate);
 
-  const filteredEntidades = entidades.filter(e => 
-    e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
-    (e.rfc && e.rfc.toLowerCase().includes(busqueda.toLowerCase()))
-  );
+  const filteredEntidades = entidades.filter(e => {
+    const term = busqueda.toLowerCase();
+    return (
+      (e.nombre && e.nombre.toLowerCase().includes(term)) ||
+      (e.rfc && e.rfc.toLowerCase().includes(term)) ||
+      (e.razon_social && e.razon_social.toLowerCase().includes(term)) ||
+      (e.categoria && e.categoria.toLowerCase().includes(term)) ||
+      (e.especialidad && e.especialidad.toLowerCase().includes(term)) ||
+      (e.telefono && e.telefono.toLowerCase().includes(term)) ||
+      (e.email && e.email.toLowerCase().includes(term)) ||
+      (e.direccion && e.direccion.toLowerCase().includes(term))
+    );
+  });
   
   const reportRef = useRef(null);
 
