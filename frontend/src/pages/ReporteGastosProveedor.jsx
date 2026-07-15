@@ -6,11 +6,17 @@ import { jsPDF } from 'jspdf';
 import { toast } from 'sonner';
 
 // Función para obtener la fecha formateada (YYYY-MM-DD)
-const formatDateStr = (date) => date.toISOString().split('T')[0];
+const formatDateStr = (date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 // Funciones para calcular la semana (Viernes a Jueves) de una fecha
 const getStartOfWeek = (date) => {
   const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
   const day = result.getDay();
   // El viernes es el día 5. Buscamos el viernes pasado o el actual.
   const diff = (day >= 5) ? (5 - day) : (5 - day - 7);
