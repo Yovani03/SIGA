@@ -350,8 +350,26 @@ export default function ReporteGastosProveedor() {
               <p className="text-gray-500 dark:text-gray-400 mt-1">
                 RFC: {reportData.tipo === 'proveedor' ? reportData.proveedor.rfc : reportData.taller.rfc || 'N/A'}
               </p>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                {reportData.tipo === 'proveedor' ? (
+                  <>
+                    {reportData.proveedor.razon_social && <p><span className="font-semibold text-gray-900 dark:text-white">Razón Social:</span> {reportData.proveedor.razon_social}</p>}
+                    {reportData.proveedor.categoria && <p><span className="font-semibold text-gray-900 dark:text-white">Categoría:</span> {reportData.proveedor.categoria}</p>}
+                    {reportData.proveedor.telefono && <p><span className="font-semibold text-gray-900 dark:text-white">Teléfono:</span> {reportData.proveedor.telefono}</p>}
+                    {reportData.proveedor.email && <p><span className="font-semibold text-gray-900 dark:text-white">Email:</span> {reportData.proveedor.email}</p>}
+                    {reportData.proveedor.direccion && <p className="col-span-1 md:col-span-2"><span className="font-semibold text-gray-900 dark:text-white">Dirección:</span> {reportData.proveedor.direccion}</p>}
+                  </>
+                ) : (
+                  <>
+                    {reportData.taller.razon_social && <p><span className="font-semibold text-gray-900 dark:text-white">Razón Social:</span> {reportData.taller.razon_social}</p>}
+                    {reportData.taller.especialidad && <p><span className="font-semibold text-gray-900 dark:text-white">Especialidad:</span> {reportData.taller.especialidad}</p>}
+                    {reportData.taller.telefono && <p><span className="font-semibold text-gray-900 dark:text-white">Teléfono:</span> {reportData.taller.telefono}</p>}
+                    {reportData.taller.direccion && <p className="col-span-1 md:col-span-2"><span className="font-semibold text-gray-900 dark:text-white">Dirección:</span> {reportData.taller.direccion}</p>}
+                  </>
+                )}
+              </div>
             </div>
-            <div className="text-right">
+            <div className="text-right whitespace-nowrap">
               <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Período del Reporte</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
                 {formatShortDate(startOfWeek)} <span className="text-gray-400 mx-1">al</span> {formatShortDate(endOfWeek)}
