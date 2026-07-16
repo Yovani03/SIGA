@@ -199,8 +199,18 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
         if solicitud.estado != 'Pendiente':
             return Response({'detail': 'Solo se pueden aprobar solicitudes pendientes.'}, status=400)
             
-        # Copiar los cambios propuestos
-        cambios = solicitud.cambios_propuestos.copy()
+        # Manejar posibles strings o None en cambios_propuestos
+        cambios_raw = solicitud.cambios_propuestos
+        import json
+        if isinstance(cambios_raw, str):
+            try:
+                cambios = json.loads(cambios_raw)
+            except:
+                cambios = {}
+        elif isinstance(cambios_raw, dict):
+            cambios = cambios_raw.copy()
+        else:
+            cambios = {}
 
         # Limpiar datos corruptos de solicitudes antiguas si las hay
         if 'archivo_escaneado' in cambios:
