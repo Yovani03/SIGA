@@ -78,10 +78,15 @@ class TicketSerializer(serializers.ModelSerializer):
             ticket.variados.set(variados_data)
         
         for detalle in detalles_data:
-            u_id = detalle.get('unidad')
-            c_id = detalle.get('caja')
-            v_id = detalle.get('variado')
+            u_raw = detalle.get('unidad')
+            c_raw = detalle.get('caja')
+            v_raw = detalle.get('variado')
             monto = detalle.get('monto')
+            
+            u_id = getattr(u_raw, 'id', u_raw)
+            c_id = getattr(c_raw, 'id', c_raw)
+            v_id = getattr(v_raw, 'id', v_raw)
+
             if (u_id or c_id or v_id) and monto:
                 TicketDetalleUnidad.objects.create(
                     ticket=ticket, 
@@ -120,10 +125,15 @@ class TicketSerializer(serializers.ModelSerializer):
         if detalles_data is not None:
             instance.detalles_unidades.all().delete()
             for detalle in detalles_data:
-                u_id = detalle.get('unidad')
-                c_id = detalle.get('caja')
-                v_id = detalle.get('variado')
+                u_raw = detalle.get('unidad')
+                c_raw = detalle.get('caja')
+                v_raw = detalle.get('variado')
                 monto = detalle.get('monto')
+                
+                u_id = getattr(u_raw, 'id', u_raw)
+                c_id = getattr(c_raw, 'id', c_raw)
+                v_id = getattr(v_raw, 'id', v_raw)
+
                 if (u_id or c_id or v_id) and monto:
                     TicketDetalleUnidad.objects.create(
                         ticket=ticket, 
@@ -225,10 +235,15 @@ class FacturaSerializer(serializers.ModelSerializer):
                 factura.ticket.variados.set(variados_data)
         
         for detalle in detalles_data:
-            u_id = detalle.get('unidad')
-            c_id = detalle.get('caja')
-            v_id = detalle.get('variado')
+            u_raw = detalle.get('unidad')
+            c_raw = detalle.get('caja')
+            v_raw = detalle.get('variado')
             monto = detalle.get('monto')
+            
+            u_id = getattr(u_raw, 'id', u_raw)
+            c_id = getattr(c_raw, 'id', c_raw)
+            v_id = getattr(v_raw, 'id', v_raw)
+
             if (u_id or c_id or v_id) and monto:
                 FacturaDetalleUnidad.objects.create(
                     factura=factura, 
@@ -286,10 +301,15 @@ class FacturaSerializer(serializers.ModelSerializer):
         if detalles_data is not None:
             instance.detalles_unidades.all().delete()
             for detalle in detalles_data:
-                u_id = detalle.get('unidad')
-                c_id = detalle.get('caja')
-                v_id = detalle.get('variado')
+                u_raw = detalle.get('unidad')
+                c_raw = detalle.get('caja')
+                v_raw = detalle.get('variado')
                 monto = detalle.get('monto')
+                
+                u_id = getattr(u_raw, 'id', u_raw)
+                c_id = getattr(c_raw, 'id', c_raw)
+                v_id = getattr(v_raw, 'id', v_raw)
+
                 if (u_id or c_id or v_id) and monto:
                     FacturaDetalleUnidad.objects.create(
                         factura=factura, 
