@@ -85,7 +85,7 @@ const Facturacion = () => {
   const [variados, setVariados] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
-  const isLector = user?.rol === 'lector_gastos';
+  const isLector = user?.rol === 'lector_gastos' || user?.rol === 'jefe_logistica';
   const [searchTerm, setSearchTerm] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [editingFactura, setEditingFactura] = useState(null);

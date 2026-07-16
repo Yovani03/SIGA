@@ -43,9 +43,12 @@ function App() {
                   <Route path="solicitudes-cambios" element={<SolicitudesCambios />} />
                 </Route>
 
-                {/* Rutas de Capturista (con Lector de Gastos) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'lector_gastos']} />}>
+                {/* Rutas de Capturista (con Lector de Gastos y Logística para visualizar facturas) */}
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'lector_gastos', 'jefe_logistica']} />}>
                   <Route path="facturacion" element={<Facturacion />} />
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista', 'lector_gastos']} />}>
                   <Route path="tickets" element={<Tickets />} />
                 </Route>
 

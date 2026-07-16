@@ -56,7 +56,7 @@ const DashboardLayout = () => {
   const capturistaItems = [
     { icon: <Users size={20} />, label: 'Operadores', path: '/operadores', roles: ['admin_general', 'admin', 'jefe_logistica'] },
     { icon: <MapPin size={20} />, label: 'Logística', path: '/logistica', roles: ['admin_general', 'admin', 'jefe_logistica'] },
-    { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
+    { icon: <FilePlus size={20} />, label: 'Facturación', path: '/facturacion', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos', 'jefe_logistica'] },
     { icon: <Ticket size={20} />, label: 'Tickets', path: '/tickets', roles: ['admin_general', 'admin', 'capturista', 'lector_gastos'] },
     { icon: <LayoutGrid size={20} />, label: 'Catálogos', path: '/catalogos', roles: ['admin_general', 'admin', 'capturista'] },
     { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
