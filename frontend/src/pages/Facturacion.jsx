@@ -103,23 +103,81 @@ const Facturacion = () => {
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const itemsPerPage = 6;
+  const [stats, setStats] = useState({ total: 0, count: 0, units: 0, chart_data: [] });
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
 
-  const fetchData = async () => {
+  const getFormatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const getDateParams = () => {
+    let fecha_inicio = null;
+    let fecha_fin = null;
+    
+    if (dateRange === 'week') {
+      const day = referenceDate.getDay();
+      const diffToFriday = (day + 2) % 7;
+      const start = new Date(referenceDate);
+      start.setDate(referenceDate.getDate() - diffToFriday);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      
+      fecha_inicio = getFormatDate(start);
+      fecha_fin = getFormatDate(end);
+    } else if (dateRange === 'month') {
+      fecha_inicio = getFormatDate(new Date(selectedYear, selectedMonth, 1));
+      fecha_fin = getFormatDate(new Date(selectedYear, selectedMonth + 1, 0));
+    } else if (dateRange === 'year') {
+      fecha_inicio = getFormatDate(new Date(selectedYear, 0, 1));
+      fecha_fin = getFormatDate(new Date(selectedYear, 11, 31));
+    }
+    return { fecha_inicio, fecha_fin };
+  };
+
+  const fetchCatalogs = async () => {
     try {
-      setLoading(true);
-      const [facturasRes, vehiculosRes, cajasRes, variadosRes] = await Promise.all([
-        api.get('facturas/'),
+      const [vehiculosRes, cajasRes, variadosRes] = await Promise.all([
         api.get('vehiculos/'),
         api.get('cajas/'),
         api.get('variados/')
       ]);
-      setFacturas(facturasRes.data);
-      setVehiculos(vehiculosRes.data);
-      setCajas(cajasRes.data);
-      setVariados(variadosRes.data);
+      setVehiculos(vehiculosRes.data.results || vehiculosRes.data);
+      setCajas(cajasRes.data.results || cajasRes.data);
+      setVariados(variadosRes.data.results || variadosRes.data);
     } catch (err) {
-      console.error("Error cargando facturación", err);
+      console.error("Error cargando catálogos", err);
+    }
+  };
+
+  const fetchFacturasData = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        search: searchTerm,
+        ...getDateParams()
+      };
+      
+      const [facturasRes, statsRes] = await Promise.all([
+        api.get('facturas/', { params }),
+        api.get('facturas/stats/', { params: getDateParams() })
+      ]);
+      
+      if (facturasRes.data.results) {
+        setFacturas(facturasRes.data.results);
+        setTotalItems(facturasRes.data.count);
+      } else {
+        setFacturas(facturasRes.data);
+        setTotalItems(facturasRes.data.length);
+      }
+      
+      setStats(statsRes.data);
+    } catch (err) {
+      console.error("Error cargando facturas", err);
       notify.error("No se pudieron cargar los datos de facturación.");
     } finally {
       setLoading(false);
@@ -127,8 +185,14 @@ const Facturacion = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchCatalogs();
   }, []);
+
+  useEffect(() => {
+    fetchFacturasData();
+  }, [currentPage, searchTerm, dateRange, referenceDate, selectedMonth, selectedYear]);
+
+  const fetchData = fetchFacturasData;
 
   const handleAltaSuccess = () => {
     setShowAltaModal(false);
@@ -183,62 +247,17 @@ const Facturacion = () => {
     return variados.find(v => v.id === variadoId);
   };
 
-  const filteredFacturas = facturas.filter(f => {
-    if (f.producto_categoria === 'Combustible') return false;
-
-    // Filter by date range
-    let start = null;
-    let end = null;
-    
-    if (dateRange === 'week') {
-      const day = referenceDate.getDay();
-      const diffToFriday = (day + 2) % 7;
-      start = new Date(referenceDate);
-      start.setDate(referenceDate.getDate() - diffToFriday);
-      start.setHours(0, 0, 0, 0);
-      
-      end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-    } else if (dateRange === 'month') {
-      start = new Date(selectedYear, selectedMonth, 1);
-      end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
-    } else if (dateRange === 'year') {
-      start = new Date(selectedYear, 0, 1);
-      end = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
-    }
-
-    if (start && new Date(f.fecha + 'T00:00:00') < start) return false;
-    if (end && new Date(f.fecha + 'T00:00:00') > end) return false;
-
-    const unidad = getUnidadInfo(f.unidad);
-    const caja = getCajaInfo(f.caja);
-    const variado = getVariadoInfo(f.variado);
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      f.folio.includes(searchTerm) ||
-      (f.descripcion && f.descripcion.toLowerCase().includes(searchLower)) ||
-      (f.taller_nombre && f.taller_nombre.toLowerCase().includes(searchLower)) ||
-      (f.proveedor_nombre && f.proveedor_nombre.toLowerCase().includes(searchLower)) ||
-      (f.rfc_emisor && f.rfc_emisor.toLowerCase().includes(searchLower)) ||
-      (f.razon_social_emisor && f.razon_social_emisor.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.placas.toLowerCase().includes(searchLower)) ||
-      (caja && caja.numero_economico.toLowerCase().includes(searchLower)) ||
-      (caja && caja.placas.toLowerCase().includes(searchLower)) ||
-      (variado && variado.numero_economico.toLowerCase().includes(searchLower)) ||
-      (variado && variado.placas && variado.placas.toLowerCase().includes(searchLower))
-    );
-  }).sort((a, b) => new Date(b.fecha + 'T00:00:00') - new Date(a.fecha + 'T00:00:00'));
+  const chartDataConFills = (stats.chart_data || []).map((item, index) => ({
+    ...item,
+    fill: categoryChartConfig[item.name]?.color || COLORS[index % COLORS.length]
+  }));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, dateRange, referenceDate, selectedMonth, selectedYear]);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentFacturas = filteredFacturas.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredFacturas.length / itemsPerPage);
+  const currentFacturas = facturas;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -253,28 +272,6 @@ const Facturacion = () => {
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
-
-  const stats = {
-    total: filteredFacturas.reduce((acc, curr) => curr.cancelado ? acc : acc + parseFloat(curr.monto), 0),
-    count: filteredFacturas.length,
-    units: [...new Set(filteredFacturas.map(f => f.unidad))].length
-  };
-
-  const chartDataConFills = Object.entries(
-    filteredFacturas.reduce((acc, f) => {
-      if (f.cancelado) return acc;
-      let cat = f.categoria;
-      if (!cat || cat === 'Otro') {
-        cat = f.producto_categoria || 'Otro';
-      }
-      acc[cat] = (acc[cat] || 0) + parseFloat(f.monto);
-      return acc;
-    }, {})
-  ).map(([name, value], index) => ({
-    name,
-    value,
-    fill: categoryChartConfig[name]?.color || COLORS[index % COLORS.length]
-  })).sort((a, b) => b.value - a.value);
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-in fade-in duration-700">

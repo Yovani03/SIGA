@@ -1,6 +1,7 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from .models import Viaje, ConfiguracionBono, Bitacora
 from .serializers import ViajeSerializer, ConfiguracionBonoSerializer, BitacoraSerializer
@@ -13,9 +14,39 @@ from django.core.files import File
 from django.conf import settings
 from tempfile import NamedTemporaryFile
 
+from core.pagination import CustomPagination
+
 class ViajeViewSet(viewsets.ModelViewSet):
-    queryset = Viaje.objects.all()
     serializer_class = ViajeSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    pagination_class = CustomPagination
+    search_fields = ['origen', 'destino', 'cliente', 'operador__nombre', 'operador__apellidos', 'unidad__numero_economico']
+    filterset_fields = ['estatus', 'completado']
+    ordering_fields = ['fecha_salida', 'fecha_llegada']
+
+    def get_queryset(self):
+        queryset = Viaje.objects.all().order_by('-fecha_salida')
+        fecha_inicio = self.request.query_params.get('fecha_inicio')
+        fecha_fin = self.request.query_params.get('fecha_fin')
+        
+        if fecha_inicio:
+            queryset = queryset.filter(fecha_salida__gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(fecha_salida__lte=fecha_fin)
+            
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        total = queryset.count()
+        en_ruta = queryset.filter(estatus='en_ruta').count()
+        completados = queryset.filter(completado=True).count()
+        return Response({
+            'total': total,
+            'en_ruta': en_ruta,
+            'completados': completados
+        })
 
     def perform_create(self, serializer):
         # Si no se proporciona fecha_salida, usar la actual

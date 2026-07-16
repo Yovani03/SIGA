@@ -74,9 +74,12 @@ class BloqueCargaCombustibleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+from core.pagination import CustomPagination
+
 class CargaCombustibleViewSet(viewsets.ModelViewSet):
     queryset = CargaCombustible.objects.all()
     serializer_class = CargaCombustibleSerializer
+    pagination_class = CustomPagination
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)

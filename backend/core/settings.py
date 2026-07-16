@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_filters',
     # Local apps
     'usuarios',
     'vehiculos',
@@ -199,7 +200,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'usuarios.permissions.IsLectorGastosReadOnly',
         'rest_framework.permissions.AllowAny',
-    )
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 from datetime import timedelta

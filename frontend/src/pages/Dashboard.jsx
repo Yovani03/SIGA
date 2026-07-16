@@ -76,26 +76,26 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [resVehiculos, resFacturas, resFuel, resProyecciones] = await Promise.all([
-        api.get('vehiculos/'),
-        api.get('facturas/'),
-        api.get('cargas-combustible/'),
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const firstDay = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+      const lastDay = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+
+      const [resVehiculos, resFacturasStats, resFacturasRecent, resFuelRecent, resProyecciones] = await Promise.all([
+        api.get('vehiculos/', { params: { nopaged: true } }),
+        api.get('facturas/stats/', { params: { fecha_inicio: firstDay, fecha_fin: lastDay, exclude_categoria: 'Combustible', cancelado: false } }),
+        api.get('facturas/', { params: { page_size: 5 } }),
+        api.get('cargas-combustible/', { params: { page_size: 5 } }),
         api.get('vehiculos/proyeccion_mantenimiento/')
       ]);
 
       const vehs = resVehiculos.data || [];
-      const facts = (resFacturas.data || []).filter(f => f.producto_categoria !== 'Combustible');
-      const fuel = resFuel.data || [];
-
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const validMonthFacts = facts.filter(f => {
-        if (f.cancelado) return false;
-        const fDate = new Date(f.fecha + 'T00:00:00');
-        return fDate.getMonth() === currentMonth && fDate.getFullYear() === currentYear;
-      });
+      const statsMonto = resFacturasStats.data?.total_monto || 0;
+      const statsCount = resFacturasStats.data?.total_count || 0;
+      
+      const facts = resFacturasRecent.data?.results || resFacturasRecent.data || [];
+      const fuel = resFuelRecent.data?.results || resFuelRecent.data || [];
 
       setStats({
         unidades: {
@@ -108,8 +108,8 @@ const Dashboard = () => {
           proximos: 3 // Mockup for now
         },
         facturacion: {
-          total: validMonthFacts.reduce((acc, f) => acc + parseFloat(f.monto || 0), 0),
-          count: validMonthFacts.length
+          total: statsMonto,
+          count: statsCount
         }
       });
 

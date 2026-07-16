@@ -153,18 +153,18 @@ const Logistica = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [resVehiculos, resTalleres, resOrdenes, resFacturas, resViajes, resOps] = await Promise.all([
-        api.get('vehiculos/'),
-        api.get('talleres/'),
-        api.get('ordenes-trabajo/'),
-        api.get('facturas/'),
-        api.get('viajes/'),
-        api.get('operadores/')
+        api.get('vehiculos/', { params: { nopaged: true } }),
+        api.get('talleres/', { params: { nopaged: true } }),
+        api.get('ordenes-trabajo/', { params: { nopaged: true } }),
+        api.get('facturas/', { params: { nopaged: true } }),
+        api.get('viajes/', { params: { nopaged: true, fecha_inicio: startDate, fecha_fin: endDate } }),
+        api.get('operadores/', { params: { nopaged: true } })
       ]);
       
       setVehiculos(resVehiculos.data);

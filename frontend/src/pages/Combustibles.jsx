@@ -214,7 +214,7 @@ const Combustibles = () => {
     try {
       setLoadingHistorial(true);
       const res = await api.get(`bloques/por_dia/?fecha=${fechaHistorial}`);
-      setHistorial(res.data);
+      setHistorial(res.data.results || res.data);
     } catch (err) {
       console.error("Error fetching history", err);
       setHistorial([]);
@@ -227,7 +227,7 @@ const Combustibles = () => {
     try {
       setLoadingHistorial(true);
       const res = await api.get('cargas-combustible/historial_especiales/');
-      setHistorialEspecial(res.data);
+      setHistorialEspecial(res.data.results || res.data);
     } catch (err) {
       console.error("Error fetching special history", err);
       setHistorialEspecial([]);
@@ -255,7 +255,7 @@ const Combustibles = () => {
     setLoadingEvidencias(true);
     try {
       const res = await api.get('evidencias-gas/');
-      setEvidenciasGas(res.data);
+      setEvidenciasGas(res.data.results || res.data);
     } catch(err) {
       console.error(err);
       notify.error("Error al cargar evidencias de gas");
@@ -668,8 +668,8 @@ const Combustibles = () => {
   const fetchUnidades = async () => {
     try {
       const [resUnidades, resVariados] = await Promise.all([
-        api.get(`vehiculos/?fecha=${fecha}`),
-        api.get(`variados/?fecha=${fecha}`)
+        api.get(`vehiculos/?fecha=${fecha}&nopaged=true`),
+        api.get(`variados/?fecha=${fecha}&nopaged=true`)
       ]);
       const mappedUnidades = resUnidades.data.map(u => ({ ...u, is_variado: false }));
       const mappedVariados = resVariados.data.map(v => ({ 

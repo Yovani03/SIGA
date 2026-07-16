@@ -1,6 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum, Count, Q
 from .models import Factura, Producto, Ticket
 from .serializers import FacturaSerializer, ProductoSerializer, TicketSerializer
 
@@ -20,10 +22,67 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 from usuarios.models import HistorialAccion
+from django.db.models import Sum, Count, Q
+from core.pagination import CustomPagination
 
 class FacturaViewSet(viewsets.ModelViewSet):
-    queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    pagination_class = CustomPagination
+    search_fields = ['folio', 'descripcion', 'taller__nombre', 'proveedor__nombre', 'rfc_emisor', 'razon_social_emisor', 'unidad__numero_economico', 'unidad__placas', 'caja__numero_economico', 'caja__placas', 'variado__numero_economico', 'variado__placas']
+    filterset_fields = ['cancelado']
+    ordering_fields = ['fecha', 'monto']
+
+    def get_queryset(self):
+        queryset = Factura.objects.all().order_by('-fecha')
+        
+        # Filtrado por rango de fechas
+        fecha_inicio = self.request.query_params.get('fecha_inicio')
+        fecha_fin = self.request.query_params.get('fecha_fin')
+        if fecha_inicio:
+            queryset = queryset.filter(fecha__gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(fecha__lte=fecha_fin)
+            
+        # Filtrado por categoría
+        categoria = self.request.query_params.get('categoria')
+        exclude_categoria = self.request.query_params.get('exclude_categoria')
+        if categoria:
+            queryset = queryset.filter(categoria=categoria)
+        if exclude_categoria:
+            queryset = queryset.exclude(categoria=exclude_categoria)
+            
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Filtramos facturas canceladas para los totales
+        valid_qs = queryset.filter(cancelado=False)
+        
+        total = valid_qs.aggregate(total_monto=Sum('monto'))['total_monto'] or 0
+        count = valid_qs.count()
+        unidades = valid_qs.exclude(unidad__isnull=True).values('unidad').distinct().count()
+        
+        # También podemos agrupar por categoría para la gráfica
+        chart_data_raw = valid_qs.values('categoria', 'producto__categoria').annotate(monto_total=Sum('monto'))
+        chart_data = {}
+        for item in chart_data_raw:
+            cat = item['categoria']
+            if not cat or cat == 'Otro':
+                cat = item['producto__categoria'] or 'Otro'
+            chart_data[cat] = chart_data.get(cat, 0) + float(item['monto_total'] or 0)
+            
+        chart_data_list = [{'name': k, 'value': v} for k, v in chart_data.items()]
+        chart_data_list.sort(key=lambda x: x['value'], reverse=True)
+        
+        return Response({
+            'total': float(total),
+            'count': count,
+            'units': unidades,
+            'chart_data': chart_data_list
+        })
 
     def perform_create(self, serializer):
         factura = serializer.save()
