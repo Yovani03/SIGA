@@ -91,8 +91,8 @@ const Dashboard = () => {
       ]);
 
       const vehs = resVehiculos.data || [];
-      const statsMonto = resFacturasStats.data?.total_monto || 0;
-      const statsCount = resFacturasStats.data?.total_count || 0;
+      const statsMonto = resFacturasStats.data?.total || 0;
+      const statsCount = resFacturasStats.data?.count || 0;
       
       const facts = resFacturasRecent.data?.results || resFacturasRecent.data || [];
       const fuel = resFuelRecent.data?.results || resFuelRecent.data || [];

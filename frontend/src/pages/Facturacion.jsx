@@ -448,7 +448,7 @@ const Facturacion = () => {
           <Loader2 className="text-blue-500 animate-spin" size={48} />
           <p className="text-slate-400 font-medium">Cargando facturación...</p>
         </div>
-      ) : filteredFacturas.length === 0 ? (
+      ) : totalItems === 0 ? (
         <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6 shadow-xl">
           <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <FilePlus className="text-slate-400 dark:text-slate-600" size={40} />
