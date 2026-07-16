@@ -36,7 +36,6 @@ const Logistica = () => {
   const [vehiculos, setVehiculos] = useState([]);
   const [talleres, setTalleres] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
-  const [facturas, setFacturas] = useState([]);
   const [viajes, setViajes] = useState([]);
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,11 +157,10 @@ const Logistica = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resVehiculos, resTalleres, resOrdenes, resFacturas, resViajes, resOps] = await Promise.all([
+      const [resVehiculos, resTalleres, resOrdenes, resViajes, resOps] = await Promise.all([
         api.get('vehiculos/', { params: { nopaged: true } }),
         api.get('talleres/', { params: { nopaged: true } }),
         api.get('ordenes-trabajo/', { params: { nopaged: true } }),
-        api.get('facturas/', { params: { nopaged: true } }),
         api.get('viajes/', { params: { nopaged: true, fecha_inicio: startDate, fecha_fin: endDate } }),
         api.get('operadores/', { params: { nopaged: true } })
       ]);
@@ -170,7 +168,6 @@ const Logistica = () => {
       setVehiculos(resVehiculos.data);
       setTalleres(resTalleres.data);
       setOrdenes(resOrdenes.data);
-      setFacturas(resFacturas.data);
       setViajes(resViajes.data);
       setOperadores(resOps.data);
     } catch (err) {
