@@ -17,6 +17,7 @@ from tempfile import NamedTemporaryFile
 from core.pagination import CustomPagination
 
 class ViajeViewSet(viewsets.ModelViewSet):
+    queryset = Viaje.objects.all()
     serializer_class = ViajeSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
     pagination_class = CustomPagination

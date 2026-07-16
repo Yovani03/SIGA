@@ -26,6 +26,7 @@ from django.db.models import Sum, Count, Q
 from core.pagination import CustomPagination
 
 class FacturaViewSet(viewsets.ModelViewSet):
+    queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
     pagination_class = CustomPagination
