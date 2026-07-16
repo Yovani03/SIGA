@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Count, Q
+from core.pagination import CustomPagination
 from .models import Factura, Producto, Ticket
 from .serializers import FacturaSerializer, ProductoSerializer, TicketSerializer
 
@@ -40,7 +41,6 @@ class TicketViewSet(viewsets.ModelViewSet):
 
 from usuarios.models import HistorialAccion
 from django.db.models import Sum, Count, Q
-from core.pagination import CustomPagination
 
 class FacturaViewSet(viewsets.ModelViewSet):
     queryset = Factura.objects.all()
