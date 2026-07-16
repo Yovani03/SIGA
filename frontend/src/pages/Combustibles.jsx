@@ -1503,17 +1503,79 @@ const Combustibles = () => {
 
               <div className="space-y-2">
                 <label className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">Litros Cargados</label>
-                <div className="relative">
-                  <input 
-                    type="number" 
-                    required
-                    step="0.001"
-                    value={cargaEspecial.litros}
-                    onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                    placeholder="0.000"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">L</span>
+                <div className="flex items-center gap-2 relative">
+                  <div className="relative flex-1">
+                    <input 
+                      type="number" 
+                      required
+                      step="0.001"
+                      value={cargaEspecial.litros}
+                      onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                      placeholder="0.000"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">L</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalculadoraIndex(calculadoraIndex === 'especial' ? null : 'especial');
+                      setCalculadoraValores(['', '']);
+                    }}
+                    className={`p-3 rounded-xl transition-all ${calculadoraIndex === 'especial' ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'}`}
+                    title="Calculadora de Litros"
+                  >
+                    <Calculator size={18} />
+                  </button>
+                  {calculadoraIndex === 'especial' && (
+                    <div className="absolute right-0 sm:left-full top-full sm:top-0 mt-2 sm:mt-0 sm:ml-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 z-50 w-56 animate-in fade-in zoom-in duration-200">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-2">
+                          <Calculator size={14} className="text-amber-500"/> Sumar Tickets
+                        </span>
+                        <button type="button" onClick={() => setCalculadoraIndex(null)} className="text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 p-1 rounded-md transition-colors"><X size={14}/></button>
+                      </div>
+                      <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar mb-3 pr-1">
+                        {calculadoraValores.map((val, i) => (
+                          <div key={i} className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">T{i+1}</span>
+                            <input 
+                              type="number"
+                              step="0.001"
+                              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all dark:text-white"
+                              placeholder="0.000"
+                              value={val}
+                              onChange={(e) => {
+                                const newVals = [...calculadoraValores];
+                                newVals[i] = e.target.value;
+                                setCalculadoraValores(newVals);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        type="button"
+                        className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs py-2 rounded-xl transition-colors flex items-center justify-center gap-1 mb-3 font-medium"
+                        onClick={() => setCalculadoraValores([...calculadoraValores, ''])}
+                      >
+                        <Plus size={14}/> Agregar Ticket
+                      </button>
+                      
+                      <button
+                        type="button"
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/30 flex justify-between items-center px-4 hover:scale-[1.02] active:scale-[0.98]"
+                        onClick={() => {
+                          const total = calculadoraValores.reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0);
+                          setCargaEspecial({...cargaEspecial, litros: total.toString()});
+                          setCalculadoraIndex(null);
+                        }}
+                      >
+                        <span>Aplicar</span>
+                        <span>{calculadoraValores.reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0).toFixed(3)} L</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
