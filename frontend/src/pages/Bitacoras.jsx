@@ -45,10 +45,16 @@ const Bitacoras = () => {
     }
   };
 
+  const getLocalISODate = (d) => {
+    const offset = d.getTimezoneOffset();
+    const adjusted = new Date(d.getTime() - (offset*60*1000));
+    return adjusted.toISOString().split('T')[0];
+  };
+
   const getNextFriday = () => {
     const d = new Date();
     d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7));
-    return d.toISOString().split('T')[0];
+    return getLocalISODate(d);
   };
 
   const getCurrentWeekFriday = () => {
@@ -56,7 +62,7 @@ const Bitacoras = () => {
     const day = d.getDay(); // 0: Sun, ..., 5: Fri, 6: Sat
     const diff = day >= 5 ? day - 5 : day + 2;
     d.setDate(d.getDate() - diff);
-    return d.toISOString().split('T')[0];
+    return getLocalISODate(d);
   };
 
   const openModal = () => {
@@ -402,28 +408,25 @@ const Bitacoras = () => {
               </div>
 
               <div className="space-y-2">
-                <div className="bg-[#0b1120] border border-slate-800 rounded-2xl flex items-center justify-between p-4 shadow-inner">
-                  <button 
-                    type="button"
-                    onClick={() => shiftWeek(-1)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-blue-500 uppercase mb-1">Semana del</span>
-                    <span className="text-xl font-black text-white tracking-wide">
+                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest">Fecha de Inicio de la Semana</label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input
+                    type="date"
+                    required
+                    value={formData.fecha_inicio}
+                    onChange={(e) => setFormData({...formData, fecha_inicio: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+                {formData.fecha_inicio && (
+                  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-3 flex justify-between items-center mt-2 border border-slate-200 dark:border-slate-700">
+                    <span className="text-xs text-slate-500 font-medium">Periodo a generar:</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                       {formatDateRange(formData.fecha_inicio)}
                     </span>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => shiftWeek(1)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
-                </div>
+                )}
               </div>
 
               <div className="pt-4 flex gap-3">
