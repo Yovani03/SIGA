@@ -195,54 +195,60 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        solicitud = self.get_object()
-        if solicitud.estado != 'Pendiente':
-            return Response({'detail': 'Solo se pueden aprobar solicitudes pendientes.'}, status=400)
-            
-        # Manejar posibles strings o None en cambios_propuestos
-        cambios_raw = solicitud.cambios_propuestos
-        import json
-        if isinstance(cambios_raw, str):
-            try:
-                cambios = json.loads(cambios_raw)
-            except:
+        try:
+            solicitud = self.get_object()
+            if solicitud.estado != 'Pendiente':
+                return Response({'detail': 'Solo se pueden aprobar solicitudes pendientes.'}, status=400)
+                
+            # Manejar posibles strings o None en cambios_propuestos
+            cambios_raw = solicitud.cambios_propuestos
+            import json
+            if isinstance(cambios_raw, str):
+                try:
+                    cambios = json.loads(cambios_raw)
+                except:
+                    cambios = {}
+            elif isinstance(cambios_raw, dict):
+                cambios = cambios_raw.copy()
+            else:
                 cambios = {}
-        elif isinstance(cambios_raw, dict):
-            cambios = cambios_raw.copy()
-        else:
-            cambios = {}
 
-        # Limpiar datos corruptos de solicitudes antiguas si las hay
-        if 'archivo_escaneado' in cambios:
-            del cambios['archivo_escaneado']
-        for k in ['unidades', 'cajas', 'variados']:
-            if k in cambios and isinstance(cambios[k], list):
-                cambios[k] = [v for v in cambios[k] if v and v != 'null']
-        for k, v in list(cambios.items()):
-            if v == 'null' or v == 'undefined' or v == '':
-                cambios[k] = None
+            # Limpiar datos corruptos de solicitudes antiguas si las hay
+            if 'archivo_escaneado' in cambios:
+                del cambios['archivo_escaneado']
+            for k in ['unidades', 'cajas', 'variados']:
+                if k in cambios and isinstance(cambios[k], list):
+                    cambios[k] = [v for v in cambios[k] if v and v != 'null']
+            for k, v in list(cambios.items()):
+                if v == 'null' or v == 'undefined' or v == '':
+                    cambios[k] = None
 
-        if solicitud.nuevo_archivo_escaneado:
-            solicitud.factura.archivo_escaneado = solicitud.nuevo_archivo_escaneado
-            solicitud.factura.save(update_fields=['archivo_escaneado'])
+            if solicitud.nuevo_archivo_escaneado:
+                solicitud.factura.archivo_escaneado = solicitud.nuevo_archivo_escaneado
+                solicitud.factura.save(update_fields=['archivo_escaneado'])
 
-        # Usar FacturaSerializer con partial=True para validar los cambios
-        serializer = FacturaSerializer(solicitud.factura, data=cambios, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            
-            solicitud.estado = 'Aprobada'
-            solicitud.autorizador = request.user
-            solicitud.fecha_resolucion = timezone.now()
-            solicitud.save()
-            
-            HistorialAccion.objects.create(
-                user=request.user,
-                accion="Aprobación de Cambio en Factura",
-                detalles=f"Se aprobó el cambio en la factura folio {solicitud.factura.folio} solicitado por {solicitud.solicitante.username}."
-            )
-            return Response({'detail': 'Solicitud aprobada y factura actualizada.'})
-        return Response(serializer.errors, status=400)
+            # Usar FacturaSerializer con partial=True para validar los cambios
+            serializer = FacturaSerializer(solicitud.factura, data=cambios, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                
+                solicitud.estado = 'Aprobada'
+                solicitud.autorizador = request.user
+                solicitud.fecha_resolucion = timezone.now()
+                solicitud.save()
+                
+                HistorialAccion.objects.create(
+                    user=request.user,
+                    accion="Aprobación de Cambio en Factura",
+                    detalles=f"Se aprobó el cambio en la factura folio {solicitud.factura.folio} solicitado por {solicitud.solicitante.username}."
+                )
+                return Response({'detail': 'Solicitud aprobada y factura actualizada.'})
+            return Response(serializer.errors, status=400)
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print("ERROR EN APROBAR:", error_trace)
+            return Response({'detail': f'Error interno: {str(e)}', 'trace': error_trace}, status=500)
 
     @action(detail=True, methods=['post'])
     def rechazar(self, request, pk=None):
