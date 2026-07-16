@@ -76,12 +76,13 @@ const Bonos = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [resOps, resViajes, resVehiculos, resConfig] = await Promise.all([
-          api.get('operadores/'),
-          api.get('viajes/'),
-          api.get('vehiculos/'),
-          api.get('configuracion-bonos/')
+          api.get('operadores/', { params: { nopaged: true } }),
+          api.get('viajes/', { params: { nopaged: true, fecha_inicio: startDate, fecha_fin: endDate } }),
+          api.get('vehiculos/', { params: { nopaged: true } }),
+          api.get('configuracion-bonos/', { params: { nopaged: true } })
         ]);
         setOperadores(resOps.data);
         setViajes(resViajes.data);
@@ -95,7 +96,7 @@ const Bonos = () => {
     };
 
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   // Helper to get base bonus from config
   const getBaseBono = (capacidad) => {
@@ -128,7 +129,7 @@ const Bonos = () => {
       await Promise.all(editingConfigs.map(c => 
         api.patch(`configuracion-bonos/${c.id}/`, { monto_base: c.monto_base })
       ));
-      const res = await api.get('configuracion-bonos/');
+      const res = await api.get('configuracion-bonos/', { params: { nopaged: true } });
       setConfigBonos(res.data);
       setIsConfigModalOpen(false);
       alert("Tabulador de bonos actualizado correctamente.");
@@ -270,7 +271,7 @@ const Bonos = () => {
         justificacion_sancion: justification
       });
       // Refresh voyages
-      const res = await api.get('viajes/');
+      const res = await api.get('viajes/', { params: { nopaged: true, fecha_inicio: startDate, fecha_fin: endDate } });
       setViajes(res.data);
       setIsJustifyModalOpen(false);
       setJustification('');
@@ -288,7 +289,7 @@ const Bonos = () => {
         bono_sancionado: false,
         justificacion_sancion: ''
       });
-      const res = await api.get('viajes/');
+      const res = await api.get('viajes/', { params: { nopaged: true, fecha_inicio: startDate, fecha_fin: endDate } });
       setViajes(res.data);
     } catch (err) {
       console.error("Error removing sancion", err);
