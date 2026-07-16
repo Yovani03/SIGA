@@ -1158,7 +1158,10 @@ const Combustibles = () => {
                       filteredUnidades.map(u => (
                         <button 
                           key={`${u.is_variado ? 'v' : 't'}-${u.id}`}
-                          onClick={() => handleAddUnidad(u)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleAddUnidad(u);
+                          }}
                           className="w-full flex items-center justify-between px-6 py-4 hover:bg-blue-600/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
                         >
                           <div>
