@@ -162,8 +162,10 @@ export default function ReporteGastosProveedor() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
-      const nombreEntidad = reportData.proveedor ? reportData.proveedor.nombre : reportData.taller.nombre;
-      pdf.save(`Reporte_Gastos_${nombreEntidad}_${formatShortDate(startOfWeek)}_al_${formatShortDate(endOfWeek)}.pdf`);
+      const entidad = reportData.proveedor || reportData.taller;
+      const nombreEntidad = entidad.razon_social || entidad.nombre;
+      const safeName = nombreEntidad.replace(/[^a-zA-Z0-9\s]/g, '_').trim();
+      pdf.save(`Reporte_Gastos_${safeName}_${formatShortDate(startOfWeek)}_al_${formatShortDate(endOfWeek)}.pdf`);
       
       toast.success('PDF exportado correctamente', { id: toastId });
     } catch (error) {
@@ -356,15 +358,15 @@ export default function ReporteGastosProveedor() {
                 </span>
               </div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {reportData.tipo === 'proveedor' ? reportData.proveedor.nombre : reportData.taller.nombre}
+                {reportData.tipo === 'proveedor' ? (reportData.proveedor.razon_social || reportData.proveedor.nombre) : (reportData.taller.razon_social || reportData.taller.nombre)}
               </h2>
               <p className="text-gray-500 dark:text-gray-400 mt-1">
-                RFC: {reportData.tipo === 'proveedor' ? reportData.proveedor.rfc : reportData.taller.rfc || 'N/A'}
+                <span className="font-medium mr-2">{reportData.tipo === 'proveedor' ? reportData.proveedor.nombre : reportData.taller.nombre}</span>
+                | RFC: {reportData.tipo === 'proveedor' ? reportData.proveedor.rfc : reportData.taller.rfc || 'N/A'}
               </p>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
                 {reportData.tipo === 'proveedor' ? (
                   <>
-                    {reportData.proveedor.razon_social && <p><span className="font-semibold text-gray-900 dark:text-white">Razón Social:</span> {reportData.proveedor.razon_social}</p>}
                     {reportData.proveedor.categoria && <p><span className="font-semibold text-gray-900 dark:text-white">Categoría:</span> {reportData.proveedor.categoria}</p>}
                     {reportData.proveedor.telefono && <p><span className="font-semibold text-gray-900 dark:text-white">Teléfono:</span> {reportData.proveedor.telefono}</p>}
                     {reportData.proveedor.email && <p><span className="font-semibold text-gray-900 dark:text-white">Email:</span> {reportData.proveedor.email}</p>}
@@ -372,7 +374,6 @@ export default function ReporteGastosProveedor() {
                   </>
                 ) : (
                   <>
-                    {reportData.taller.razon_social && <p><span className="font-semibold text-gray-900 dark:text-white">Razón Social:</span> {reportData.taller.razon_social}</p>}
                     {reportData.taller.especialidad && <p><span className="font-semibold text-gray-900 dark:text-white">Especialidad:</span> {reportData.taller.especialidad}</p>}
                     {reportData.taller.telefono && <p><span className="font-semibold text-gray-900 dark:text-white">Teléfono:</span> {reportData.taller.telefono}</p>}
                     {reportData.taller.direccion && <p className="col-span-1 md:col-span-2"><span className="font-semibold text-gray-900 dark:text-white">Dirección:</span> {reportData.taller.direccion}</p>}
