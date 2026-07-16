@@ -26,7 +26,8 @@ import {
   PlusCircle,
   Upload,
   FilePlus,
-  Eye
+  Eye,
+  Calculator
 } from 'lucide-react';
 import notify from '../utils/notifications';
 import { jsPDF } from 'jspdf';
@@ -91,6 +92,10 @@ const Combustibles = () => {
     ultimo_kilometraje: 0
   });
   const [cargasEspecialesList, setCargasEspecialesList] = useState([]);
+  
+  // State for Calculator
+  const [calculadoraIndex, setCalculadoraIndex] = useState(null);
+  const [calculadoraValores, setCalculadoraValores] = useState(['', '']);
   
   // State for Block Details Modal
   const [selectedBlock, setSelectedBlock] = useState(null);
@@ -1212,16 +1217,77 @@ const Combustibles = () => {
                           </select>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="relative">
-                            <input 
-                              type="number"
-                              step="0.001"
-                              value={carga.litros}
-                              onChange={(e) => updateCarga(idx, 'litros', e.target.value)}
-                              className="w-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
-                              placeholder="0.000"
-                            />
-                            <span className="ml-2 text-slate-500 text-xs">L</span>
+                          <div className="flex items-center gap-2 relative">
+                            <div className="relative">
+                              <input 
+                                type="number"
+                                step="0.001"
+                                value={carga.litros}
+                                onChange={(e) => updateCarga(idx, 'litros', e.target.value)}
+                                className="w-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-6 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder="0.000"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">L</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCalculadoraIndex(calculadoraIndex === idx ? null : idx);
+                                setCalculadoraValores(['', '']);
+                              }}
+                              className={`p-2 rounded-xl transition-all ${calculadoraIndex === idx ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'}`}
+                              title="Calculadora de Litros"
+                            >
+                              <Calculator size={16} />
+                            </button>
+                            
+                            {calculadoraIndex === idx && (
+                              <div className="absolute left-full top-0 ml-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 z-50 w-56 animate-in fade-in zoom-in duration-200">
+                                <div className="flex justify-between items-center mb-4">
+                                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-2">
+                                    <Calculator size={14} className="text-blue-500"/> Sumar Tickets
+                                  </span>
+                                  <button onClick={() => setCalculadoraIndex(null)} className="text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 p-1 rounded-md transition-colors"><X size={14}/></button>
+                                </div>
+                                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar mb-3 pr-1">
+                                  {calculadoraValores.map((val, i) => (
+                                    <div key={i} className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">T{i+1}</span>
+                                      <input 
+                                        type="number"
+                                        step="0.001"
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all dark:text-white"
+                                        placeholder="0.000"
+                                        value={val}
+                                        onChange={(e) => {
+                                          const newVals = [...calculadoraValores];
+                                          newVals[i] = e.target.value;
+                                          setCalculadoraValores(newVals);
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                                <button 
+                                  className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs py-2 rounded-xl transition-colors flex items-center justify-center gap-1 mb-3 font-medium"
+                                  onClick={() => setCalculadoraValores([...calculadoraValores, ''])}
+                                >
+                                  <Plus size={14}/> Agregar Ticket
+                                </button>
+                                
+                                <button
+                                  className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex justify-between items-center px-4 hover:scale-[1.02] active:scale-[0.98]"
+                                  onClick={() => {
+                                    const total = calculadoraValores.reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0);
+                                    updateCarga(idx, 'litros', total.toString());
+                                    setCalculadoraIndex(null);
+                                  }}
+                                >
+                                  <span>Aplicar</span>
+                                  <span>{calculadoraValores.reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0).toFixed(3)} L</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
