@@ -35,40 +35,81 @@ const Tickets = () => {
   const { user } = useContext(AuthContext);
   const isLector = user?.rol === 'lector_gastos';
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showAltaModal, setShowAltaModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalTickets, setTotalTickets] = useState(0);
+  const [totales, setTotales] = useState({ pendientes_count: 0, monto_pendiente: 0, facturados_count: 0 });
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const itemsPerPage = 6;
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchTotales = async () => {
+    try {
+      const res = await api.get('tickets/totales/');
+      setTotales(res.data);
+    } catch (err) {
+      console.error("Error al cargar totales de tickets", err);
+    }
+  };
+
+  const fetchTickets = async () => {
     try {
       setLoading(true);
-      const [ticketsRes, vehiculosRes, cajasRes, variadosRes] = await Promise.all([
-        api.get('tickets/'),
-        api.get('vehiculos/'),
-        api.get('cajas/'),
-        api.get('variados/')
-      ]);
-      setTickets(ticketsRes.data);
-      setVehiculos(vehiculosRes.data);
-      setCajas(cajasRes.data);
-      setVariados(variadosRes.data);
+      const res = await api.get('tickets/', {
+        params: {
+          page: currentPage,
+          search: debouncedSearch
+        }
+      });
+      if (res.data && res.data.results) {
+        setTickets(res.data.results);
+        setTotalTickets(res.data.count);
+      } else {
+        setTickets(res.data);
+        setTotalTickets(res.data.length);
+      }
     } catch (err) {
       console.error("Error cargando tickets", err);
-      notify.error("No se pudieron cargar los datos de tickets.");
+      notify.error("No se pudieron cargar los tickets.");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchCatalogs = async () => {
+    try {
+      const [vehiculosRes, cajasRes, variadosRes] = await Promise.all([
+        api.get('vehiculos/', { params: { nopaged: true } }),
+        api.get('cajas/', { params: { nopaged: true } }),
+        api.get('variados/', { params: { nopaged: true } })
+      ]);
+      setVehiculos(vehiculosRes.data.results || vehiculosRes.data);
+      setCajas(cajasRes.data.results || cajasRes.data);
+      setVariados(variadosRes.data.results || variadosRes.data);
+    } catch (err) {
+      console.error("Error cargando catálogos", err);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchCatalogs();
+    fetchTotales();
   }, []);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [currentPage, debouncedSearch]);
 
   const handleAltaSuccess = () => {
     setShowAltaModal(false);
-    fetchData();
+    fetchTickets();
+    fetchTotales();
   };
 
   const getUnidadInfo = (unidadId) => {
@@ -83,34 +124,12 @@ const Tickets = () => {
     return variados.find(v => v.id === variadoId);
   };
 
-  const filteredTickets = tickets.filter(t => {
-    const unidad = getUnidadInfo(t.unidad);
-    const caja = getCajaInfo(t.caja);
-    const variado = getVariadoInfo(t.variado);
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      t.folio_interno.toLowerCase().includes(searchLower) ||
-      (t.folio_emision && t.folio_emision.toLowerCase().includes(searchLower)) ||
-      (t.descripcion && t.descripcion.toLowerCase().includes(searchLower)) ||
-      (t.taller_nombre && t.taller_nombre.toLowerCase().includes(searchLower)) ||
-      (t.proveedor_nombre && t.proveedor_nombre.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.numero_economico.toLowerCase().includes(searchLower)) ||
-      (unidad && unidad.placas.toLowerCase().includes(searchLower)) ||
-      (caja && caja.numero_economico.toLowerCase().includes(searchLower)) ||
-      (caja && caja.placas.toLowerCase().includes(searchLower)) ||
-      (variado && variado.numero_economico.toLowerCase().includes(searchLower)) ||
-      (variado && variado.placas && variado.placas.toLowerCase().includes(searchLower))
-    );
-  }).sort((a, b) => new Date(b.fecha + 'T00:00:00') - new Date(a.fecha + 'T00:00:00'));
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [debouncedSearch]);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentTickets = filteredTickets.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const currentTickets = tickets;
+  const totalPages = Math.ceil(totalTickets / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -153,24 +172,21 @@ const Tickets = () => {
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Pendientes de Facturar</p>
           <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Clock className="text-amber-500 shrink-0" size={24} />
-            {tickets.filter(t => !t.convertido_en_factura).length}
+            {totales.pendientes_count}
           </p>
         </div>
         <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Monto Pendiente</p>
           <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <DollarSign className="text-emerald-500 shrink-0" size={24} />
-            {tickets
-              .filter(t => !t.convertido_en_factura)
-              .reduce((acc, curr) => acc + parseFloat(curr.monto), 0)
-              .toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            {totales.monto_pendiente.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl sm:col-span-2 lg:col-span-1 shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Ya Facturados</p>
           <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <CheckCircle2 className="text-blue-500 shrink-0" size={24} />
-            {tickets.filter(t => t.convertido_en_factura).length}
+            {totales.facturados_count}
           </p>
         </div>
       </div>
@@ -193,7 +209,7 @@ const Tickets = () => {
           <Loader2 className="text-amber-500 animate-spin" size={48} />
           <p className="text-slate-400 font-medium">Cargando tickets...</p>
         </div>
-      ) : filteredTickets.length === 0 ? (
+      ) : currentTickets.length === 0 ? (
         <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6 shadow-sm">
           <div className="bg-slate-50 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <TicketIcon className="text-slate-400 dark:text-slate-600" size={40} />

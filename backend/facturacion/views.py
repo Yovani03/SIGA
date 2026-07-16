@@ -11,15 +11,32 @@ class ProductoViewSet(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
 
 class TicketViewSet(viewsets.ModelViewSet):
-    queryset = Ticket.objects.all()
+    queryset = Ticket.objects.all().order_by('-fecha')
     serializer_class = TicketSerializer
-
+    pagination_class = CustomPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    search_fields = ['folio_interno', 'folio_emision', 'descripcion', 'taller_nombre', 'proveedor_nombre', 'unidad__numero_economico', 'unidad__placas', 'caja__numero_economico', 'caja__placas', 'variado__numero_economico', 'variado__placas']
+    filterset_fields = ['convertido_en_factura']
+    ordering_fields = ['fecha', 'monto']
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
         """Retorna tickets que aún no han sido convertidos en factura."""
-        tickets = Ticket.objects.filter(convertido_en_factura=False)
+        tickets = Ticket.objects.filter(convertido_en_factura=False).order_by('-fecha')
         serializer = self.get_serializer(tickets, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def totales(self, request):
+        """Retorna estadísticas generales de tickets."""
+        total_pendientes = Ticket.objects.filter(convertido_en_factura=False).count()
+        monto_pendiente = Ticket.objects.filter(convertido_en_factura=False).aggregate(Sum('monto'))['monto__sum'] or 0
+        total_facturados = Ticket.objects.filter(convertido_en_factura=True).count()
+        
+        return Response({
+            'pendientes_count': total_pendientes,
+            'monto_pendiente': float(monto_pendiente),
+            'facturados_count': total_facturados
+        })
 
 from usuarios.models import HistorialAccion
 from django.db.models import Sum, Count, Q
