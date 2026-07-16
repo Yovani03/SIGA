@@ -58,10 +58,10 @@ const DashboardLayout = () => {
     { 
       icon: <BarChart3 size={20} />, 
       label: 'Reportes de Gastos', 
-      roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'],
+      roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'],
       subItems: [
-        { label: 'General', path: '/reporte-gastos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
-        { label: 'Prov/Talleres', path: '/reporte-proveedores', roles: ['admin_general', 'admin', 'capturista'] }
+        { label: 'General', path: '/reporte-gastos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'] },
+        { label: 'Prov/Talleres', path: '/reporte-proveedores', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'] }
       ]
     },
   ];
