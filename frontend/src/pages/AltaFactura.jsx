@@ -104,25 +104,29 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
 
   useEffect(() => {
     Promise.all([
-      api.get('vehiculos/'),
-      api.get('productos/'),
-      api.get('tickets/'),
-      api.get('talleres/'),
-      api.get('proveedores/'),
-      api.get('cajas/'),
-      api.get('variados/')
+      api.get('vehiculos/', { params: { nopaged: true } }),
+      api.get('productos/', { params: { nopaged: true } }),
+      api.get('tickets/pendientes/'),
+      api.get('talleres/', { params: { nopaged: true } }),
+      api.get('proveedores/', { params: { nopaged: true } }),
+      api.get('cajas/', { params: { nopaged: true } }),
+      api.get('variados/', { params: { nopaged: true } })
     ]).then(([vehRes, prodRes, tickRes, tallRes, provRes, cajRes, varRes]) => {
-      setVehiculos(vehRes.data);
-      setProductos(prodRes.data);
-      setTicketsPendientes(tickRes.data.filter(t => !t.convertido_en_factura));
-      setTalleres(tallRes.data);
-      setProveedores(provRes.data);
-      setCajas(cajRes.data);
-      setVariados(varRes.data);
+      setVehiculos(vehRes.data.results || vehRes.data);
+      setProductos(prodRes.data.results || prodRes.data);
+      setTicketsPendientes(tickRes.data.results || tickRes.data);
+      
+      const talleresData = tallRes.data.results || tallRes.data;
+      const provData = provRes.data.results || provRes.data;
+      
+      setTalleres(talleresData);
+      setProveedores(provData);
+      setCajas(cajRes.data.results || cajRes.data);
+      setVariados(varRes.data.results || varRes.data);
       
       const combinedEntidades = [
-        ...tallRes.data.map(t => ({...t, tipo: 'taller'})),
-        ...provRes.data.map(p => ({...p, tipo: 'proveedor'}))
+        ...talleresData.map(t => ({...t, tipo: 'taller'})),
+        ...provData.map(p => ({...p, tipo: 'proveedor'}))
       ];
       setEntidades(combinedEntidades);
     })
