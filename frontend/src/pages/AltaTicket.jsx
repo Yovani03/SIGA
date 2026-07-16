@@ -385,7 +385,12 @@ const AltaTicket = ({ onSuccess, onClose }) => {
                     type="text"
                     placeholder="Eco o placas..."
                     value={busquedaUnidad}
-                    onChange={(e) => setBusquedaUnidad(e.target.value)}
+                    onChange={(e) => {
+                      setBusquedaUnidad(e.target.value);
+                      setMostrarDropdownUnidad(true);
+                    }}
+                    onFocus={() => setMostrarDropdownUnidad(true)}
+                    onBlur={() => setMostrarDropdownUnidad(false)}
                     className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-4 py-1.5 text-[10px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-amber-500/50 outline-none transition-all shadow-sm"
                   />
                 </div>

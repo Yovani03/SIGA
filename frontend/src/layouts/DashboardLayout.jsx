@@ -35,6 +35,7 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCapturistaOpen, setIsCapturistaOpen] = useState(false);
+  const [openMenus, setOpenMenus] = useState({});
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
 
@@ -45,12 +46,24 @@ const DashboardLayout = () => {
 
   const isAdmin = user?.rol === 'admin_general' || user?.rol === 'admin';
 
+  const toggleMenu = (label) => {
+    setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
   const mainItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica', 'lector_gastos'] },
     { icon: <Shield size={20} />, label: 'Usuarios', path: '/usuarios', roles: ['admin_general'] },
     { icon: <History size={20} />, label: 'Historial', path: '/historial', roles: ['admin_general'] },
     { icon: <FileEdit size={20} />, label: 'Solicitudes', path: '/solicitudes-cambios', roles: ['admin_general', 'admin', 'jefe_logistica'] },
-    { icon: <BarChart3 size={20} />, label: 'Reporte de Gastos', path: '/reporte-gastos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+    { 
+      icon: <BarChart3 size={20} />, 
+      label: 'Reportes de Gastos', 
+      roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'],
+      subItems: [
+        { label: 'General', path: '/reporte-gastos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
+        { label: 'Prov/Talleres', path: '/reporte-proveedores', roles: ['admin_general', 'admin', 'capturista'] }
+      ]
+    },
   ];
 
   const capturistaItems = [
@@ -62,7 +75,6 @@ const DashboardLayout = () => {
     { icon: <Truck size={20} />, label: 'Vehículos', path: '/vehiculos', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
     { icon: <Wrench size={20} />, label: 'Mantenimiento', path: '/mantenimiento', roles: ['admin_general', 'admin', 'capturista'] },
     { icon: <Droplets size={20} />, label: 'Combustible', path: '/combustible', roles: ['admin_general', 'admin', 'capturista', 'jefe_logistica'] },
-    { icon: <BarChart3 size={20} />, label: 'Reporte Prov/Talleres', path: '/reporte-proveedores', roles: ['admin_general', 'admin', 'capturista'] },
   ];
 
   const filteredMainItems = mainItems.filter(item => !item.roles || item.roles.includes(user?.rol || 'admin'));
@@ -70,20 +82,68 @@ const DashboardLayout = () => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const renderMenuItem = (item) => (
-    <Link
-      key={item.path}
-      to={item.path}
-      onClick={() => setIsSidebarOpen(false)}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${location.pathname === item.path
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-slate-200'
-        }`}
-    >
-      {item.icon}
-      <span className="font-medium">{item.label}</span>
-    </Link>
-  );
+  const renderMenuItem = (item) => {
+    if (item.subItems) {
+      const filteredSubItems = item.subItems.filter(sub => !sub.roles || sub.roles.includes(user?.rol || 'admin'));
+      if (filteredSubItems.length === 0) return null;
+      
+      const isActive = item.subItems.some(sub => location.pathname === sub.path);
+      const isOpen = openMenus[item.label] || isActive;
+      
+      return (
+        <div key={item.label} className="mt-1">
+          <button
+            onClick={() => toggleMenu(item.label)}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 ${
+              isActive 
+              ? 'bg-blue-600/10 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span className="font-medium">{item.label}</span>
+            </div>
+            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+          
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+            <div className="pl-4 space-y-1 border-l-2 border-slate-100 dark:border-slate-800 ml-6 mt-1">
+              {filteredSubItems.map(sub => (
+                <Link
+                  key={sub.path}
+                  to={sub.path}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${
+                    location.pathname === sub.path
+                    ? 'bg-blue-600/10 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span>{sub.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        onClick={() => setIsSidebarOpen(false)}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${location.pathname === item.path
+          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-slate-200'
+          }`}
+      >
+        {item.icon}
+        <span className="font-medium">{item.label}</span>
+      </Link>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 font-sans overflow-hidden transition-colors duration-300">

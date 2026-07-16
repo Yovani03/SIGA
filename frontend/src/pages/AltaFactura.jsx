@@ -945,7 +945,10 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                     type="text"
                     placeholder="Buscar eco o placas..."
                     value={busquedaUnidad}
-                    onChange={(e) => setBusquedaUnidad(e.target.value)}
+                    onChange={(e) => {
+                      setBusquedaUnidad(e.target.value);
+                      setMostrarDropdownUnidad(true);
+                    }}
                     onFocus={() => setMostrarDropdownUnidad(true)}
                     onBlur={() => setMostrarDropdownUnidad(false)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500 outline-none transition-all shadow-sm"
