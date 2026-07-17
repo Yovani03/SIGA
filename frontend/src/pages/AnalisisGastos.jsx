@@ -26,7 +26,7 @@ const categoryChartConfig = {
   },
   "Operativo": {
     label: "Operativo",
-    color: "#ef4444",
+    color: "#f97316",
   },
   "Administrativo": {
     label: "Administrativo",
