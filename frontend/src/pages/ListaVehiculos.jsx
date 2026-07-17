@@ -112,8 +112,8 @@ const ListaVehiculos = () => {
   const fetchCajas = async () => {
     try {
       setLoadingCajas(true);
-      const res = await api.get('cajas/');
-      setCajas(res.data);
+      const res = await api.get('cajas/', { params: { nopaged: true } });
+      setCajas(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando cajas", err);
       notify.error("No se pudieron cargar las cajas.");
@@ -125,8 +125,8 @@ const ListaVehiculos = () => {
   const fetchVariados = async () => {
     try {
       setLoadingVariados(true);
-      const res = await api.get('variados/');
-      setVariados(res.data);
+      const res = await api.get('variados/', { params: { nopaged: true } });
+      setVariados(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando vehículos variados", err);
       notify.error("No se pudieron cargar los vehículos variados.");
@@ -140,8 +140,9 @@ const ListaVehiculos = () => {
     setLoadingCajaFacturas(true);
     setShowCajaFacturasModal(true);
     try {
-      const res = await api.get('facturas/');
-      const filtered = res.data.reduce((acc, f) => {
+      const res = await api.get('facturas/', { params: { nopaged: true } });
+      const data = res.data.results || res.data;
+      const filtered = data.reduce((acc, f) => {
         const detalle = f.detalles_unidades?.find(d => d.caja === cajaObj.id);
         if (detalle) {
           acc.push({ ...f, monto_especifico: detalle.monto, es_compartida: true });
@@ -163,8 +164,9 @@ const ListaVehiculos = () => {
     setLoadingVariadoFacturas(true);
     setShowVariadoFacturasModal(true);
     try {
-      const res = await api.get('facturas/');
-      const filtered = res.data.reduce((acc, f) => {
+      const res = await api.get('facturas/', { params: { nopaged: true } });
+      const data = res.data.results || res.data;
+      const filtered = data.reduce((acc, f) => {
         const detalle = f.detalles_unidades?.find(d => d.variado === variadoObj.id);
         if (detalle) {
           acc.push({ ...f, monto_especifico: detalle.monto, es_compartida: true });
@@ -193,8 +195,8 @@ const ListaVehiculos = () => {
 
   const fetchCargasCombustible = async () => {
     try {
-      const res = await api.get('cargas-combustible/');
-      setCargasCombustible(res.data);
+      const res = await api.get('cargas-combustible/', { params: { nopaged: true } });
+      setCargasCombustible(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando cargas de combustible", err);
     }
@@ -202,8 +204,8 @@ const ListaVehiculos = () => {
 
   const fetchOrdenes = async () => {
     try {
-      const res = await api.get('ordenes-trabajo/');
-      setOrdenesTrabajo(res.data);
+      const res = await api.get('ordenes-trabajo/', { params: { nopaged: true } });
+      setOrdenesTrabajo(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando órdenes", err);
     }
@@ -211,8 +213,8 @@ const ListaVehiculos = () => {
 
   const fetchAllFacturas = async () => {
     try {
-      const res = await api.get('facturas/');
-      setAllFacturas(res.data);
+      const res = await api.get('facturas/', { params: { nopaged: true } });
+      setAllFacturas(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando todas las facturas", err);
     }
@@ -220,8 +222,8 @@ const ListaVehiculos = () => {
 
   const fetchTalleres = async () => {
     try {
-      const res = await api.get('talleres/');
-      setTalleres(res.data);
+      const res = await api.get('talleres/', { params: { nopaged: true } });
+      setTalleres(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando talleres", err);
     }
@@ -230,8 +232,8 @@ const ListaVehiculos = () => {
   const fetchVehiculos = async () => {
     try {
       setLoading(true);
-      const res = await api.get('vehiculos/');
-      setVehiculos(res.data);
+      const res = await api.get('vehiculos/', { params: { nopaged: true } });
+      setVehiculos(res.data.results || res.data);
     } catch (err) {
       console.error("Error cargando vehículos", err);
       notify.error("No se pudieron cargar las unidades.");
@@ -366,8 +368,9 @@ const ListaVehiculos = () => {
   const fetchVehiculoFacturas = async (vehiculoId) => {
     setLoadingFacturas(true);
     try {
-      const res = await api.get('facturas/');
-      const filtered = res.data.reduce((acc, f) => {
+      const res = await api.get('facturas/', { params: { nopaged: true } });
+      const data = res.data.results || res.data;
+      const filtered = data.reduce((acc, f) => {
         // Buscar si esta unidad tiene un monto asignado específicamente
         const detalle = f.detalles_unidades?.find(d => d.unidad === vehiculoId);
         if (detalle) {
