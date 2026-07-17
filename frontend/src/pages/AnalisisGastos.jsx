@@ -249,7 +249,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
   const lineSeries = useMemo(() => [{ name: 'Monto Total', data: dataPorMes.map(d => d.total) }], [dataPorMes]);
 
   const areaOptions = useMemo(() => ({
-    chart: { type: 'area', stacked: true, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+    chart: { type: 'area', stacked: false, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
     colors: dataPorCategoriaConFills.map(c => c.fill),
     stroke: { curve: 'smooth', width: 2 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
