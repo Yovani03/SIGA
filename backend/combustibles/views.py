@@ -184,8 +184,8 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
                 resultados[key]["ultimo_km"] = c.kilometraje
             
         lista_resultados = list(resultados.values())
-        # Ordenar por total_litros descendente
-        lista_resultados.sort(key=lambda x: x['total_litros'], reverse=True)
+        # Ordenar alfanuméricamente por el nombre de la unidad
+        lista_resultados.sort(key=lambda x: x['unidad_nombre'])
         
         return Response(lista_resultados)
 
