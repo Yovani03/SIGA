@@ -561,6 +561,90 @@ const Combustibles = () => {
     doc.save(`Reporte_Evidencias_Gas_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const exportarPDFTotalizadorGas = async () => {
+    const selectedEvidenciasData = evidenciasGas.filter(e => selectedEvidencias.includes(e.id));
+    if (selectedEvidenciasData.length === 0) {
+      notify.warning('Selecciona al menos una evidencia para el reporte');
+      return;
+    }
+    
+    // Extraer fechas únicas de las evidencias seleccionadas
+    const fechas = [...new Set(selectedEvidenciasData.map(e => e.fecha))];
+    const fechasParam = fechas.join(',');
+
+    try {
+      setLoading(true);
+      const res = await api.get(`cargas-combustible/totalizador_unidades/?fechas=${fechasParam}&tipo_combustible=gas_lp`);
+      const data = res.data;
+
+      if (!data || data.length === 0) {
+        notify.info('No se encontraron cargas de Gas LP para las fechas seleccionadas');
+        setLoading(false);
+        return;
+      }
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setTextColor(30, 41, 59); // Slate-800
+      doc.setFont('helvetica', 'bold');
+      doc.text("TOTALIZADOR DE GAS LP", pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'normal');
+      doc.text("SIGA - Sistema de Gestión de Autotransporte", pageWidth / 2, 27, { align: 'center' });
+      doc.text(`Fechas: ${fechas.join(', ')}`, pageWidth / 2, 33, { align: 'center' });
+      
+      doc.setDrawColor(226, 232, 240); // Slate-200
+      doc.line(15, 38, pageWidth - 15, 38);
+
+      const tableBody = data.map(item => [
+        item.unidad_nombre,
+        item.ultimo_km ? item.ultimo_km.toLocaleString('en-US') : "-",
+        item.cantidad_cargas,
+        parseFloat(item.total_litros).toFixed(3) + " L",
+        "$" + parseFloat(item.total_monto).toLocaleString('es-MX', {minimumFractionDigits:2})
+      ]);
+
+      const granTotalLitros = data.reduce((acc, curr) => acc + parseFloat(curr.total_litros), 0);
+      const granTotalMonto = data.reduce((acc, curr) => acc + parseFloat(curr.total_monto), 0);
+
+      tableBody.push([
+        "GRAN TOTAL",
+        "-",
+        data.reduce((acc, curr) => acc + curr.cantidad_cargas, 0),
+        granTotalLitros.toFixed(3) + " L",
+        "$" + granTotalMonto.toLocaleString('es-MX', {minimumFractionDigits:2})
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Unidad', 'Último KM', 'Total Cargas', 'Total Litros', 'Monto Total']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [16, 185, 129] }, // bg-emerald-500
+        footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42] },
+        didParseCell: function (dataParse) {
+          if (dataParse.row.index === tableBody.length - 1) {
+             dataParse.cell.styles.fontStyle = 'bold';
+             dataParse.cell.styles.fillColor = [241, 245, 249];
+          }
+        }
+      });
+
+      doc.save(`Totalizador_GasLP_${new Date().toISOString().split('T')[0]}.pdf`);
+      notify.success("Reporte generado con éxito");
+    } catch(err) {
+      console.error(err);
+      notify.error("Error al generar totalizador de gas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const exportHistorialToPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -2189,13 +2273,23 @@ const Combustibles = () => {
                   </span>
                 </div>
                 {selectedEvidencias.length > 0 && (
-                  <button 
-                    onClick={exportarPDFEvidencias}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-md text-sm font-bold"
-                  >
-                    <Download size={16} />
-                    Generar Reporte ({selectedEvidencias.length})
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={exportarPDFTotalizadorGas}
+                      disabled={loading}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-xl transition-all shadow-md text-sm font-bold"
+                    >
+                      {loading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                      Totalizador Gas LP
+                    </button>
+                    <button 
+                      onClick={exportarPDFEvidencias}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-md text-sm font-bold"
+                    >
+                      <Download size={16} />
+                      Generar Reporte ({selectedEvidencias.length})
+                    </button>
+                  </div>
                 )}
               </div>
               

@@ -150,11 +150,21 @@ class CargaCombustibleViewSet(viewsets.ModelViewSet):
     def totalizador_unidades(self, request):
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        fechas_param = request.query_params.get('fechas')
+        tipo_combustible = request.query_params.get('tipo_combustible')
         
-        if not fecha_inicio or not fecha_fin:
-            return Response({"error": "fecha_inicio y fecha_fin son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        cargas = CargaCombustible.objects.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin).order_by('fecha', 'id')
+        cargas = CargaCombustible.objects.all().order_by('fecha', 'id')
+
+        if fechas_param:
+            fechas_list = fechas_param.split(',')
+            cargas = cargas.filter(fecha__in=fechas_list)
+        elif fecha_inicio and fecha_fin:
+            cargas = cargas.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin)
+        else:
+            return Response({"error": "fechas o (fecha_inicio y fecha_fin) son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if tipo_combustible:
+            cargas = cargas.filter(tipo_combustible=tipo_combustible)
         
         # Agrupar manualmente en Python para combinar Tractocamiones y Vehículos Variados uniformemente
         resultados = {}
