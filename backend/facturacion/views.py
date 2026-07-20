@@ -7,7 +7,7 @@ from django.http import HttpResponse
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
@@ -452,7 +452,6 @@ class ContraReciboViewSet(viewsets.ModelViewSet):
         styles = getSampleStyleSheet()
         elements = []
         
-        # Header text
         header_style = ParagraphStyle(
             name='HeaderStyle',
             parent=styles['Heading1'],
@@ -467,12 +466,6 @@ class ContraReciboViewSet(viewsets.ModelViewSet):
             alignment=1, # Center
             spaceAfter=3
         )
-        
-        elements.append(Paragraph("AUTOTRANSPORTES COLUMBIA S.A DE C.V", header_style))
-        elements.append(Paragraph("RFC: ACO090825HW4", sub_header_style))
-        elements.append(Paragraph("Dirección: Lucero 1B, San Miguel Contla, 90640 San Miguel Contla, Tlax.", sub_header_style))
-        elements.append(Spacer(1, 10))
-        
         title_style = ParagraphStyle(
             name='TitleStyle',
             parent=styles['Heading2'],
@@ -480,79 +473,116 @@ class ContraReciboViewSet(viewsets.ModelViewSet):
             alignment=1,
             spaceAfter=12
         )
-        elements.append(Paragraph(f"Contra Recibo: {cr.folio}", title_style))
-        
-        # Info Provider
         info_style = styles['Normal']
-        
-        prov_nombre = cr.proveedor.nombre if cr.proveedor else (cr.taller.nombre if cr.taller else 'N/A')
-        elements.append(Paragraph(f"<b>Recibido de:</b> {prov_nombre}", info_style))
-        fecha_local = cr.fecha_creacion.astimezone() if cr.fecha_creacion else None
-        fecha_str = fecha_local.strftime('%d/%m/%Y %H:%M') if fecha_local else ""
-        elements.append(Paragraph(f"<b>Fecha:</b> {fecha_str}", info_style))
-        elements.append(Paragraph(f"<b>Capturista:</b> {cr.capturista.username if cr.capturista else 'N/A'}", info_style))
-        elements.append(Paragraph(f"<b>Aplica RESICO:</b> {'Sí' if cr.resico_aplicado else 'No'}", info_style))
-        elements.append(Spacer(1, 15))
-        
-        # Table of Invoices
-        data = [['Folio', 'Fecha Emisión', 'Importe', 'Estado', 'Motivo / Observación']]
-        
-        for factura in cr.facturas_detalle.all():
-            observacion = factura.observacion or ""
-            motivo = factura.motivo_rechazo or ""
-            texto_rechazo = f"{motivo} - {observacion}" if motivo or observacion else ""
-            
-            data.append([
-                factura.folio_factura,
-                factura.fecha_emision.strftime('%d/%m/%Y'),
-                f"${factura.importe:,.2f}",
-                factura.estado,
-                texto_rechazo
-            ])
-            
-        table = Table(data, colWidths=[1.2*inch, 1*inch, 1*inch, 0.9*inch, 3*inch])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1f2937')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,0), 10),
-            ('BOTTOMPADDING', (0,0), (-1,0), 8),
-            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f9fafb')),
-            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#d1d5db')),
-            ('FONTSIZE', (0,1), (-1,-1), 9),
-            ('WORDWRAP', (0,0), (-1,-1), True),
-        ]))
-        
-        elements.append(table)
-        elements.append(Spacer(1, 20))
-        
-        # Totals
         totals_style = ParagraphStyle(
             name='TotalsStyle',
             parent=styles['Normal'],
             fontSize=11,
             alignment=2 # Right
         )
-        elements.append(Paragraph(f"<b>Total Facturas:</b> {cr.total_facturas}", totals_style))
-        elements.append(Paragraph(f"<b>Subtotal:</b> ${cr.subtotal:,.2f}", totals_style))
         
-        elements.append(Spacer(1, 50))
+        def build_copy(title_suffix, invoices, is_company_copy=False):
+            copy_elements = []
+            copy_elements.append(Paragraph("AUTOTRANSPORTES COLUMBIA S.A DE C.V", header_style))
+            copy_elements.append(Paragraph("RFC: ACO090825HW4", sub_header_style))
+            copy_elements.append(Paragraph("Dirección: Lucero 1B, San Miguel Contla, 90640 San Miguel Contla, Tlax.", sub_header_style))
+            copy_elements.append(Spacer(1, 10))
+            
+            copy_elements.append(Paragraph(f"Contra Recibo: {cr.folio} - {title_suffix}", title_style))
+            
+            prov_nombre = cr.proveedor.nombre if cr.proveedor else (cr.taller.nombre if cr.taller else 'N/A')
+            copy_elements.append(Paragraph(f"<b>Recibido de:</b> {prov_nombre}", info_style))
+            fecha_local = cr.fecha_creacion.astimezone() if cr.fecha_creacion else None
+            fecha_str = fecha_local.strftime('%d/%m/%Y %H:%M') if fecha_local else ""
+            copy_elements.append(Paragraph(f"<b>Fecha:</b> {fecha_str}", info_style))
+            copy_elements.append(Paragraph(f"<b>Capturista:</b> {cr.capturista.username if cr.capturista else 'N/A'}", info_style))
+            copy_elements.append(Paragraph(f"<b>Aplica RESICO:</b> {'Sí' if cr.resico_aplicado else 'No'}", info_style))
+            copy_elements.append(Spacer(1, 15))
+            
+            if is_company_copy:
+                data = [['Folio', 'Fecha Emisión', 'Importe', 'Estado']]
+            else:
+                data = [['Folio', 'Fecha Emisión', 'Importe', 'Estado', 'Motivo / Observación']]
+            
+            subtotal_copy = 0
+            count_copy = 0
+            
+            for factura in invoices:
+                observacion = factura.observacion or ""
+                motivo = factura.motivo_rechazo or ""
+                texto_rechazo = f"{motivo} - {observacion}" if motivo or observacion else ""
+                
+                subtotal_copy += factura.importe
+                count_copy += 1
+                
+                if is_company_copy:
+                    data.append([
+                        factura.folio_factura,
+                        factura.fecha_emision.strftime('%d/%m/%Y'),
+                        f"${factura.importe:,.2f}",
+                        factura.estado
+                    ])
+                else:
+                    data.append([
+                        factura.folio_factura,
+                        factura.fecha_emision.strftime('%d/%m/%Y'),
+                        f"${factura.importe:,.2f}",
+                        factura.estado,
+                        texto_rechazo
+                    ])
+            
+            if is_company_copy:
+                table = Table(data, colWidths=[1.5*inch, 1.5*inch, 2*inch, 2*inch])
+            else:
+                table = Table(data, colWidths=[1.2*inch, 1*inch, 1*inch, 0.9*inch, 3*inch])
+                
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1f2937')),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 10),
+                ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f9fafb')),
+                ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#d1d5db')),
+                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('WORDWRAP', (0,0), (-1,-1), True),
+            ]))
+            
+            copy_elements.append(table)
+            copy_elements.append(Spacer(1, 20))
+            
+            copy_elements.append(Paragraph(f"<b>Total Facturas:</b> {count_copy}", totals_style))
+            copy_elements.append(Paragraph(f"<b>Subtotal:</b> ${subtotal_copy:,.2f}", totals_style))
+            
+            copy_elements.append(Spacer(1, 50))
+            
+            sig_data = [
+                ['_________________________', '_________________________'],
+                ['Entregado por (Proveedor)', 'Recibido por (Capturista)']
+            ]
+            sig_table = Table(sig_data, colWidths=[3.5*inch, 3.5*inch])
+            sig_table.setStyle(TableStyle([
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
+                ('TOPPADDING', (0,0), (-1,-1), 15),
+            ]))
+            
+            copy_elements.append(sig_table)
+            
+            return copy_elements
+
+        all_invoices = cr.facturas_detalle.all()
+        accepted_invoices = cr.facturas_detalle.filter(estado='Aceptada')
         
-        # Signatures
-        sig_data = [
-            ['_________________________', '_________________________'],
-            ['Entregado por (Proveedor)', 'Recibido por (Capturista)']
-        ]
-        sig_table = Table(sig_data, colWidths=[3.5*inch, 3.5*inch])
-        sig_table.setStyle(TableStyle([
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-            ('FONTSIZE', (0,0), (-1,-1), 10),
-            ('TOPPADDING', (0,0), (-1,-1), 15),
-        ]))
+        # Copia Proveedor (Todas las facturas)
+        elements.extend(build_copy("COPIA PROVEEDOR", all_invoices, is_company_copy=False))
         
-        elements.append(sig_table)
+        elements.append(PageBreak())
+        
+        # Copia Empresa (Solo Aceptadas)
+        elements.extend(build_copy("COPIA EMPRESA", accepted_invoices, is_company_copy=True))
         
         doc.build(elements)
         return response
