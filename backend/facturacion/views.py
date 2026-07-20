@@ -3,9 +3,17 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Count, Q
+from django.http import HttpResponse
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
 from core.pagination import CustomPagination
-from .models import Factura, Producto, Ticket
-from .serializers import FacturaSerializer, ProductoSerializer, TicketSerializer
+from .models import Factura, Producto, Ticket, ContraRecibo
+from .serializers import FacturaSerializer, ProductoSerializer, TicketSerializer, ContraReciboSerializer
 
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
@@ -421,3 +429,130 @@ class SolicitudCambioFacturaViewSet(viewsets.ModelViewSet):
         )
         return Response({'detail': 'Solicitud rechazada.'})
 
+class ContraReciboViewSet(viewsets.ModelViewSet):
+    queryset = ContraRecibo.objects.all()
+    serializer_class = ContraReciboSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    search_fields = ['folio', 'proveedor__nombre', 'taller__nombre', 'capturista__username']
+
+    def perform_create(self, serializer):
+        serializer.save(capturista=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        cr = self.get_object()
+        
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{cr.folio}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=letter,
+                                rightMargin=40, leftMargin=40,
+                                topMargin=40, bottomMargin=40)
+        
+        styles = getSampleStyleSheet()
+        elements = []
+        
+        # Header text
+        header_style = ParagraphStyle(
+            name='HeaderStyle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            alignment=1, # Center
+            spaceAfter=6
+        )
+        sub_header_style = ParagraphStyle(
+            name='SubHeaderStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            alignment=1, # Center
+            spaceAfter=3
+        )
+        
+        elements.append(Paragraph("AUTOTRANSPORTES COLUMBIA S.A DE C.V", header_style))
+        elements.append(Paragraph("RFC: ACO090825HW4", sub_header_style))
+        elements.append(Paragraph("Dirección: Lucero 1B, San Miguel Contla, 90640 San Miguel Contla, Tlax.", sub_header_style))
+        elements.append(Spacer(1, 10))
+        
+        title_style = ParagraphStyle(
+            name='TitleStyle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            alignment=1,
+            spaceAfter=12
+        )
+        elements.append(Paragraph(f"Contra Recibo: {cr.folio}", title_style))
+        
+        # Info Provider
+        info_style = styles['Normal']
+        
+        prov_nombre = cr.proveedor.nombre if cr.proveedor else (cr.taller.nombre if cr.taller else 'N/A')
+        elements.append(Paragraph(f"<b>Recibido de:</b> {prov_nombre}", info_style))
+        fecha_local = cr.fecha_creacion.astimezone() if cr.fecha_creacion else None
+        fecha_str = fecha_local.strftime('%d/%m/%Y %H:%M') if fecha_local else ""
+        elements.append(Paragraph(f"<b>Fecha:</b> {fecha_str}", info_style))
+        elements.append(Paragraph(f"<b>Capturista:</b> {cr.capturista.username if cr.capturista else 'N/A'}", info_style))
+        elements.append(Paragraph(f"<b>Aplica RESICO:</b> {'Sí' if cr.resico_aplicado else 'No'}", info_style))
+        elements.append(Spacer(1, 15))
+        
+        # Table of Invoices
+        data = [['Folio', 'Fecha Emisión', 'Importe', 'Estado', 'Motivo / Observación']]
+        
+        for factura in cr.facturas_detalle.all():
+            observacion = factura.observacion or ""
+            motivo = factura.motivo_rechazo or ""
+            texto_rechazo = f"{motivo} - {observacion}" if motivo or observacion else ""
+            
+            data.append([
+                factura.folio_factura,
+                factura.fecha_emision.strftime('%d/%m/%Y'),
+                f"${factura.importe:,.2f}",
+                factura.estado,
+                texto_rechazo
+            ])
+            
+        table = Table(data, colWidths=[1.2*inch, 1*inch, 1*inch, 0.9*inch, 3*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1f2937')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('BOTTOMPADDING', (0,0), (-1,0), 8),
+            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f9fafb')),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#d1d5db')),
+            ('FONTSIZE', (0,1), (-1,-1), 9),
+            ('WORDWRAP', (0,0), (-1,-1), True),
+        ]))
+        
+        elements.append(table)
+        elements.append(Spacer(1, 20))
+        
+        # Totals
+        totals_style = ParagraphStyle(
+            name='TotalsStyle',
+            parent=styles['Normal'],
+            fontSize=11,
+            alignment=2 # Right
+        )
+        elements.append(Paragraph(f"<b>Total Facturas:</b> {cr.total_facturas}", totals_style))
+        elements.append(Paragraph(f"<b>Subtotal:</b> ${cr.subtotal:,.2f}", totals_style))
+        
+        elements.append(Spacer(1, 50))
+        
+        # Signatures
+        sig_data = [
+            ['_________________________', '_________________________'],
+            ['Entregado por (Proveedor)', 'Recibido por (Capturista)']
+        ]
+        sig_table = Table(sig_data, colWidths=[3.5*inch, 3.5*inch])
+        sig_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 15),
+        ]))
+        
+        elements.append(sig_table)
+        
+        doc.build(elements)
+        return response

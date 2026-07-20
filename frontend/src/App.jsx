@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Facturacion from './pages/Facturacion';
+import ContraRecibos from './pages/ContraRecibos';
 import ListaVehiculos from './pages/ListaVehiculos';
 import Mantenimiento from './pages/Mantenimiento';
 import Logistica from './pages/Logistica';
@@ -57,6 +58,7 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['admin_general', 'admin', 'capturista']} />}>
                   <Route path="mantenimiento" element={<Mantenimiento />} />
                   <Route path="catalogos" element={<Catalogos />} />
+                  <Route path="contra-recibos" element={<ContraRecibos />} />
                 </Route>
 
                 {/* Rutas de Reportes */}

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Factura, Producto, Ticket, FacturaDetalleUnidad, TicketDetalleUnidad, SolicitudCambioFactura
+from .models import Factura, Producto, Ticket, FacturaDetalleUnidad, TicketDetalleUnidad, SolicitudCambioFactura, ContraRecibo, ContraReciboFactura
 from vehiculos.models import UnidadTractocamion
 from mantenimiento.models import Taller
 
@@ -328,3 +328,43 @@ class FacturaSerializer(serializers.ModelSerializer):
                         )
                     
         return factura
+
+class ContraReciboFacturaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContraReciboFactura
+        fields = '__all__'
+
+class ContraReciboSerializer(serializers.ModelSerializer):
+    facturas_detalle = ContraReciboFacturaSerializer(many=True, required=False)
+    proveedor_nombre = serializers.ReadOnlyField(source='proveedor.nombre')
+    taller_nombre = serializers.ReadOnlyField(source='taller.nombre')
+    capturista_nombre = serializers.ReadOnlyField(source='capturista.username')
+
+    class Meta:
+        model = ContraRecibo
+        fields = '__all__'
+
+    def create(self, validated_data):
+        facturas_data = validated_data.pop('facturas_detalle', [])
+        
+        # Generar folio autoincremental
+        last_cr = ContraRecibo.objects.order_by('-id').first()
+        if last_cr and last_cr.folio.startswith('CR-'):
+            try:
+                next_num = int(last_cr.folio.split('-')[1]) + 1
+            except:
+                next_num = 1
+        else:
+            next_num = 1
+            
+        validated_data['folio'] = f'CR-{next_num:04d}'
+        
+        # Guardamos el contra recibo
+        contra_recibo = ContraRecibo.objects.create(**validated_data)
+        
+        # Guardamos las facturas asociadas
+        for factura_data in facturas_data:
+            ContraReciboFactura.objects.create(contra_recibo=contra_recibo, **factura_data)
+            
+        return contra_recibo
+

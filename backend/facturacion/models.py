@@ -332,3 +332,56 @@ class SolicitudCambioFactura(models.Model):
 
     def __str__(self):
         return f"Solicitud Cambio Factura {self.factura.folio} - {self.estado}"
+
+class ContraRecibo(models.Model):
+    folio = models.CharField(max_length=50, unique=True, verbose_name="Folio Contra Recibo")
+    proveedor = models.ForeignKey(
+        'proveedores.Proveedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contra_recibos',
+        verbose_name="Proveedor"
+    )
+    taller = models.ForeignKey(
+        Taller,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contra_recibos',
+        verbose_name="Taller/Origen"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    capturista = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Capturista")
+    resico_aplicado = models.BooleanField(default=False, verbose_name="RESICO Aplicado")
+    total_facturas = models.IntegerField(default=0, verbose_name="Total de Facturas")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Subtotal")
+
+    class Meta:
+        verbose_name = "Contra Recibo"
+        verbose_name_plural = "Contra Recibos"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return self.folio
+
+class ContraReciboFactura(models.Model):
+    ESTADOS = (
+        ('Aceptada', 'Aceptada'),
+        ('Rechazada', 'Rechazada'),
+    )
+    contra_recibo = models.ForeignKey(ContraRecibo, on_delete=models.CASCADE, related_name='facturas_detalle')
+    folio_factura = models.CharField(max_length=100, verbose_name="Folio Factura")
+    fecha_emision = models.DateField(verbose_name="Fecha Emisión")
+    importe = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Importe")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Aceptada', verbose_name="Estado")
+    motivo_rechazo = models.TextField(blank=True, null=True, verbose_name="Motivo de Rechazo")
+    observacion = models.TextField(blank=True, null=True, verbose_name="Observación para el proveedor")
+
+    class Meta:
+        verbose_name = "Factura de Contra Recibo"
+        verbose_name_plural = "Facturas de Contra Recibos"
+
+    def __str__(self):
+        return f"{self.folio_factura} ({self.estado})"
+
