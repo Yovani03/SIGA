@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Download, Search, Check, X, FileText, Trash2, Printer, Save, History, PlusCircle } from 'lucide-react';
+import { Plus, Download, Search, Check, X, FileText, Trash2, Printer, Save, History, PlusCircle, Store } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContraRecibos() {
@@ -17,6 +17,33 @@ export default function ContraRecibos() {
   const [facturas, setFacturas] = useState([]);
   
   // Estado para el formulario de factura en línea
+  
+  const [busquedaEntidad, setBusquedaEntidad] = useState('');
+  const [mostrarDropdownEntidad, setMostrarDropdownEntidad] = useState(false);
+  const [entidadSeleccionada, setEntidadSeleccionada] = useState(null);
+
+  const entidades = [
+    ...proveedores.map(p => ({ ...p, tipo: 'proveedor' })),
+    ...talleres.map(t => ({ ...t, tipo: 'taller' }))
+  ];
+
+  const entidadesFiltradas = entidades.filter(e => {
+    const searchLower = busquedaEntidad.toLowerCase();
+    return (
+      (e.nombre && e.nombre.toLowerCase().includes(searchLower)) ||
+      (e.razon_social && e.razon_social.toLowerCase().includes(searchLower)) ||
+      (e.rfc && e.rfc.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const seleccionarEntidad = (entidad) => {
+    setEntidadSeleccionada(entidad);
+    setOrigenTipo(entidad.tipo);
+    setOrigenId(entidad.id);
+    setBusquedaEntidad(entidad.razon_social || entidad.nombre);
+    setMostrarDropdownEntidad(false);
+  };
+
   const [nuevaFactura, setNuevaFactura] = useState({
     folio_factura: '',
     fecha_emision: '',
@@ -121,6 +148,8 @@ export default function ContraRecibos() {
       
       // Reset form
       setOrigenId('');
+      setBusquedaEntidad('');
+      setEntidadSeleccionada(null);
       setResicoAplicado(false);
       setFacturas([]);
       setActiveTab('history');
@@ -192,65 +221,90 @@ export default function ContraRecibos() {
 
       {activeTab === 'new' ? (
         <div className="space-y-6 animate-in fade-in duration-300">
-          {/* General Data Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Datos Generales</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de Origen
-                </label>
-                <select
-                  value={origenTipo}
-                  onChange={(e) => {
-                    setOrigenTipo(e.target.value);
-                    setOrigenId('');
-                  }}
-                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="proveedor">Proveedor</option>
-                  <option value="taller">Taller</option>
-                </select>
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Seleccionar {origenTipo === 'proveedor' ? 'Proveedor' : 'Taller'}
-                </label>
-                <select
-                  value={origenId}
-                  onChange={(e) => setOrigenId(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Selecciona una opción...</option>
-                  {origenTipo === 'proveedor'
-                    ? proveedores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)
-                    : talleres.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)
-                  }
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center">
-              <input
-                id="resico"
-                type="checkbox"
-                checked={resicoAplicado}
-                onChange={(e) => setResicoAplicado(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <label htmlFor="resico" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Aplica RESICO
-              </label>
-            </div>
-          </div>
-
-          {/* Invoices Section */}
+          {/* Invoices Section with General Data */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agregar Facturas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generar Contra Recibo</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="relative">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
+                    <Store size={14} /> Taller / Proveedor
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                      <Search className="text-gray-500/40" size={12} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar taller o proveedor..."
+                      value={busquedaEntidad}
+                      onChange={(e) => {
+                        setBusquedaEntidad(e.target.value);
+                        if (!e.target.value) {
+                           setEntidadSeleccionada(null);
+                           setOrigenId('');
+      setBusquedaEntidad('');
+      setEntidadSeleccionada(null);
+                        }
+                      }}
+                      onFocus={() => setMostrarDropdownEntidad(true)}
+                      onBlur={() => setTimeout(() => setMostrarDropdownEntidad(false), 200)}
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-8 pr-3 py-2 text-sm text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                    />
+                    
+                    {mostrarDropdownEntidad && (
+                      <div 
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto custom-scrollbar"
+                      >
+                        {entidadesFiltradas.length === 0 ? (
+                          <div className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 italic">
+                            No se encontraron resultados
+                          </div>
+                        ) : (
+                          entidadesFiltradas.map(e => (
+                            <button
+                              key={`${e.tipo}-${e.id}`}
+                              type="button"
+                              onClick={() => seleccionarEntidad(e)}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-indigo-50 dark:hover:bg-gray-700 text-left border-b border-gray-100 dark:border-gray-750 last:border-0 transition-colors group"
+                            >
+                              <div>
+                                <div className="text-gray-900 dark:text-white font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-400 text-sm">
+                                  {e.razon_social || e.nombre}
+                                </div>
+                                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                                  <span className="uppercase font-semibold bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[9px]">
+                                    {e.tipo === 'taller' ? 'Taller' : 'Proveedor'}
+                                  </span>
+                                  {e.rfc && <span>RFC: {e.rfc}</span>}
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-end mb-2">
+                  <div className="flex items-center">
+                    <input
+                      id="resico"
+                      type="checkbox"
+                      checked={resicoAplicado}
+                      onChange={(e) => setResicoAplicado(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <label htmlFor="resico" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Aplica RESICO
+                    </label>
+                  </div>
+                </div>
+            </div>
+
             
             <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -418,6 +472,8 @@ export default function ContraRecibos() {
               onClick={() => {
                 setFacturas([]);
                 setOrigenId('');
+      setBusquedaEntidad('');
+      setEntidadSeleccionada(null);
               }}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
