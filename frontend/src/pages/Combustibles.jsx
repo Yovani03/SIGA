@@ -118,6 +118,8 @@ const Combustibles = () => {
     ignorar_kilometraje: false,
     km_equivocado: false
   });
+  const [busquedaNuevaCarga, setBusquedaNuevaCarga] = useState('');
+  const [busquedaNuevaCargaFocus, setBusquedaNuevaCargaFocus] = useState(false);
 
   // States for Totalizador
   const [totalizadorData, setTotalizadorData] = useState([]);
@@ -1101,6 +1103,11 @@ const Combustibles = () => {
   const filteredUnidadesEspecial = unidades.filter(u => 
     u.numero_economico.toLowerCase().includes(busquedaEspecial.toLowerCase()) || 
     u.placas?.toLowerCase().includes(busquedaEspecial.toLowerCase())
+  );
+
+  const filteredUnidadesNuevaCarga = unidades.filter(u => 
+    u.numero_economico.toLowerCase().includes(busquedaNuevaCarga.toLowerCase()) || 
+    u.placas?.toLowerCase().includes(busquedaNuevaCarga.toLowerCase())
   );
 
   return (
@@ -2553,14 +2560,58 @@ const Combustibles = () => {
                       <button onClick={() => setShowAddCarga(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X size={20} /></button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
+                      <div className="relative">
                         <label className="block text-xs font-bold text-slate-500 mb-1">Unidad</label>
-                        <select className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.unidad} onChange={e => setNewCargaData({...newCargaData, unidad: e.target.value})}>
-                          <option value="">Selecciona unidad</option>
-                          {unidades.map(u => (
-                            <option key={`${u.is_variado?'v':'t'}-${u.id}`} value={`${u.is_variado?'v':'t'}-${u.id}`}>{u.numero_economico}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                          <input 
+                            type="text" 
+                            required
+                            placeholder="Buscar unidad..."
+                            value={busquedaNuevaCarga}
+                            onChange={(e) => {
+                              setBusquedaNuevaCarga(e.target.value);
+                              if (newCargaData.unidad) {
+                                setNewCargaData({ ...newCargaData, unidad: '', kilometraje: '', km_equivocado: false });
+                              }
+                            }}
+                            onFocus={() => setBusquedaNuevaCargaFocus(true)}
+                            onBlur={() => setTimeout(() => setBusquedaNuevaCargaFocus(false), 200)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 p-2.5 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                          />
+                          {(busquedaNuevaCargaFocus || busquedaNuevaCarga) && !newCargaData.unidad && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar">
+                              {filteredUnidadesNuevaCarga.length > 0 ? (
+                                filteredUnidadesNuevaCarga.map(u => (
+                                  <button 
+                                    key={`${u.is_variado ? 'v' : 't'}-${u.id}`}
+                                    type="button"
+                                    onClick={() => {
+                                      const val = `${u.is_variado ? 'v' : 't'}-${u.id}`;
+                                      setNewCargaData({
+                                        ...newCargaData,
+                                        unidad: val,
+                                        kilometraje: u.ultimo_kilometraje || '',
+                                        km_equivocado: false
+                                      });
+                                      setBusquedaNuevaCarga(u.numero_economico);
+                                      setBusquedaNuevaCargaFocus(false);
+                                    }}
+                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-blue-500/10 text-left border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors group"
+                                  >
+                                    <div>
+                                      <div className="text-slate-900 dark:text-white font-bold group-hover:text-blue-500 text-sm">{u.numero_economico}</div>
+                                      <div className="text-xs text-slate-500">{u.placas ? `${u.placas} - ` : ''}{u.marca}</div>
+                                    </div>
+                                    <CheckCircle2 size={16} className="text-slate-400 group-hover:text-blue-500" />
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="p-3 text-slate-500 text-center text-xs">No se encontraron unidades</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Fecha</label>
