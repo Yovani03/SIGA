@@ -25,7 +25,8 @@ import {
   Pencil,
   Archive,
   XCircle,
-  Settings
+  Settings,
+  Download
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import {
@@ -136,6 +137,36 @@ const Facturacion = () => {
       fecha_fin = getFormatDate(new Date(selectedYear, 11, 31));
     }
     return { fecha_inicio, fecha_fin };
+  };
+
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  const handleDownloadCombinedPDF = async () => {
+    try {
+      setDownloadingPDF(true);
+      const params = getDateParams();
+      
+      const response = await api.get('facturas/descargar_pdf_semana/', {
+        params,
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `facturas_${params.fecha_inicio}_a_${params.fecha_fin}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      notify.success("PDF generado exitosamente");
+    } catch (error) {
+      console.error("Error al descargar PDF:", error);
+      notify.error("Ocurrió un error al generar el PDF combinado.");
+    } finally {
+      setDownloadingPDF(false);
+    }
   };
 
   const fetchCatalogs = async () => {
@@ -356,6 +387,17 @@ const Facturacion = () => {
               <ChevronRight size={20} />
             </button>
           </div>
+        )}
+
+        {dateRange === 'week' && (
+          <button
+            onClick={handleDownloadCombinedPDF}
+            disabled={downloadingPDF}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 animate-in slide-in-from-left-2 duration-300 ml-auto md:ml-0"
+          >
+            {downloadingPDF ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Descargar PDF Combinado
+          </button>
         )}
 
         {dateRange === 'month' && (

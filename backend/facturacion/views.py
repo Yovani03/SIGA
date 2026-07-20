@@ -102,6 +102,82 @@ class FacturaViewSet(viewsets.ModelViewSet):
             'chart_data': chart_data_list
         })
 
+    @action(detail=False, methods=['get'])
+    def descargar_pdf_semana(self, request):
+        queryset = self.get_queryset().filter(
+            cancelado=False,
+            archivo_escaneado__isnull=False
+        ).exclude(archivo_escaneado='')
+
+        def get_sort_key(factura):
+            import re
+            def extract_num(s):
+                if not s: return 999999
+                nums = re.findall(r'\d+', str(s))
+                return int(nums[0]) if nums else 999999
+            
+            if factura.unidad:
+                return (0, extract_num(factura.unidad.numero_economico))
+            elif factura.detalles_unidades.exists():
+                first = factura.detalles_unidades.first()
+                if first.unidad:
+                    return (0, extract_num(first.unidad.numero_economico))
+                return (0, 999998)
+            elif factura.caja:
+                return (1, extract_num(factura.caja.numero_economico))
+            elif factura.variado:
+                return (2, extract_num(factura.variado.numero_economico))
+            return (9, 999999)
+
+        facturas = list(queryset)
+        facturas.sort(key=get_sort_key)
+
+        from pypdf import PdfWriter, PdfReader
+        from PIL import Image
+        import io
+        import os
+        from django.http import HttpResponse
+
+        merger = PdfWriter()
+
+        for f in facturas:
+            if not f.archivo_escaneado:
+                continue
+            path = f.archivo_escaneado.path
+            if not os.path.exists(path):
+                continue
+                
+            ext = os.path.splitext(path)[1].lower()
+            try:
+                if ext == '.pdf':
+                    reader = PdfReader(path)
+                    for page in reader.pages:
+                        merger.add_page(page)
+                elif ext in ['.jpg', '.jpeg', '.png']:
+                    image = Image.open(path)
+                    pdf_bytes = io.BytesIO()
+                    if image.mode == "RGBA":
+                        image = image.convert("RGB")
+                    image.save(pdf_bytes, format='PDF')
+                    pdf_bytes.seek(0)
+                    reader = PdfReader(pdf_bytes)
+                    for page in reader.pages:
+                        merger.add_page(page)
+            except Exception as e:
+                print(f"Error procesando {path}: {e}")
+                continue
+
+        output = io.BytesIO()
+        merger.write(output)
+        output.seek(0)
+        
+        fecha_inicio = request.query_params.get('fecha_inicio', 'inicio')
+        fecha_fin = request.query_params.get('fecha_fin', 'fin')
+        
+        response = HttpResponse(output.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="facturas_{fecha_inicio}_a_{fecha_fin}.pdf"'
+        return response
+
     def perform_create(self, serializer):
         factura = serializer.save()
         user = self.request.user if self.request.user.is_authenticated else None
