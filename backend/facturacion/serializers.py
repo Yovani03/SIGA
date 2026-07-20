@@ -333,6 +333,7 @@ class ContraReciboFacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContraReciboFactura
         fields = '__all__'
+        read_only_fields = ['contra_recibo']
 
 class ContraReciboSerializer(serializers.ModelSerializer):
     facturas_detalle = ContraReciboFacturaSerializer(many=True, required=False)
@@ -343,6 +344,7 @@ class ContraReciboSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContraRecibo
         fields = '__all__'
+        read_only_fields = ['folio', 'capturista']
 
     def create(self, validated_data):
         facturas_data = validated_data.pop('facturas_detalle', [])
