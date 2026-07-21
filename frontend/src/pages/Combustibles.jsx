@@ -1877,18 +1877,18 @@ const Combustibles = () => {
             ) : historialTipo === 'totalizador' ? (
                 <div className="space-y-6">
                   {/* Controles de Totalizador */}
-                  <div className="flex flex-col md:flex-row justify-between items-center bg-slate-900/40 p-4 rounded-2xl border border-slate-700/50 gap-4">
-                    <div className="flex items-center bg-slate-950/50 rounded-xl overflow-hidden border border-slate-800">
-                      <button onClick={handlePrevWeek} className="p-3 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                  <div className="flex flex-col md:flex-row justify-between items-center bg-slate-100 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 gap-4">
+                    <div className="flex items-center bg-white dark:bg-slate-950/50 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
+                      <button onClick={handlePrevWeek} className="p-3 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <ChevronLeft size={20} />
                       </button>
                       <div className="px-6 py-2 text-center min-w-[200px]">
-                        <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">Semana Del</p>
-                        <p className="text-white font-bold text-lg whitespace-nowrap">
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mb-1">Semana Del</p>
+                        <p className="text-slate-900 dark:text-white font-bold text-lg whitespace-nowrap">
                           {getStartOfWeek(totalizadorDateRef).toLocaleDateString('es-MX', {day:'2-digit', month:'short'})} - {getEndOfWeek(totalizadorDateRef).toLocaleDateString('es-MX', {day:'2-digit', month:'short'})}
                         </p>
                       </div>
-                      <button onClick={handleNextWeek} className="p-3 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                      <button onClick={handleNextWeek} className="p-3 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <ChevronRight size={20} />
                       </button>
                     </div>
@@ -1900,62 +1900,62 @@ const Combustibles = () => {
                   </div>
 
                   {/* Tabla Totalizador */}
-                  <div className="bg-slate-900/40 border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-800/50 text-slate-400 border-b border-slate-700">
+                        <thead className="bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                           <tr>
-                            <th className="px-6 py-4 font-bold text-slate-300 uppercase text-xs tracking-wider">Unidad</th>
-                            <th className="px-6 py-4 font-bold text-slate-300 uppercase text-xs tracking-wider text-center">Último KM</th>
+                            <th className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300 uppercase text-xs tracking-wider">Unidad</th>
+                            <th className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300 uppercase text-xs tracking-wider text-center">Último KM</th>
                             <th className="px-6 py-4 font-bold text-center uppercase text-xs tracking-wider">Total Cargas</th>
-                            <th className="px-6 py-4 font-bold text-right text-blue-400 uppercase text-xs tracking-wider">Total Litros</th>
-                            <th className="px-6 py-4 font-bold text-right text-emerald-400 uppercase text-xs tracking-wider">Monto Total</th>
+                            <th className="px-6 py-4 font-bold text-right text-blue-600 dark:text-blue-400 uppercase text-xs tracking-wider">Total Litros</th>
+                            <th className="px-6 py-4 font-bold text-right text-emerald-600 dark:text-emerald-400 uppercase text-xs tracking-wider">Monto Total</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/50">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50">
                           {loadingTotalizador ? (
                             <tr>
                               <td colSpan="4" className="px-6 py-12 text-center">
                                 <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-4" />
-                                <p className="text-slate-400">Calculando totales...</p>
+                                <p className="text-slate-500 dark:text-slate-400">Calculando totales...</p>
                               </td>
                             </tr>
                           ) : totalizadorData.length === 0 ? (
                             <tr>
-                              <td colSpan="4" className="px-6 py-12 text-center text-slate-400">
+                              <td colSpan="4" className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                 No hay cargas registradas en esta semana.
                               </td>
                             </tr>
                           ) : (
                             <>
                               {totalizadorData.map((item) => (
-                                <tr key={item.id_key} className="hover:bg-slate-800/30 transition-colors group">
-                                  <td className="px-6 py-4 text-white font-bold text-base group-hover:text-emerald-400 transition-colors">{item.unidad_nombre}</td>
-                                  <td className="px-6 py-4 text-center text-slate-300 font-medium">
-                                    <span className="bg-slate-800/80 px-3 py-1 rounded-lg text-xs font-mono border border-slate-700 text-slate-300">{item.ultimo_km ? item.ultimo_km.toLocaleString('en-US') : "-"}</span>
+                                <tr key={item.id_key} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                                  <td className="px-6 py-4 text-slate-900 dark:text-white font-bold text-base group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{item.unidad_nombre}</td>
+                                  <td className="px-6 py-4 text-center text-slate-700 dark:text-slate-300 font-medium">
+                                    <span className="bg-slate-100 dark:bg-slate-800/80 px-3 py-1 rounded-lg text-xs font-mono border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{item.ultimo_km ? item.ultimo_km.toLocaleString('en-US') : "-"}</span>
                                   </td>
-                                  <td className="px-6 py-4 text-center text-slate-300 font-medium">
-                                    <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-bold border border-slate-700 group-hover:border-emerald-500/50 transition-colors">{item.cantidad_cargas}</span>
+                                  <td className="px-6 py-4 text-center text-slate-700 dark:text-slate-300 font-medium">
+                                    <span className="bg-slate-100 dark:bg-slate-800/80 px-3 py-1 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700 group-hover:border-emerald-500/50 transition-colors">{item.cantidad_cargas}</span>
                                   </td>
-                                  <td className="px-6 py-4 text-right font-mono text-blue-300 font-bold text-base">
+                                  <td className="px-6 py-4 text-right font-mono text-blue-600 dark:text-blue-300 font-bold text-base">
                                     {parseFloat(item.total_litros).toFixed(3)} L
                                   </td>
-                                  <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold text-base">
+                                  <td className="px-6 py-4 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold text-base">
                                     ${parseFloat(item.total_monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                   </td>
                                 </tr>
                               ))}
                               {/* Gran Total Footer */}
-                              <tr className="bg-slate-800/90 border-t-2 border-emerald-500/30">
-                                <td className="px-6 py-5 text-white font-black text-lg uppercase tracking-wider">Gran Total</td>
+                              <tr className="bg-slate-100 dark:bg-slate-800/90 border-t-2 border-emerald-500/30">
+                                <td className="px-6 py-5 text-slate-900 dark:text-white font-black text-lg uppercase tracking-wider">Gran Total</td>
                                 <td className="px-6 py-5 text-center text-slate-500 font-bold text-lg">-</td>
-                                <td className="px-6 py-5 text-center text-white font-bold text-lg">
+                                <td className="px-6 py-5 text-center text-slate-900 dark:text-white font-bold text-lg">
                                   {totalizadorData.reduce((acc, curr) => acc + curr.cantidad_cargas, 0)}
                                 </td>
-                                <td className="px-6 py-5 text-right font-mono text-blue-400 font-black text-lg">
+                                <td className="px-6 py-5 text-right font-mono text-blue-600 dark:text-blue-400 font-black text-lg">
                                   {totalizadorData.reduce((acc, curr) => acc + parseFloat(curr.total_litros), 0).toFixed(3)} L
                                 </td>
-                                <td className="px-6 py-5 text-right font-mono text-emerald-400 font-black text-lg">
+                                <td className="px-6 py-5 text-right font-mono text-emerald-600 dark:text-emerald-400 font-black text-lg">
                                   ${totalizadorData.reduce((acc, curr) => acc + parseFloat(curr.total_monto), 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                 </td>
                               </tr>
