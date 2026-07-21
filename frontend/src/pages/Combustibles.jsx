@@ -47,7 +47,7 @@ const Combustibles = () => {
   const { user } = useContext(AuthContext);
   const isLector = user?.rol === 'lector_gastos';
 
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState('');
   const [precios, setPrecios] = useState({
     magna: '',
     premium: '',
@@ -82,7 +82,7 @@ const Combustibles = () => {
   // State for Special Load
   const [cargaEspecial, setCargaEspecial] = useState({
     unidad: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: '',
     tipo_combustible: 'diesel',
     precio_unitario: '',
     litros: '',
@@ -109,7 +109,7 @@ const Combustibles = () => {
   const [showAddCarga, setShowAddCarga] = useState(false);
   const [newCargaData, setNewCargaData] = useState({
     unidad: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: '',
     tipo_combustible: 'diesel',
     litros: '',
     precio_unitario: '',
@@ -771,6 +771,10 @@ const Combustibles = () => {
   };
 
   const fetchPreciosDia = async (date) => {
+    if (!date) {
+      setPrecios({ magna: '', premium: '', diesel: '', electrico: '0', gas_lp: '' });
+      return;
+    }
     try {
       const res = await api.get(`precios-combustible/por_fecha/?fecha=${date}`);
       if (res.data) {
@@ -813,6 +817,25 @@ const Combustibles = () => {
     setCargas(newCargas);
   };
 
+  const handleGridKeyDown = (e, rowIndex, colName, maxRows) => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      let nextRow = rowIndex;
+      let nextCol = colName;
+
+      if (e.key === 'ArrowUp') nextRow = Math.max(0, rowIndex - 1);
+      if (e.key === 'ArrowDown') nextRow = Math.min(maxRows - 1, rowIndex + 1);
+      if (e.key === 'ArrowLeft') nextCol = 'litros';
+      if (e.key === 'ArrowRight') nextCol = 'kilometraje';
+
+      const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+      if (nextInput && !nextInput.disabled) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    }
+  };
+
   const updateCarga = (index, field, value) => {
     const newCargas = [...cargas];
     newCargas[index][field] = value;
@@ -820,6 +843,10 @@ const Combustibles = () => {
   };
 
   const handleSubmit = async () => {
+    if (!fecha) {
+      notify.info("Selecciona la fecha de carga.");
+      return;
+    }
     if (cargas.length === 0) {
       notify.info("Agrega al menos una carga.");
       return;
@@ -914,7 +941,7 @@ const Combustibles = () => {
 
   const handleAddEspecialToList = (e) => {
     e.preventDefault();
-    if (!cargaEspecial.unidad || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.km_equivocado && !cargaEspecial.kilometraje)) {
+    if (!cargaEspecial.unidad || !cargaEspecial.fecha || !cargaEspecial.precio_unitario || !cargaEspecial.litros || (!cargaEspecial.ignorar_kilometraje && !cargaEspecial.km_equivocado && !cargaEspecial.kilometraje)) {
       notify.info("Completa todos los campos requeridos.");
       return;
     }
@@ -991,7 +1018,7 @@ const Combustibles = () => {
   );
 
   const handleAddNewCargaToBlock = async () => {
-    if(!newCargaData.unidad || !newCargaData.litros || !newCargaData.precio_unitario || (!newCargaData.ignorar_kilometraje && !newCargaData.km_equivocado && !newCargaData.kilometraje)){
+    if(!newCargaData.fecha || !newCargaData.unidad || !newCargaData.litros || !newCargaData.precio_unitario || (!newCargaData.ignorar_kilometraje && !newCargaData.km_equivocado && !newCargaData.kilometraje)){
       notify.info("Completa los campos obligatorios");
       return;
     }
@@ -1218,10 +1245,12 @@ const Combustibles = () => {
                 <div className="relative">
                   <input 
                     type="number" 
-                    placeholder="0.00"
+                    step="0.01"
                     value={precios[fuel.id]}
                     onChange={(e) => setPrecios({...precios, [fuel.id]: e.target.value})}
-                    className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    className={`w-full bg-transparent border-none text-2xl font-bold p-0 focus:ring-0 ${fuel.color.split(' ')[2]} outline-none`}
+                    placeholder="0.00"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">MXN/L</span>
                 </div>
@@ -1240,6 +1269,13 @@ const Combustibles = () => {
                   onChange={(e) => setBusqueda(e.target.value)}
                   onFocus={() => setBusquedaFocus(true)}
                   onBlur={() => setTimeout(() => setBusquedaFocus(false), 200)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && filteredUnidades.length === 1) {
+                      e.preventDefault();
+                      handleAddUnidad(filteredUnidades[0]);
+                      e.target.blur();
+                    }
+                  }}
                   className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 />
                 
@@ -1316,8 +1352,12 @@ const Combustibles = () => {
                               <input 
                                 type="number"
                                 step="0.001"
+                                data-row={idx}
+                                data-col="litros"
                                 value={carga.litros}
                                 onChange={(e) => updateCarga(idx, 'litros', e.target.value)}
+                                onKeyDown={(e) => handleGridKeyDown(e, idx, 'litros', cargas.length)}
+                                onWheel={(e) => e.currentTarget.blur()}
                                 className="w-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-6 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
                                 placeholder="0.000"
                               />
@@ -1391,9 +1431,13 @@ const Combustibles = () => {
                                 <input 
                                   type="number" 
                                   step="1"
+                                  data-row={idx}
+                                  data-col="kilometraje"
                                   disabled={carga.ignorar_kilometraje || carga.km_equivocado}
                                   value={carga.kilometraje}
                                   onChange={(e) => updateCarga(idx, 'kilometraje', e.target.value ? parseInt(e.target.value) : '')}
+                                  onKeyDown={(e) => handleGridKeyDown(e, idx, 'kilometraje', cargas.length)}
+                                  onWheel={(e) => e.currentTarget.blur()}
                                   className={`w-32 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 ${carga.ignorar_kilometraje || carga.km_equivocado ? 'opacity-30 cursor-not-allowed' : ''}`}
                                   placeholder="Km actual"
                                 />
@@ -1514,6 +1558,19 @@ const Combustibles = () => {
                     }}
                     onFocus={() => setBusquedaEspecialFocus(true)}
                     onBlur={() => setTimeout(() => setBusquedaEspecialFocus(false), 200)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && filteredUnidadesEspecial.length === 1) {
+                        e.preventDefault();
+                        const u = filteredUnidadesEspecial[0];
+                        setCargaEspecial({
+                          ...cargaEspecial,
+                          unidad: `${u.is_variado ? 'v' : 't'}-${u.id}`
+                        });
+                        setBusquedaEspecial(u.numero_economico);
+                        setBusquedaEspecialFocus(false);
+                        e.target.blur();
+                      }
+                    }}
                     className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                   />
                   {(busquedaEspecialFocus || busquedaEspecial) && !cargaEspecial.unidad && (
@@ -2577,6 +2634,22 @@ const Combustibles = () => {
                             }}
                             onFocus={() => setBusquedaNuevaCargaFocus(true)}
                             onBlur={() => setTimeout(() => setBusquedaNuevaCargaFocus(false), 200)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && filteredUnidadesNuevaCarga.length === 1) {
+                                e.preventDefault();
+                                const u = filteredUnidadesNuevaCarga[0];
+                                const val = `${u.is_variado ? 'v' : 't'}-${u.id}`;
+                                setNewCargaData({
+                                  ...newCargaData,
+                                  unidad: val,
+                                  kilometraje: u.ultimo_kilometraje || '',
+                                  km_equivocado: false
+                                });
+                                setBusquedaNuevaCarga(u.numero_economico);
+                                setBusquedaNuevaCargaFocus(false);
+                                e.target.blur();
+                              }
+                            }}
                             className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 p-2.5 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                           />
                           {(busquedaNuevaCargaFocus || busquedaNuevaCarga) && !newCargaData.unidad && (
