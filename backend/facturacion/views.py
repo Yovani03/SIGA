@@ -10,6 +10,26 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+from reportlab.platypus.flowables import Flowable
+
+class BottomContainer(Flowable):
+    def __init__(self, content):
+        Flowable.__init__(self)
+        self.content = content
+        
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.w, self.h = self.content.wrap(availWidth, availHeight)
+        
+        if self.h > availHeight:
+            self.height = self.h
+            return (self.width, self.height)
+            
+        self.height = availHeight
+        return (self.width, self.height)
+        
+    def draw(self):
+        self.content.drawOn(self.canv, 0, 0)
 
 from core.pagination import CustomPagination
 from .models import Factura, Producto, Ticket, ContraRecibo
@@ -555,7 +575,7 @@ class ContraReciboViewSet(viewsets.ModelViewSet):
             copy_elements.append(Paragraph(f"<b>Total Facturas:</b> {count_copy}", totals_style))
             copy_elements.append(Paragraph(f"<b>Subtotal:</b> ${subtotal_copy:,.2f}", totals_style))
             
-            copy_elements.append(Spacer(1, 50))
+            copy_elements.append(Spacer(1, 20))
             
             sig_data = [
                 ['_________________________', '_________________________'],
@@ -569,7 +589,7 @@ class ContraReciboViewSet(viewsets.ModelViewSet):
                 ('TOPPADDING', (0,0), (-1,-1), 15),
             ]))
             
-            copy_elements.append(sig_table)
+            copy_elements.append(BottomContainer(sig_table))
             
             return copy_elements
 
