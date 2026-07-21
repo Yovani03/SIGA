@@ -446,8 +446,8 @@ const Logistica = () => {
         )}
       </div>
 
-      {/* Tabs - Oculto temporalmente */}
-      <div className="hidden bg-slate-200/50 dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-full max-w-lg backdrop-blur-xl shadow-inner">
+      {/* Tabs */}
+      <div className="flex bg-slate-200/50 dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-200 dark:border-slate-800/80 w-full max-w-lg backdrop-blur-xl shadow-inner">
         <button
           onClick={() => setActiveTab('monitor')}
           className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
@@ -464,6 +464,7 @@ const Logistica = () => {
             Monitor
           </span>
         </button>
+        {/* Oculto temporalmente porque Combustible está en el panel principal
         <button
           onClick={() => setActiveTab('combustible')}
           className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
@@ -480,6 +481,7 @@ const Logistica = () => {
             Combustible
           </span>
         </button>
+        */}
         <button
           onClick={() => setActiveTab('bonos')}
           className={`relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold transition-all duration-300 ease-out overflow-hidden ${
