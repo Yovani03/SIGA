@@ -201,6 +201,7 @@ const AltaTicket = ({ onSuccess, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if(!window.confirm('¿Estás seguro de registrar este ticket y generar el folio?')) return;
     setLoading(true);
     setGeneratedFolio('');
 

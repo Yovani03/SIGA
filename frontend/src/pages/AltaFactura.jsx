@@ -550,6 +550,8 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const handleSubmit = async (e) => {
     e?.preventDefault();
     
+    if(!window.confirm(factura ? '¿Estás seguro de actualizar esta factura?' : '¿Estás seguro de registrar esta factura?')) return;
+
     if (factura && isCapturista && !motivoCambio) {
         setShowMotivoModal(true);
         return;
@@ -565,6 +567,12 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     
     if (!formData.folio || !formData.monto || !formData.fecha || (!formData.taller && !formData.proveedor) || !hasAssets) {
       notify.error("Faltan campos obligatorios. Revisa el Folio, Monto, Fecha, Proveedor y Unidad/Caja/Variado.");
+      setLoading(false);
+      return;
+    }
+
+    if (scannedFiles.length === 0 && !formData.archivo_escaneado) {
+      notify.error("Debes adjuntar o escanear el documento de la factura obligatoriamente.");
       setLoading(false);
       return;
     }

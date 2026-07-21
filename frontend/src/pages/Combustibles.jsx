@@ -427,6 +427,7 @@ const Combustibles = () => {
 
   const handleSubmitEvidencia = async (e) => {
     e.preventDefault();
+    if(!window.confirm('¿Estás seguro de registrar esta evidencia?')) return;
     if(!evidenciaForm.folio_factura || !evidenciaForm.monto || !evidenciaForm.fecha) {
         notify.info("Completa los campos obligatorios");
         return;
@@ -963,6 +964,7 @@ const Combustibles = () => {
   };
 
   const handleSubmit = async () => {
+    if(!window.confirm('¿Estás seguro de guardar todas las cargas registradas?')) return;
     if (!fecha) {
       notify.info("Selecciona la fecha de carga.");
       return;
@@ -1100,6 +1102,7 @@ const Combustibles = () => {
   };
 
   const handleSubmitEspecial = async () => {
+    if(!window.confirm('¿Estás seguro de guardar todas las cargas especiales?')) return;
     if (cargasEspecialesList.length === 0) {
       notify.info("Agrega cargas a la lista.");
       return;

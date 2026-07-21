@@ -114,6 +114,7 @@ export default function ContraRecibos() {
   };
 
   const handleSaveAndPrint = async () => {
+    if(!window.confirm('¿Estás seguro de guardar e imprimir el contra recibo?')) return;
     if (!origenId) {
       toast.error('Por favor selecciona un proveedor o taller.');
       return;
