@@ -43,6 +43,91 @@ const Spinner = () => (
   </svg>
 );
 
+const FuelSelect = ({ value, onChange, rowIndex, maxRows, handleGridKeyDown }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const options = [
+    { value: 'diesel', label: 'Diesel' },
+    { value: 'magna', label: 'Magna' },
+    { value: 'premium', label: 'Premium' },
+    { value: 'electrico', label: 'Eléctrico' },
+    { value: 'gas_lp', label: 'Gas LP' }
+  ];
+  const [highlightedIndex, setHighlightedIndex] = useState(
+    Math.max(0, options.findIndex(o => o.value === value))
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setHighlightedIndex(Math.max(0, options.findIndex(o => o.value === value)));
+    }
+  }, [isOpen, value]);
+
+  const handleKeyDown = (e) => {
+    if (isOpen) {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setHighlightedIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setHighlightedIndex(prev => Math.min(options.length - 1, prev + 1));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        onChange(options[highlightedIndex].value);
+        setIsOpen(false);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsOpen(false);
+      } else if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        // If they want to move horizontally while it's open
+        e.preventDefault();
+        setIsOpen(false);
+        handleGridKeyDown(e, rowIndex, 'combustible', maxRows);
+      }
+    } else {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        handleGridKeyDown(e, rowIndex, 'combustible', maxRows);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+    }
+  };
+
+  return (
+    <div className="relative min-w-[120px]">
+      <input 
+        type="text"
+        readOnly
+        data-row={rowIndex}
+        data-col="combustible"
+        value={options.find(o => o.value === value)?.label || ''}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+        onKeyDown={handleKeyDown}
+        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer text-left"
+      />
+      {isOpen && (
+        <div className="absolute top-full left-0 z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+          {options.map((opt, i) => (
+            <div 
+              key={opt.value}
+              className={`px-3 py-2 text-sm cursor-pointer transition-colors ${i === highlightedIndex ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Combustibles = () => {
   const { user } = useContext(AuthContext);
   const isLector = user?.rol === 'lector_gastos';
@@ -820,19 +905,54 @@ const Combustibles = () => {
   const handleGridKeyDown = (e, rowIndex, colName, maxRows) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
-      let nextRow = rowIndex;
-      let nextCol = colName;
-
-      if (e.key === 'ArrowUp') nextRow = Math.max(0, rowIndex - 1);
-      if (e.key === 'ArrowDown') nextRow = Math.min(maxRows - 1, rowIndex + 1);
-      if (e.key === 'ArrowLeft') nextCol = 'litros';
-      if (e.key === 'ArrowRight') nextCol = 'kilometraje';
-
-      const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+      
+      const cols = ['combustible', 'litros', 'kilometraje', 'ignorar_km', 'km_equivocado'];
+      let r = rowIndex;
+      let cIdx = cols.indexOf(colName);
+      
+      if (e.key === 'ArrowUp') r = Math.max(0, r - 1);
+      if (e.key === 'ArrowDown') r = Math.min(maxRows - 1, r + 1);
+      
+      let nextInput = null;
+      
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+         let step = e.key === 'ArrowLeft' ? -1 : 1;
+         let nextCIdx = cIdx + step;
+         while(nextCIdx >= 0 && nextCIdx < cols.length) {
+            let el = document.querySelector(`input[data-row="${r}"][data-col="${cols[nextCIdx]}"]`);
+            if (el && !el.disabled) {
+                nextInput = el;
+                break;
+            }
+            nextCIdx += step;
+         }
+      } else {
+         nextInput = document.querySelector(`input[data-row="${r}"][data-col="${colName}"]`);
+      }
+      
       if (nextInput && !nextInput.disabled) {
         nextInput.focus();
-        nextInput.select();
+        if (nextInput.type !== 'checkbox') nextInput.select();
       }
+    }
+  };
+
+  const handleCheckboxKeyDown = (e, idx, field, maxRows) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const checkbox = e.target;
+      const newValue = !checkbox.checked;
+      
+      if (field === 'ignorar_km') {
+        updateCarga(idx, 'ignorar_kilometraje', newValue);
+      } else if (field === 'km_equivocado') {
+        updateCarga(idx, 'km_equivocado', newValue);
+        if (newValue) {
+          updateCarga(idx, 'kilometraje', cargas[idx].ultimo_kilometraje || 0);
+        }
+      }
+    } else {
+      handleGridKeyDown(e, idx, field, maxRows);
     }
   };
 
@@ -1334,17 +1454,13 @@ const Combustibles = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <select 
+                          <FuelSelect 
                             value={carga.tipo_combustible}
-                            onChange={(e) => updateCarga(idx, 'tipo_combustible', e.target.value)}
-                            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="diesel">Diesel</option>
-                            <option value="magna">Magna</option>
-                            <option value="premium">Premium</option>
-                            <option value="electrico">Eléctrico</option>
-                            <option value="gas_lp">Gas LP</option>
-                          </select>
+                            onChange={(val) => updateCarga(idx, 'tipo_combustible', val)}
+                            rowIndex={idx}
+                            maxRows={cargas.length}
+                            handleGridKeyDown={handleGridKeyDown}
+                          />
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 relative">
@@ -1393,6 +1509,7 @@ const Combustibles = () => {
                                         className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all dark:text-white"
                                         placeholder="0.000"
                                         value={val}
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         onChange={(e) => {
                                           const newVals = [...calculadoraValores];
                                           newVals[i] = e.target.value;
@@ -1446,16 +1563,21 @@ const Combustibles = () => {
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input 
                                   type="checkbox"
+                                  data-row={idx}
+                                  data-col="ignorar_km"
                                   checked={carga.ignorar_kilometraje}
                                   disabled={carga.km_equivocado}
                                   onChange={(e) => updateCarga(idx, 'ignorar_kilometraje', e.target.checked)}
-                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-offset-slate-900 disabled:opacity-30"
+                                  onKeyDown={(e) => handleCheckboxKeyDown(e, idx, 'ignorar_km', cargas.length)}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-offset-slate-900 focus:ring-2 focus:ring-blue-500 disabled:opacity-30 cursor-pointer"
                                 />
                                 <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Odm. Dañado</span>
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input 
                                   type="checkbox"
+                                  data-row={idx}
+                                  data-col="km_equivocado"
                                   checked={carga.km_equivocado}
                                   disabled={carga.ignorar_kilometraje}
                                   onChange={(e) => {
@@ -1465,7 +1587,8 @@ const Combustibles = () => {
                                       updateCarga(idx, 'kilometraje', carga.ultimo_kilometraje || 0);
                                     }
                                   }}
-                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 disabled:opacity-30"
+                                  onKeyDown={(e) => handleCheckboxKeyDown(e, idx, 'km_equivocado', cargas.length)}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-offset-slate-900 focus:ring-2 focus:ring-amber-500 disabled:opacity-30 cursor-pointer"
                                 />
                                 <span className="text-[10px] text-amber-500 uppercase font-bold tracking-tighter">KM Equivocado</span>
                               </label>
@@ -1646,6 +1769,7 @@ const Combustibles = () => {
                     step="0.01"
                     value={cargaEspecial.precio_unitario}
                     onChange={(e) => setCargaEspecial({...cargaEspecial, precio_unitario: e.target.value})}
+                    onWheel={(e) => e.currentTarget.blur()}
                     className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                     placeholder="0.00"
                   />
@@ -1662,6 +1786,7 @@ const Combustibles = () => {
                       step="0.001"
                       value={cargaEspecial.litros}
                       onChange={(e) => setCargaEspecial({...cargaEspecial, litros: e.target.value})}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                       placeholder="0.000"
                     />
@@ -1696,6 +1821,7 @@ const Combustibles = () => {
                               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all dark:text-white"
                               placeholder="0.000"
                               value={val}
+                              onWheel={(e) => e.currentTarget.blur()}
                               onChange={(e) => {
                                 const newVals = [...calculadoraValores];
                                 newVals[i] = e.target.value;
@@ -1745,6 +1871,7 @@ const Combustibles = () => {
                       disabled={cargaEspecial.ignorar_kilometraje || cargaEspecial.km_equivocado}
                       value={cargaEspecial.kilometraje}
                       onChange={(e) => setCargaEspecial({...cargaEspecial, kilometraje: e.target.value})}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className={`w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-4 py-3 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-500 ${cargaEspecial.ignorar_kilometraje || cargaEspecial.km_equivocado ? 'opacity-30 cursor-not-allowed' : ''}`}
                       placeholder="Km actual"
                     />
@@ -2202,7 +2329,7 @@ const Combustibles = () => {
                   <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Monto</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                    <input type="number" step="0.01" required value={evidenciaForm.monto} onChange={e => setEvidenciaForm({...evidenciaForm, monto: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                    <input type="number" step="0.01" required value={evidenciaForm.monto} onChange={e => setEvidenciaForm({...evidenciaForm, monto: e.target.value})} onWheel={(e) => e.currentTarget.blur()} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                   </div>
                 </div>
                 <div>
@@ -2519,6 +2646,7 @@ const Combustibles = () => {
                                 type="number" 
                                 className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white"
                                 value={editCargaData.litros} 
+                                onWheel={(e) => e.currentTarget.blur()}
                                 onChange={e => setEditCargaData({...editCargaData, litros: e.target.value})} 
                               />
                             </td>
@@ -2527,6 +2655,7 @@ const Combustibles = () => {
                                 type="number" 
                                 className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white"
                                 value={editCargaData.precio_unitario} 
+                                onWheel={(e) => e.currentTarget.blur()}
                                 onChange={e => setEditCargaData({...editCargaData, precio_unitario: e.target.value})} 
                               />
                             </td>
@@ -2538,6 +2667,7 @@ const Combustibles = () => {
                                 type="number" 
                                 className="w-20 p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 text-right text-slate-900 dark:text-white mb-1"
                                 value={editCargaData.kilometraje} 
+                                onWheel={(e) => e.currentTarget.blur()}
                                 onChange={e => setEditCargaData({...editCargaData, kilometraje: e.target.value})}
                                 disabled={editCargaData.ignorar_kilometraje || editCargaData.km_equivocado}
                               />
@@ -2702,15 +2832,15 @@ const Combustibles = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Precio Unit.</label>
-                        <input type="number" step="0.01" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.precio_unitario} onChange={e => setNewCargaData({...newCargaData, precio_unitario: e.target.value})} />
+                        <input type="number" step="0.01" onWheel={(e) => e.currentTarget.blur()} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.precio_unitario} onChange={e => setNewCargaData({...newCargaData, precio_unitario: e.target.value})} />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Litros</label>
-                        <input type="number" step="0.001" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.litros} onChange={e => setNewCargaData({...newCargaData, litros: e.target.value})} />
+                        <input type="number" step="0.001" onWheel={(e) => e.currentTarget.blur()} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={newCargaData.litros} onChange={e => setNewCargaData({...newCargaData, litros: e.target.value})} />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Kilometraje</label>
-                        <input type="number" className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white disabled:opacity-50" value={newCargaData.kilometraje} onChange={e => setNewCargaData({...newCargaData, kilometraje: e.target.value})} disabled={newCargaData.ignorar_kilometraje || newCargaData.km_equivocado} />
+                        <input type="number" onWheel={(e) => e.currentTarget.blur()} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white disabled:opacity-50" value={newCargaData.kilometraje} onChange={e => setNewCargaData({...newCargaData, kilometraje: e.target.value})} disabled={newCargaData.ignorar_kilometraje || newCargaData.km_equivocado} />
                       </div>
                       <div className="flex flex-col justify-center gap-2">
                         <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium cursor-pointer">
