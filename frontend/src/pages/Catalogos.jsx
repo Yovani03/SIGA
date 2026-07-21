@@ -15,18 +15,18 @@ const Catalogos = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-3xl border border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-100 dark:bg-slate-900/40 p-4 rounded-3xl border border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3 px-2">
           <div className="bg-indigo-600 p-2 rounded-xl">
             <LayoutGrid className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Administración de Catálogos</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Administración de Catálogos</h1>
             <p className="text-slate-500 text-xs font-medium">Gestiona productos, talleres y proveedores en un solo lugar</p>
           </div>
         </div>
 
-        <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-slate-800/80 self-center backdrop-blur-xl shadow-inner w-full md:w-auto overflow-x-auto custom-scrollbar">
+        <div className="flex bg-slate-200/50 dark:bg-slate-950/80 p-1.5 rounded-full border border-slate-300/50 dark:border-slate-800/80 self-center backdrop-blur-xl shadow-inner w-full md:w-auto overflow-x-auto custom-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -34,7 +34,7 @@ const Catalogos = () => {
               className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-out whitespace-nowrap overflow-hidden ${
                 activeTab === tab.id
                   ? 'text-white shadow-lg shadow-indigo-900/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/50'
               }`}
             >
               {activeTab === tab.id && (

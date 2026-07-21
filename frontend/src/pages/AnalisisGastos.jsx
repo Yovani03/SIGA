@@ -273,14 +273,14 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
     <div className="space-y-8 animate-in fade-in duration-700">
       
       {/* Filtro por Unidad */}
-      <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl flex flex-col lg:flex-row items-center gap-6">
+      <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl flex flex-col lg:flex-row items-center gap-6 shadow-sm dark:shadow-none">
         <div className="flex items-center gap-3 bg-blue-600/10 p-3 rounded-2xl">
           <Filter className="text-blue-500" size={24} />
         </div>
         
         <div className="flex-grow w-full space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <label className="text-slate-400 text-sm font-bold uppercase tracking-wider block">
+            <label className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider block">
               Analizar gastos por unidad
             </label>
             
@@ -291,7 +291,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
                 placeholder="Buscar por eco o placas..."
                 value={busquedaUnidad}
                 onChange={(e) => setBusquedaUnidad(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white focus:border-blue-500 outline-none transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all shadow-inner placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
           </div>
@@ -301,7 +301,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
             <select
               value={unidadSeleccionada}
               onChange={(e) => setUnidadSeleccionada(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none font-medium cursor-pointer"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none font-medium cursor-pointer shadow-inner"
             >
               <option value="todas">
                 {busquedaUnidad 
@@ -313,9 +313,9 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               </option>
               
               {vehiculosFiltrados.length > 0 && (
-                <optgroup label="Tractores / Unidades" className="bg-slate-955 text-blue-400 font-bold">
+                <optgroup label="Tractores / Unidades" className="bg-slate-100 dark:bg-slate-955 text-blue-600 dark:text-blue-400 font-bold">
                   {vehiculosFiltrados.map(v => (
-                    <option key={`tractor_${v.id}`} value={v.id} className="text-white font-normal bg-slate-950">
+                    <option key={`tractor_${v.id}`} value={v.id} className="text-slate-900 dark:text-white font-normal bg-white dark:bg-slate-950">
                       {v.numero_economico} {v.placas ? `- ${v.placas}` : ''}
                     </option>
                   ))}
@@ -323,9 +323,9 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               )}
 
               {cajasFiltradas.length > 0 && (
-                <optgroup label="Remolques / Cajas" className="bg-slate-955 text-blue-400 font-bold">
+                <optgroup label="Remolques / Cajas" className="bg-slate-100 dark:bg-slate-955 text-blue-600 dark:text-blue-400 font-bold">
                   {cajasFiltradas.map(c => (
-                    <option key={`caja_${c.id}`} value={`caja_${c.id}`} className="text-white font-normal bg-slate-950">
+                    <option key={`caja_${c.id}`} value={`caja_${c.id}`} className="text-slate-900 dark:text-white font-normal bg-white dark:bg-slate-950">
                       {c.numero_economico} {c.placas ? `- ${c.placas}` : ''}
                     </option>
                   ))}
@@ -333,9 +333,9 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               )}
 
               {variadosFiltradas.length > 0 && (
-                <optgroup label="Vehículos Variados / Maquinaria" className="bg-slate-955 text-blue-400 font-bold">
+                <optgroup label="Vehículos Variados / Maquinaria" className="bg-slate-100 dark:bg-slate-955 text-blue-600 dark:text-blue-400 font-bold">
                   {variadosFiltradas.map(varItem => (
-                    <option key={`variado_${varItem.id}`} value={`variado_${varItem.id}`} className="text-white font-normal bg-slate-950">
+                    <option key={`variado_${varItem.id}`} value={`variado_${varItem.id}`} className="text-slate-900 dark:text-white font-normal bg-white dark:bg-slate-950">
                       {varItem.numero_economico} {varItem.placas ? `- ${varItem.placas}` : ''} {varItem.tipo ? `(${varItem.tipo})` : ''}
                     </option>
                   ))}
@@ -349,12 +349,12 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Distribución por Categoría */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 shadow-xl">
+        <div className="bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm dark:shadow-xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-blue-600/20 p-3 rounded-2xl">
               <PieChartIcon className="text-blue-500" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-white">Distribución de Gastos</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Distribución de Gastos</h3>
           </div>
           
           {dataPorCategoriaConFills.length > 0 ? (
@@ -368,15 +368,15 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
                   return dataPorCategoriaConFills.map((item) => {
                     const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0.0';
                     return (
-                      <div key={item.name} className="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/80 rounded-2xl transition-all hover:bg-slate-900/60">
+                      <div key={item.name} className="flex items-center justify-between p-3.5 bg-white dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/60 shadow-sm dark:shadow-none">
                         <div className="flex items-center gap-3">
                           <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{categoryChartConfig[item.name]?.label || item.name}</p>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{categoryChartConfig[item.name]?.label || item.name}</p>
                             <p className="text-[10px] text-slate-500 font-bold">{percentage}% del total</p>
                           </div>
                         </div>
-                        <span className="text-xs font-black text-white shrink-0 ml-4 font-mono">
+                        <span className="text-xs font-black text-slate-900 dark:text-white shrink-0 ml-4 font-mono">
                           ${parseFloat(item.value).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -386,19 +386,19 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               </div>
             </div>
           ) : (
-            <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
+            <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-200/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
               No hay datos para esta selección
             </div>
           )}
         </div>
 
         {/* Tendencia Mensual */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 shadow-xl">
+        <div className="bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm dark:shadow-xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-emerald-600/20 p-3 rounded-2xl">
               <TrendingUp className="text-emerald-500" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-white">Tendencia Mensual Total</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Tendencia Mensual Total</h3>
           </div>
           
           {dataPorMes.length > 0 ? (
@@ -406,19 +406,19 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               <ReactApexChart options={lineOptions} series={lineSeries} type="line" height="100%" />
             </div>
           ) : (
-            <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
+            <div className="h-80 flex items-center justify-center text-slate-500 font-medium italic bg-slate-200/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
               Sin historial de gastos disponible
             </div>
           )}
         </div>
 
         {/* Comparativa de Gastos por Mes y Categoría */}
-        <div className="col-span-1 lg:col-span-2 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 shadow-xl">
+        <div className="col-span-1 lg:col-span-2 bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm dark:shadow-xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-purple-600/20 p-3 rounded-2xl">
               <BarChart3 className="text-purple-500" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-white">Comparativa de Gastos por Categoría</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Comparativa de Gastos por Categoría</h3>
           </div>
           
           {dataPorMes.length > 0 ? (
@@ -426,7 +426,7 @@ const AnalisisGastos = ({ facturas, vehiculos, cajas = [], variados = [], cargas
               <ReactApexChart options={areaOptions} series={areaSeries} type="area" height="100%" />
             </div>
           ) : (
-            <div className="h-96 flex items-center justify-center text-slate-500 font-medium italic bg-slate-950/20 rounded-2xl border border-dashed border-slate-800">
+            <div className="h-96 flex items-center justify-center text-slate-500 font-medium italic bg-slate-200/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
               No hay facturas registradas para generar la comparativa
             </div>
           )}

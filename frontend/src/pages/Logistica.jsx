@@ -523,20 +523,20 @@ const Logistica = () => {
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase mb-1">
                   SEMANA OPERATIVA (VIE - JUE)
                 </span>
-                <div className="flex items-center bg-slate-900 dark:bg-slate-950 rounded-2xl p-1.5 border border-slate-800 shadow-xl max-w-fit">
-                  <button onClick={handlePrevWeek} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+                <div className="flex items-center bg-white dark:bg-slate-950 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-800 shadow-xl max-w-fit">
+                  <button onClick={handlePrevWeek} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
                     <ChevronLeft size={20} />
                   </button>
                   <div className="px-4 py-1.5 flex flex-col items-center min-w-[140px]">
-                    <div className="flex items-center gap-2 text-blue-500 mb-0.5">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-500 mb-0.5">
                       <Calendar size={14} />
                       <span className="text-[10px] font-bold tracking-wider">PERIODO ACTUAL</span>
                     </div>
-                    <span className="text-sm font-bold text-white">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
                       {new Date(startDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} - {new Date(endDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
-                  <button onClick={handleNextWeek} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+                  <button onClick={handleNextWeek} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
                     <ChevronRight size={20} />
                   </button>
                 </div>

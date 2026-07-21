@@ -60,11 +60,11 @@ const Productos = () => {
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <Tag className="text-purple-500" size={36} />
             Catálogo de Productos
           </h1>
-          <p className="text-slate-400 mt-2 text-lg">Administra los conceptos y categorías de gastos para tus facturas.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Administra los conceptos y categorías de gastos para tus facturas.</p>
         </div>
         
         <button 
@@ -130,21 +130,21 @@ const Productos = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {productos.map(p => (
-            <div key={p.id} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group">
+            <div key={p.id} className="bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group shadow-sm dark:shadow-none">
               <div className="flex justify-between items-start mb-4">
-                <div className="bg-slate-800 px-3 py-1 rounded-full text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                <div className="bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   {p.categoria}
                 </div>
-                <button onClick={() => handleDelete(p.id)} className="text-slate-500 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                <button onClick={() => handleDelete(p.id)} className="text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                   <Trash2 size={16} />
                 </button>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">{p.nombre}</h3>
-              <p className="text-sm text-slate-400 line-clamp-2">{p.descripcion || 'Sin descripción'}</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{p.nombre}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{p.descripcion || 'Sin descripción'}</p>
             </div>
           ))}
           {productos.length === 0 && !showForm && (
-            <div className="col-span-full text-center p-12 bg-slate-900/40 border border-slate-800 rounded-3xl text-slate-400">
+            <div className="col-span-full text-center p-12 bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-500 dark:text-slate-400">
               No hay productos registrados. Agrega uno nuevo para empezar a categorizar facturas.
             </div>
           )}

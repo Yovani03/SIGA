@@ -77,11 +77,11 @@ const Proveedores = () => {
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <Users className="text-purple-500" size={36} />
             Directorio de Proveedores
           </h1>
-          <p className="text-slate-400 mt-2 text-lg">Gestiona todos los proveedores de la empresa y filtra por categoría.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Gestiona todos los proveedores de la empresa y filtra por categoría.</p>
         </div>
         
         <button 
@@ -97,17 +97,17 @@ const Proveedores = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+      <div className="flex flex-col md:flex-row gap-4 bg-slate-100 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
         <div className="relative group flex-1">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Search className="text-slate-500 group-focus-within:text-purple-500 transition-colors" size={20} />
+            <Search className="text-slate-400 dark:text-slate-500 group-focus-within:text-purple-500 transition-colors" size={20} />
           </div>
           <input
             type="text"
             placeholder="Buscar por nombre, teléfono, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all placeholder:text-slate-600"
+            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
           />
         </div>
         
@@ -115,7 +115,7 @@ const Proveedores = () => {
           <select
             value={categoriaFilter}
             onChange={(e) => setCategoriaFilter(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all appearance-none cursor-pointer"
+            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all appearance-none cursor-pointer shadow-inner"
           >
             <option value="">Todas las Categorías</option>
             {categorias.map(cat => (
@@ -138,26 +138,26 @@ const Proveedores = () => {
           <button onClick={fetchProveedores} className="text-purple-400 hover:text-purple-300 font-bold underline">Intentar de nuevo</button>
         </div>
       ) : filteredProveedores.length === 0 ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
-          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
-            <Users className="text-slate-600" size={40} />
+        <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
+          <div className="bg-slate-200 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
+            <Users className="text-slate-400 dark:text-slate-600" size={40} />
           </div>
-          <h3 className="text-2xl font-bold text-white">No se encontraron proveedores</h3>
-          <p className="text-slate-400 max-w-md mx-auto">
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">No se encontraron proveedores</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             No hay resultados para los filtros actuales. Intenta con otra categoría o término de búsqueda.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProveedores.map((p) => (
-            <div key={p.id} className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group shadow-xl flex flex-col h-full">
+            <div key={p.id} className="bg-slate-100 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-3xl p-6 hover:border-purple-500/50 transition-all group shadow-sm dark:shadow-xl flex flex-col h-full">
               <div className="flex justify-between items-start mb-4 bg-transparent w-full">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-xl truncate pr-2">{p.razon_social || p.nombre}</h3>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-xl truncate pr-2">{p.razon_social || p.nombre}</h3>
                   {p.razon_social && p.nombre && p.razon_social.trim().toLowerCase() !== p.nombre.trim().toLowerCase() && (
-                    <p className="text-slate-400 text-sm font-medium mt-1 truncate">{p.nombre}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1 truncate">{p.nombre}</p>
                   )}
-                  <div className="inline-flex items-center gap-1.5 bg-purple-600/20 text-purple-400 text-xs font-bold px-2.5 py-1 rounded-md mt-2 border border-purple-500/20">
+                  <div className="inline-flex items-center gap-1.5 bg-purple-600/10 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 text-xs font-bold px-2.5 py-1 rounded-md mt-2 border border-purple-500/20">
                     <Briefcase size={12} />
                     {p.categoria}
                   </div>
@@ -167,7 +167,7 @@ const Proveedores = () => {
                     setSelectedProveedor(p);
                     setShowModal(true);
                   }}
-                  className="p-2 bg-slate-800 hover:bg-purple-600/20 text-slate-400 hover:text-purple-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
+                  className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-600/20 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
                   title="Editar Proveedor"
                 >
                   <Edit3 size={16} />
@@ -176,8 +176,8 @@ const Proveedores = () => {
 
               <div className="space-y-3 mt-4 flex-1">
                 {p.telefono && (
-                  <div className="flex items-center gap-3 text-slate-300">
-                    <div className="bg-slate-800/80 p-1.5 rounded-lg text-slate-400">
+                  <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="bg-slate-200 dark:bg-slate-800/80 p-1.5 rounded-lg text-slate-500 dark:text-slate-400">
                       <Phone size={16} />
                     </div>
                     <span className="text-sm font-medium">{p.telefono}</span>
@@ -185,8 +185,8 @@ const Proveedores = () => {
                 )}
                 
                 {p.email && (
-                  <div className="flex items-center gap-3 text-slate-300">
-                    <div className="bg-slate-800/80 p-1.5 rounded-lg text-slate-400">
+                  <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="bg-slate-200 dark:bg-slate-800/80 p-1.5 rounded-lg text-slate-500 dark:text-slate-400">
                       <Mail size={16} />
                     </div>
                     <span className="text-sm font-medium truncate">{p.email}</span>
@@ -194,8 +194,8 @@ const Proveedores = () => {
                 )}
 
                 {p.direccion && (
-                  <div className="flex items-start gap-3 text-slate-300">
-                    <div className="bg-slate-800/80 p-1.5 rounded-lg text-slate-400 mt-0.5">
+                  <div className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="bg-slate-200 dark:bg-slate-800/80 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 mt-0.5">
                       <MapPin size={16} />
                     </div>
                     <span className="text-sm font-medium line-clamp-2">{p.direccion}</span>
@@ -204,12 +204,12 @@ const Proveedores = () => {
               </div>
               
               {p.sitio_web && (
-                <div className="pt-4 mt-4 border-t border-slate-800/50">
+                <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800/50">
                   <a 
                     href={p.sitio_web.startsWith('http') ? p.sitio_web : `https://${p.sitio_web}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-bold transition-colors"
+                    className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 text-sm font-bold transition-colors"
                   >
                     <Globe size={16} /> Visitar sitio web
                   </a>

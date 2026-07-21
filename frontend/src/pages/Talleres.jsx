@@ -75,11 +75,11 @@ const Talleres = () => {
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <Wrench className="text-blue-500" size={36} />
             Directorio de Talleres
           </h1>
-          <p className="text-slate-400 mt-2 text-lg">Gestiona el catálogo de mecánicos y talleres externos.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Gestiona el catálogo de mecánicos y talleres externos.</p>
         </div>
         
         <button 
@@ -95,21 +95,21 @@ const Talleres = () => {
       </div>
 
       {/* Search & Filter */}
-      <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 space-y-6">
+      <div className="bg-slate-100 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm dark:shadow-none">
         <div className="relative group">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Search className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
+            <Search className="text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
           </div>
           <input
             type="text"
             placeholder="Buscar por nombre del taller, especialidad o dirección..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
+            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-4 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
           />
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/50">
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/50">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-widest w-full mb-2 ml-1">Filtrar por Especialidad:</div>
           {especialidadesList.map((esp) => (
             <button
@@ -118,7 +118,7 @@ const Talleres = () => {
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
                 selectedSpecialty === esp
                   ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
+                  : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               {esp}
@@ -140,24 +140,24 @@ const Talleres = () => {
           <button onClick={fetchTalleres} className="text-blue-400 hover:text-blue-300 font-bold underline">Intentar de nuevo</button>
         </div>
       ) : filteredTalleres.length === 0 ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
-          <div className="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
-            <Wrench className="text-slate-600" size={40} />
+        <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-20 text-center space-y-6">
+          <div className="bg-slate-200 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
+            <Wrench className="text-slate-400 dark:text-slate-600" size={40} />
           </div>
-          <h3 className="text-2xl font-bold text-white">No se encontraron talleres</h3>
-          <p className="text-slate-400 max-w-md mx-auto">
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">No se encontraron talleres</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {searchTerm ? "No hay resultados para la búsqueda actual." : "Aún no hay talleres registrados en el sistema."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTalleres.map((t) => (
-            <div key={t.id} className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-3xl p-6 hover:border-blue-500/50 transition-all group shadow-xl flex flex-col h-full">
+            <div key={t.id} className="bg-slate-100 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-3xl p-6 hover:border-blue-500/50 transition-all group shadow-sm dark:shadow-xl flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-xl pr-2">{t.razon_social || t.nombre}</h3>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-xl pr-2">{t.razon_social || t.nombre}</h3>
                   {t.razon_social && t.nombre && t.razon_social.trim().toLowerCase() !== t.nombre.trim().toLowerCase() && (
-                    <p className="text-slate-400 text-sm font-medium mt-1">{t.nombre}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">{t.nombre}</p>
                   )}
                   {t.especialidad && (
                     <div className="flex flex-wrap gap-2 mt-2">
@@ -175,7 +175,7 @@ const Talleres = () => {
                     setSelectedTaller(t);
                     setShowModal(true);
                   }}
-                  className="p-2 bg-slate-800 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
+                  className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-600/20 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
                   title="Editar Taller"
                 >
                   <Edit3 size={16} />
@@ -184,8 +184,8 @@ const Talleres = () => {
 
               <div className="space-y-4 mt-4 flex-1">
                 {t.telefono && (
-                  <div className="flex items-center gap-3 text-slate-300">
-                    <div className="bg-slate-800/80 p-1.5 rounded-lg text-slate-400">
+                  <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="bg-slate-200 dark:bg-slate-800/80 p-1.5 rounded-lg text-slate-500 dark:text-slate-400">
                       <Phone size={16} />
                     </div>
                     <span className="text-sm font-medium">{t.telefono}</span>
@@ -193,8 +193,8 @@ const Talleres = () => {
                 )}
 
                 {t.direccion && (
-                  <div className="flex items-start gap-3 text-slate-300">
-                    <div className="bg-slate-800/80 p-1.5 rounded-lg text-slate-400 mt-0.5">
+                  <div className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="bg-slate-200 dark:bg-slate-800/80 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 mt-0.5">
                       <MapPin size={16} />
                     </div>
                     <span className="text-sm font-medium line-clamp-2">{t.direccion}</span>
@@ -202,12 +202,12 @@ const Talleres = () => {
                 )}
               </div>
               
-              <div className="pt-4 mt-4 border-t border-slate-800/50 flex gap-2">
+              <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800/50 flex gap-2">
                 <a 
                   href={t.url_mapa || `https://maps.google.com/?q=${encodeURIComponent(t.direccion || t.nombre)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 flex justify-center items-center gap-2 bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-400 py-2.5 rounded-xl text-sm font-bold transition-colors"
+                  className="flex-1 flex justify-center items-center gap-2 bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 py-2.5 rounded-xl text-sm font-bold transition-colors"
                 >
                   <MapPin size={16} /> Ver en Mapa
                 </a>

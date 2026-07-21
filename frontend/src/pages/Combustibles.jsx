@@ -1824,22 +1824,22 @@ const Combustibles = () => {
             
             <div className="flex items-center gap-4">
               {/* Selector de Historial */}
-              <div className="flex bg-slate-900/50 p-1.5 rounded-full backdrop-blur-xl overflow-x-auto custom-scrollbar">
+              <div className="flex bg-slate-200/80 dark:bg-slate-900/50 p-1.5 rounded-full backdrop-blur-xl overflow-x-auto custom-scrollbar shadow-inner">
                 <button 
                   onClick={() => setHistorialTipo('normal')}
-                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'normal' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'normal' ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                   Diarias
                 </button>
                 <button 
                   onClick={() => setHistorialTipo('especial')}
-                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'especial' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'especial' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                   Especiales
                 </button>
                 <button 
                   onClick={() => setHistorialTipo('totalizador')}
-                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'totalizador' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${historialTipo === 'totalizador' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                   Totalizador
                 </button>

@@ -296,24 +296,24 @@ export default function ReporteGastosProveedor() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-center invisible">
                 Navegador Semanal
               </label>
-              <div className="bg-slate-900 dark:bg-slate-950 border border-slate-700 rounded-2xl flex items-center justify-between p-2 h-16 shadow-inner">
+              <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-2xl flex items-center justify-between p-2 h-16 shadow-inner">
                 <button 
                   onClick={() => changeWeek(-1)}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                  className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 rounded-xl transition-all"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 
                 <div className="text-center flex-1">
-                  <p className="text-blue-400 text-xs font-bold tracking-widest uppercase mb-0.5">Semana del</p>
-                  <p className="text-white font-black text-lg">
+                  <p className="text-indigo-600 dark:text-blue-400 text-xs font-bold tracking-widest uppercase mb-0.5">Semana del</p>
+                  <p className="text-gray-900 dark:text-white font-black text-lg">
                     {formatShortDate(startOfWeek)} - {formatShortDate(endOfWeek)}
                   </p>
                 </div>
                 
                 <button 
                   onClick={() => changeWeek(1)}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                  className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 rounded-xl transition-all"
                 >
                   <ChevronRight size={24} />
                 </button>
