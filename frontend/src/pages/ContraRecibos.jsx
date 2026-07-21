@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import axios from 'axios';
 import { Plus, Download, Search, Check, X, FileText, Trash2, Printer, Save, History, PlusCircle, Store } from 'lucide-react';
 import { toast } from 'sonner';
@@ -65,8 +66,8 @@ export default function ContraRecibos() {
   const fetchCatalogos = async () => {
     try {
       const [provRes, tallRes] = await Promise.all([
-        axios.get('/api/proveedores/'),
-        axios.get('/api/talleres/')
+        api.get('proveedores/'),
+        api.get('talleres/')
       ]);
       setProveedores(provRes.data);
       setTalleres(tallRes.data);
@@ -78,7 +79,7 @@ export default function ContraRecibos() {
   const fetchHistorial = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/contra-recibos/');
+      const res = await api.get('contra-recibos/');
       setHistorial(res.data.results || res.data);
     } catch (error) {
       toast.error('Error al cargar historial de contra recibos');
@@ -140,7 +141,7 @@ export default function ContraRecibos() {
 
     try {
       setLoading(true);
-      const res = await axios.post('/api/contra-recibos/', payload);
+      const res = await api.post('contra-recibos/', payload);
       toast.success('Contra recibo generado exitosamente');
       
       // Descargar PDF
@@ -165,7 +166,7 @@ export default function ContraRecibos() {
 
   const downloadPDF = async (id, folio) => {
     try {
-      const res = await axios.get(`/api/contra-recibos/${id}/pdf/`, { responseType: 'blob' });
+      const res = await api.get(`contra-recibos/${id}/pdf/`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
