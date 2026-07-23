@@ -2663,7 +2663,11 @@ const Combustibles = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    {selectedBlock.cargas?.map((carga, i) => (
+                    {selectedBlock.cargas?.slice().sort((a, b) => {
+                      const strA = a.unidad_detalle || `Eco ${a.unidad || a.unidad_variada || ''}`;
+                      const strB = b.unidad_detalle || `Eco ${b.unidad || b.unidad_variada || ''}`;
+                      return strA.localeCompare(strB, undefined, { numeric: true, sensitivity: 'base' });
+                    }).map((carga, i) => (
                       <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                         {editingCargaId === carga.id ? (
                           <>
