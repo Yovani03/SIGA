@@ -80,6 +80,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
   const [mostrarDropdownEntidad, setMostrarDropdownEntidad] = useState(false);
   
   const [existingFile, setExistingFile] = useState(null);
+  const [replaceExistingScan, setReplaceExistingScan] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   
   const { user } = useContext(AuthContext);
@@ -571,7 +572,7 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
       return;
     }
 
-    if (scannedFiles.length === 0 && !formData.archivo_escaneado) {
+    if (scannedFiles.length === 0 && !formData.archivo_escaneado && (!existingFile || replaceExistingScan)) {
       notify.error("Debes adjuntar o escanear el documento de la factura obligatoriamente.");
       setLoading(false);
       return;
@@ -627,16 +628,39 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
     }
     
     if (scannedFiles.length > 0) {
-      if (scannedFiles.length === 1) {
-        data.append('archivo_escaneado', scannedFiles[0]);
-      } else {
+      if (existingFile && !replaceExistingScan) {
         try {
-          const mergedFile = await mergePDFs(scannedFiles);
-          data.append('archivo_escaneado', mergedFile);
+          const existingPdfRes = await fetch(formatMediaUrl(existingFile));
+          const existingPdfBytes = await existingPdfRes.arrayBuffer();
+          const existingDoc = await PDFDocument.load(existingPdfBytes);
+          
+          const mergedNewFile = await mergePDFs(scannedFiles);
+          const newDoc = await PDFDocument.load(await mergedNewFile.arrayBuffer());
+          
+          const copiedPages = await existingDoc.copyPages(newDoc, newDoc.getPageIndices());
+          copiedPages.forEach(page => existingDoc.addPage(page));
+          
+          const finalPdfBytes = await existingDoc.save();
+          const finalFile = new File([finalPdfBytes], `factura_anexada_${Date.now()}.pdf`, { type: 'application/pdf' });
+          data.append('archivo_escaneado', finalFile);
         } catch (err) {
-          notify.error(err.message);
+          console.error("Error al anexar PDF:", err);
+          notify.error("Error al anexar las hojas al documento existente. Asegúrate de que ambos sean PDFs válidos.");
           setLoading(false);
           return;
+        }
+      } else {
+        if (scannedFiles.length === 1) {
+          data.append('archivo_escaneado', scannedFiles[0]);
+        } else {
+          try {
+            const mergedFile = await mergePDFs(scannedFiles);
+            data.append('archivo_escaneado', mergedFile);
+          } catch (err) {
+            notify.error(err.message);
+            setLoading(false);
+            return;
+          }
         }
       }
     } else if (formData.archivo_escaneado) {
@@ -1492,7 +1516,23 @@ const AltaFactura = ({ onSuccess, onClose, factura, existingFacturas = [] }) => 
                   </div>
                 </div>
                 <div className="pt-2 flex flex-col gap-2">
-                  <p className="text-[10px] text-slate-500 text-center mb-1">Si subes o escaneas un archivo nuevo, reemplazará al actual.</p>
+                  <div className="flex items-center gap-2 mb-2 bg-rose-50 dark:bg-rose-900/10 p-2 rounded-lg border border-rose-100 dark:border-rose-900/20">
+                    <input 
+                      type="checkbox" 
+                      id="replaceExistingScan"
+                      checked={replaceExistingScan}
+                      onChange={(e) => setReplaceExistingScan(e.target.checked)}
+                      className="rounded border-rose-300 text-rose-500 focus:ring-rose-500"
+                    />
+                    <label htmlFor="replaceExistingScan" className="text-[10px] text-rose-700 dark:text-rose-400 font-semibold cursor-pointer select-none">
+                      Eliminar escaneo anterior y reemplazar completamente
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-slate-500 text-center mb-1">
+                    {replaceExistingScan 
+                      ? "Se reemplazará el documento actual con las nuevas hojas." 
+                      : "Las hojas nuevas se agregarán al final del documento actual."}
+                  </p>
                   <div className="flex gap-2">
                     <button
                       type="button"

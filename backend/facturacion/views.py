@@ -44,7 +44,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     pagination_class = CustomPagination
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
-    search_fields = ['folio_interno', 'folio_emision', 'descripcion', 'taller_nombre', 'proveedor_nombre', 'unidad__numero_economico', 'unidad__placas', 'caja__numero_economico', 'caja__placas', 'variado__numero_economico', 'variado__placas']
+    search_fields = ['folio_interno', 'folio_emision', 'descripcion', 'taller__nombre', 'proveedor__nombre', 'unidad__numero_economico', 'unidad__placas', 'caja__numero_economico', 'caja__placas', 'variado__numero_economico', 'variado__placas']
     filterset_fields = ['convertido_en_factura']
     ordering_fields = ['fecha', 'monto']
     @action(detail=False, methods=['get'])
