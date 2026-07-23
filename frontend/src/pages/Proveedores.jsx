@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { 
   Users, 
@@ -11,11 +12,13 @@ import {
   Loader2,
   AlertCircle,
   Briefcase,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import NuevoProveedor from './NuevoProveedor';
 
 const Proveedores = () => {
+  const { user } = useContext(AuthContext);
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +62,18 @@ const Proveedores = () => {
   const handleSuccess = () => {
     setShowModal(false);
     fetchProveedores();
+  };
+
+  const handleDelete = async (id, nombre) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el proveedor "${nombre}"?`)) {
+      try {
+        await api.delete(`proveedores/${id}/`);
+        fetchProveedores();
+      } catch (err) {
+        console.error("Error al eliminar el proveedor", err);
+        alert("Hubo un error al eliminar el proveedor. Es posible que esté en uso en facturas o tickets.");
+      }
+    }
   };
 
   const filteredProveedores = proveedores.filter(p => {
@@ -162,16 +177,27 @@ const Proveedores = () => {
                     {p.categoria}
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedProveedor(p);
-                    setShowModal(true);
-                  }}
-                  className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-600/20 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
-                  title="Editar Proveedor"
-                >
-                  <Edit3 size={16} />
-                </button>
+                <div className="flex gap-2 self-start flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setSelectedProveedor(p);
+                      setShowModal(true);
+                    }}
+                    className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-600/20 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-xl transition-all shadow-inner"
+                    title="Editar Proveedor"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  {user?.rol === 'admin_general' && (
+                    <button
+                      onClick={() => handleDelete(p.id, p.nombre)}
+                      className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-600/20 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all shadow-inner"
+                      title="Eliminar Proveedor"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-3 mt-4 flex-1">

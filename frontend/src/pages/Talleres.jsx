@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { 
   Wrench, 
@@ -9,11 +10,13 @@ import {
   Loader2,
   AlertCircle,
   Settings2,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import NuevoTaller from './NuevoTaller';
 
 const Talleres = () => {
+  const { user } = useContext(AuthContext);
   const [talleres, setTalleres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,6 +58,18 @@ const Talleres = () => {
   const handleSuccess = () => {
     setShowModal(false);
     fetchTalleres();
+  };
+
+  const handleDelete = async (id, nombre) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el taller "${nombre}"?`)) {
+      try {
+        await api.delete(`talleres/${id}/`);
+        fetchTalleres();
+      } catch (err) {
+        console.error("Error al eliminar el taller", err);
+        alert("Hubo un error al eliminar el taller. Es posible que esté en uso en facturas o tickets.");
+      }
+    }
   };
 
   const filteredTalleres = talleres.filter(t => {
@@ -170,16 +185,27 @@ const Talleres = () => {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedTaller(t);
-                    setShowModal(true);
-                  }}
-                  className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-600/20 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all shadow-inner flex-shrink-0 self-start"
-                  title="Editar Taller"
-                >
-                  <Edit3 size={16} />
-                </button>
+                <div className="flex gap-2 self-start flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setSelectedTaller(t);
+                      setShowModal(true);
+                    }}
+                    className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-600/20 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all shadow-inner"
+                    title="Editar Taller"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  {user?.rol === 'admin_general' && (
+                    <button
+                      onClick={() => handleDelete(t.id, t.nombre)}
+                      className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-600/20 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all shadow-inner"
+                      title="Eliminar Taller"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4 mt-4 flex-1">
