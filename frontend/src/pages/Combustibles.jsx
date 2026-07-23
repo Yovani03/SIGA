@@ -2654,6 +2654,7 @@ const Combustibles = () => {
                     <tr>
                       <th className="px-4 py-3 font-semibold">Unidad</th>
                       <th className="px-4 py-3 font-semibold">Tipo</th>
+                      <th className="px-4 py-3 font-semibold text-center">Fecha</th>
                       <th className="px-4 py-3 font-semibold text-right">Litros</th>
                       <th className="px-4 py-3 font-semibold text-right">Precio/L</th>
                       <th className="px-4 py-3 font-semibold text-right">Total</th>
@@ -2670,6 +2671,7 @@ const Combustibles = () => {
                               {carga.unidad_detalle || `Eco ${carga.unidad || carga.unidad_variada}`}
                             </td>
                             <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-center whitespace-nowrap text-xs">{new Date(carga.fecha + 'T12:00:00').toLocaleDateString('es-MX')}</td>
                             <td className="px-4 py-3 text-right">
                               <input 
                                 type="number" 
@@ -2721,6 +2723,7 @@ const Combustibles = () => {
                               {carga.es_especial && <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full uppercase font-bold">Especial</span>}
                             </td>
                             <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{carga.tipo_combustible}</td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-center whitespace-nowrap text-xs font-medium">{new Date(carga.fecha + 'T12:00:00').toLocaleDateString('es-MX')}</td>
                             <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">{parseFloat(carga.litros).toFixed(2)} L</td>
                             <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">${parseFloat(carga.precio_unitario).toFixed(2)}</td>
                             <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
@@ -2754,7 +2757,7 @@ const Combustibles = () => {
                     ))}
                     {(!selectedBlock.cargas || selectedBlock.cargas.length === 0) && (
                       <tr>
-                        <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan="8" className="px-4 py-8 text-center text-slate-500">
                           No hay detalles disponibles para este bloque.
                         </td>
                       </tr>
