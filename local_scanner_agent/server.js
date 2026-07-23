@@ -17,20 +17,19 @@ app.get('/api/scan', (req, res) => {
         fs.unlinkSync(outputPath);
     }
 
-    console.log("-> Recibida orden desde la Web. Iniciando escáner...");
+    // Obtenemos el perfil de la query string, o usamos "Brother" por defecto
+    const profile = req.query.profile || 'Brother';
+
+    console.log(`-> Recibida orden desde la Web. Iniciando escáner con perfil: ${profile}...`);
     
-    // Ejecutamos NAPS2 por línea de comandos usando el perfil "Brother"
-    // Dependiendo de tu instalación, NAPS2 instala "naps2.console.exe" o "naps2.exe" en C:\Program Files\NAPS2\
-    // Para la versión 7, el comando base es naps2.com o naps2.exe.
-    
+    // Ejecutamos NAPS2 por línea de comandos usando el perfil seleccionado
     const programFiles = process.env.PROGRAMFILES || 'C:\\Program Files';
-    // Probamos con la ruta por defecto de NAPS2 console
-    const command = `"${programFiles}\\NAPS2\\naps2.console.exe" -p "Brother" -o "${outputPath}"`;
+    const command = `"${programFiles}\\NAPS2\\naps2.console.exe" -p "${profile}" -o "${outputPath}"`;
 
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error al ejecutar escaner: ${error.message}`);
-            return res.status(500).json({ error: 'No se pudo activar el escáner. Verifica que esté encendido y el perfil se llame "Brother".' });
+            return res.status(500).json({ error: `No se pudo activar el escáner. Verifica que esté encendido y el perfil se llame "${profile}".` });
         }
         
         console.log("-> Escaneo completado con éxito.");

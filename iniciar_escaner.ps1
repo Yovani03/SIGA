@@ -39,7 +39,13 @@ try {
         }
 
         if ($request.Url.LocalPath -eq "/api/scan") {
-            Write-Host "-> Recibida orden desde la Web. Iniciando escaner..."
+            # Extract profile from query parameter
+            $profile = "Brother"
+            if ($request.Url.Query -match "profile=([^&]+)") {
+                $profile = $matches[1]
+            }
+
+            Write-Host "-> Recibida orden desde la Web. Iniciando escaner con perfil $profile..."
             
             # Definir la ruta del archivo de salida
             $outputPath = Join-Path $PSScriptRoot "temp_scan.pdf"
@@ -70,9 +76,9 @@ try {
                 continue
             }
 
-            # Ejecutar el escaneo usando el perfil 'Brother'
+            # Ejecutar el escaneo usando el perfil
             Write-Host "Ejecutando NAPS2..."
-            $process = Start-Process -FilePath $napsPath -ArgumentList "-p `"Brother`"", "-o `"$outputPath`"" -NoNewWindow -PassThru -Wait
+            $process = Start-Process -FilePath $napsPath -ArgumentList "-p `"$profile`"", "-o `"$outputPath`"" -NoNewWindow -PassThru -Wait
 
             if (Test-Path $outputPath) {
                 Write-Host "-> Escaneo completado con exito."
